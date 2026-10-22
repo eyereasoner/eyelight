@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.1** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.2** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -22,7 +22,7 @@ mortal(Person) :- human(Person).
 Who = socrates.
 ```
 
-Eyelight's `.eye` language uses familiar clause notation. It implements **finite positive relational rules**, a deliberately small Datalog-style language. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete first-version language.
+Eyelight's `.eye` language uses familiar clause notation. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete language.
 
 ## Run your first program
 
@@ -67,6 +67,11 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 | [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.eye) | Joins and shared variables |
 | [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.eye) | Distinct atoms, strings, and integers |
 | [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.eye) | IRIs represented in an ordinary triple relation |
+| [Price calculations](https://github.com/eyereasoner/eyelight/blob/main/examples/arithmetic.eye) | Arithmetic, comparisons, and string built-ins |
+| [Outside the network](https://github.com/eyereasoner/eyelight/blob/main/examples/negation.eye) | Stratified negation after recursive reachability |
+| [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.eye) | Grouped counts, sums, minima, and maxima |
+| [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.eye) | Witnesses scoped to individual rule firings |
+| [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.eye) | Every C1–C9 condition actively checked |
 
 ## Keep the evidence
 
@@ -96,17 +101,64 @@ Conditions:
   C2 well-foundedness: 1 checked, 0 failed
   C3 justification: 3 checked, 0 failed
   C4 coverage: 5 checked, 0 failed
-  C5 re-decision: not applicable (no interpreted built-ins)
-  C6 boundary consistency: not applicable (no trust obligations or inference fuses)
+  C5 re-decision: not applicable (program uses no built-ins or aggregates)
+  C6 boundary consistency: not applicable (program uses no negation or aggregation)
   C7 relevance: 2 checked, 0 failed
-  C8 witness integrity: not applicable (no existential witnesses)
+  C8 witness integrity: not applicable (program uses no fresh witnesses)
   C9 query isolation: 1 checked, 0 failed
 Source assertions are assumed. Answer completeness is not checked.
 ```
 
-A valid certificate establishes **positive support for its claims**. It assumes the source assertions, does not authenticate their authors, and does not establish that every answer was found. A failed query prints `false.` but has no positive claim to certify. A certificate with zero claims proves no answers and no absence. The checker shares the term representation and closed matching primitives with the evaluator; it has a separate verification loop and performs no inference search.
+A valid certificate establishes **support for its recorded claims relative to the source program**. Input facts are assumptions. The checker does not authenticate their authors or establish that every answer was found. A failed query prints `false.` but produces no claim proving that failure. An empty certificate establishes no answers.
 
-The [C1–C9 contract](https://eyereasoner.github.io/eyelight/SPEC/#8-verification) defines the requirements and counting units. Invalid reports identify the failing condition and affected step or claim. C5, C6, and C8 are explicitly not applicable to the current language: it has no interpreted built-ins, trust obligations, inference fuses, or existential generation. Certificates cannot add those features through unsupported metadata.
+The [C1–C9 contract](https://eyereasoner.github.io/eyelight/SPEC/#8-verification) defines the requirements and counting units. All nine conditions have implementations. Applicability depends on the program: Socrates needs no built-in decisions, closed-world boundaries, or witnesses, so C5, C6, and C8 report not applicable there. The voucher example exercises all nine with nonzero check counts.
+
+## Calculate, exclude, and collect
+
+Built-ins are explicit interpreted relations, like potentially infinite fact boxes. Bound inputs select a tuple or determine an output:
+
+```prolog
+?- @add(2, 3, Total), @ge(Total, 5).
+```
+
+Supported operations include checked integer arithmetic, comparisons, structural equality, string concatenation, and Unicode string length. Inputs must already be bound; undefined arithmetic tuples fail rather than wrapping. Ordinary names such as `add` remain ordinary relations.
+
+Negation and aggregation inspect completed lower strata:
+
+```prolog
+customer(ada).
+customer(bea).
+line(ada, book, 12).
+line(ada, pen, 3).
+line(bea, map, 7).
+blocked(bea).
+
+subtotal(Customer, Total) :-
+    customer(Customer),
+    sum { Price, Item : line(Customer, Item, Price) } = Total.
+
+eligible(Customer, Total) :-
+    subtotal(Customer, Total), not blocked(Customer), @ge(Total, 10).
+
+voucher(Customer, Voucher, Total) :-
+    eligible(Customer, Total), @fresh(Voucher).
+
+?- voucher(Customer, Voucher, Total).
+```
+
+Ada receives a voucher for a total of 15. Bea is blocked. `Price` and `Item` are local to the aggregate; `Customer` is its outer grouping parameter. Additional template keys keep equal prices for different items distinct. `count`, `sum`, `min`, and `max` operate on distinct template tuples; empty count and sum are zero, while empty minimum and maximum have no result.
+
+`@fresh(Voucher)` creates a typed opaque witness belonging to that rule firing. It must be a rule's final goal and bind a new variable. Witnesses are deterministic within the program; they are not globally unique random identifiers. Source programs cannot supply witness constants.
+
+```sh
+./target/release/eyelight -c examples/orders.eye
+```
+
+This checks all nine conditions: C5 recomputes calculations and aggregates, C6 verifies complete lower-stratum boundaries and absence tests, and C8 verifies witness identity. Other conditions validate the rule applications, references, dependency order, relevance, and query isolation.
+
+**Omitted facts cannot justify a negative test or a smaller aggregate.** The certificate includes the full relevant stratum prefix. The checker requires its input facts and verifies closure under every applicable source rule, without running the forward evaluator or adding missing conclusions. It shares the value model and pure matching, built-in, and aggregate semantics with the evaluator.
+
+Variables in `not` goals must be bound earlier. Negative and aggregate dependencies must be stratified. Rules that produce values through built-ins, aggregation, or fresh witnesses cannot define recursive relations; this prevents unbounded value generation. Positive recursion with tests on bound values remains supported. The [language reference](https://eyereasoner.github.io/eyelight/SPEC/#4-rules-and-body-goals) gives the exact modes and restrictions.
 
 ## Use the command line
 
@@ -117,12 +169,12 @@ The [C1–C9 contract](https://eyereasoner.github.io/eyelight/SPEC/#8-verificati
 | `-p`, `--proof` | A portable text certificate |
 | `-c`, `--prove-and-check` | A report from checking a freshly generated certificate |
 | `--check-proof FILE` | Check a saved certificate against the supplied source files |
-| `--max-facts N` | Maximum distinct stored facts; default 1,000,000 |
-| `--max-matches N` | Maximum attempted candidate matches; default 10,000,000 |
+| `--max-facts N` | Maximum stored fact/evidence steps; default 1,000,000 |
+| `--max-matches N` | Maximum matching/work operations; default 10,000,000 |
 | `-h`, `--help` | Usage |
 | `-v`, `--version` | Installed version |
 
-Choose one output option per invocation. Success returns status 0. Parse errors, resource limits, file errors, and invalid proofs return status 1 and write a specific diagnostic to stderr. Reaching a limit yields an incomplete error, with no partial stdout presented as complete answers. Limits count operations and facts; they are not a whole-process memory or time limit.
+Choose one output option per invocation. Success returns status 0. Parse errors, resource limits, file errors, and invalid proofs return status 1 and write a specific diagnostic to stderr. Reaching a limit yields an incomplete error, with no partial stdout presented as complete answers. Limits count matching/work operations and stored fact/evidence steps; they are not a whole-process memory or time limit.
 
 Files are parsed separately and merged in the supplied order. Variables belong to individual clauses and queries. Use `-` for stdin, once per invocation:
 
@@ -175,15 +227,15 @@ fn main() -> Result<(), eyelight::Error> {
 
 `Run` exposes stored proof steps, projected query answers, and the number of attempted matches. `Certificate::parse` reads the certificate format. `execute` provides the same string interface used by the browser. Parser and library errors use `eyelight::Error`; incomplete evaluation returns an error rather than a successful `Run`.
 
-`check` returns `Ok(report)` when semantic checking finishes, including when the proof is invalid. Inspect **`report.valid()`** before accepting it, or call `report.require_valid()?` to turn an invalid report into an error. `report.conditions` lists all nine conditions with counts and applicability; `report.failures` supplies their diagnostics. `report.condition(eyelight::Condition::C9)` selects one condition. Unreadable certificates and malformed source programs return errors before a report can be produced.
+`check_with_limits` accepts explicit evidence-size and matching limits; `check` uses defaults. Both return `Ok(report)` when semantic checking finishes, including when the proof is invalid. Inspect **`report.valid()`** before accepting it, or call `report.require_valid()?` to turn an invalid report into an error. `report.conditions` lists all nine conditions with counts and applicability; `report.failures` supplies their diagnostics. `report.condition(eyelight::Condition::C9)` selects one condition. Unreadable certificates and malformed source programs return errors before a report can be produced.
 
-## Scope of this first version
+## Current scope
 
-Implemented: positive recursion, joins, query projection, structural value identity, indexed fact lookup, an agenda, numbered explanations, certificate generation and C1–C9 checking reports for the supported language, a native CLI, and a browser worker.
+Implemented: positive recursion, indexed joins and an agenda, explicit arithmetic and string built-ins, stratified negation, grouped set aggregation, scoped fresh witnesses, query projection, structural value identity, explanations, certificate generation, all C1–C9 checks for their corresponding features, a native CLI, and a browser worker.
 
-Not implemented: arithmetic, lists or compound terms, negation, aggregation, existential heads, quoted graphs, generated rules, N3 parsing, general Prolog execution, or demand-driven tabling. Quoted IRIs in `triple(S, P, O)` are ordinary atom values, without additional RDF entailment built in.
+Not implemented: floating-point arithmetic, lists or general compound terms, inverse built-in solving, nested aggregates, recursive value generation, implicit existential heads, quoted graphs, generated rules, N3 parsing, general Prolog execution, or demand-driven tabling. Quoted IRIs in `triple(S, P, O)` are ordinary atom values, without additional RDF entailment built in.
 
-The finite value domain and safe heads guarantee a finite positive closure. Actual completion remains subject to resource limits, available memory, and cancellation. No speed or feature-parity claim against other engines is made in this release.
+The safety and recursion restrictions give finite strata. Actual completion remains subject to resource limits, available memory, and cancellation. Closed-boundary proofs can be substantially larger than proofs using positive rules alone because they carry the completed stratum prefix.
 
 ## Develop and verify
 
@@ -195,7 +247,7 @@ cargo clippy --target wasm32-unknown-unknown --lib -- -D warnings
 ./scripts/build-playground
 ```
 
-Tests cover language behavior, the CLI, forged certificates for every applicable proof condition, explicit non-applicability, and the worker bridge. Reachability is also checked against an independent graph algorithm on all 512 directed graphs over three nodes. Browser checks exercise actual WebAssembly execution, C1–C9 reports, forged-proof rejection, cancellation, sharing, and narrow-screen layout.
+Tests cover language behavior, the CLI, forged certificates for every applicable proof condition, explicit per-program applicability, built-ins, aggregates, witnesses, and the worker bridge. Reachability, stratified exclusions, and aggregate counts are checked against independent graph algorithms on all 512 directed graphs over three nodes. Browser checks exercise actual WebAssembly execution, C1–C9 reports, forged-proof rejection, cancellation, sharing, and narrow-screen layout.
 
 `tests/browser.mjs` automates those browser checks through Chrome's local debugging interface. With Node.js 22 or later, start the server and Chrome in separate terminals, then run the checks:
 
@@ -244,6 +296,8 @@ Open the published [guide](https://eyereasoner.github.io/eyelight/), [specificat
 | --- | --- |
 | `src/model.rs` | Values, facts, rules, queries, and validation |
 | `src/parser.rs` | The `.eye` language |
+| `src/language.rs` | Safety, built-in modes, strata, and recursion restrictions |
+| `src/semantics.rs` | Pure interpreted relations, aggregates, and finite-model matching |
 | `src/engine.rs` | Indexed joins, agenda, limits, and answer rendering |
 | `src/proof.rs` | Certificates and the separate checker |
 | `src/main.rs` | Native command line and file I/O |

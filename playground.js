@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const modes = new Set(['answers', 'explain', 'proof', 'checked', 'check']);
-const examples = new Set(['socrates', 'paths', 'family', 'values', 'rdf']);
+const examples = new Set(['socrates', 'paths', 'family', 'values', 'rdf', 'arithmetic', 'negation', 'aggregation', 'witnesses', 'orders']);
 const storageKey = 'eyelight.playground.v1';
 let worker = null;
 let ready = null;

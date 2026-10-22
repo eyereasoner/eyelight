@@ -16,6 +16,11 @@ fn all_examples_produce_answers_and_check() {
         include_str!("../examples/family.eye"),
         include_str!("../examples/values.eye"),
         include_str!("../examples/rdf.eye"),
+        include_str!("../examples/arithmetic.eye"),
+        include_str!("../examples/negation.eye"),
+        include_str!("../examples/aggregation.eye"),
+        include_str!("../examples/witnesses.eye"),
+        include_str!("../examples/orders.eye"),
     ] {
         let program = parse(source).unwrap();
         let run = reason(&program, Limits::default()).unwrap();

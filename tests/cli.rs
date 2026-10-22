@@ -87,3 +87,39 @@ fn help_version_and_multiple_source_files_work() {
         .unwrap()
         .contains("Who = hypatia."));
 }
+
+#[test]
+fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
+    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/orders.eye");
+    let result = cli(&["-c", source], "");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let report = String::from_utf8(result.stdout).unwrap();
+    assert!(!report.contains("not applicable"));
+    for condition in eyelight::Condition::ALL {
+        assert!(report.contains(&format!("{condition}:")));
+    }
+    let result = cli(&["-p", source], "");
+    assert!(result.status.success());
+    let proof = String::from_utf8(result.stdout).unwrap();
+    assert!(cli(&["--check-proof", "-", source], &proof)
+        .status
+        .success());
+    let forged = proof.replace("ge(15, 10)", "ge(0, 10)");
+    assert_ne!(forged, proof);
+    let result = cli(&["--check-proof", "-", source], &forged);
+    assert!(!result.status.success());
+    assert!(result.stdout.is_empty());
+    assert!(String::from_utf8(result.stderr)
+        .unwrap()
+        .contains("[C5 re-decision]"));
+    let result = cli(
+        &["--max-matches", "1", "--check-proof", "-", source],
+        &proof,
+    );
+    assert!(!result.status.success());
+    assert!(result.stdout.is_empty());
+}

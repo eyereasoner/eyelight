@@ -14,7 +14,8 @@ test('website stages rendered documentation and every playground dependency', as
     for (const file of ['index.md', 'SPEC/index.md', 'playground.html', 'playground/index.html',
       'playground.css', 'playground.js', 'playground-worker.js', 'assets/eyelight.svg', 'assets/docs.css',
       'pkg/eyelight.js', 'pkg/eyelight_bg.wasm', 'examples/socrates.eye', 'examples/paths.eye', 'examples/family.eye',
-      'examples/values.eye', 'examples/rdf.eye', 'LICENSE', '_layouts/default.html']) {
+      'examples/values.eye', 'examples/rdf.eye', 'examples/arithmetic.eye', 'examples/negation.eye',
+      'examples/aggregation.eye', 'examples/witnesses.eye', 'examples/orders.eye', 'LICENSE', '_layouts/default.html']) {
       assert.ok((await stat(join(directory, file))).isFile(), file);
     }
     for (const file of ['index.md', 'SPEC/index.md']) {
@@ -67,4 +68,18 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   const report = runProgram(source, 'checked', '');
   assert.match(report, /^checked: 2 steps, 1 claim/);
   for (let condition = 1; condition <= 9; condition++) assert.match(report, new RegExp(`C${condition} `));
+});
+
+
+test('browser engine checks all nine conditions on the voucher example', async () => {
+  const { initSync, runProgram } = await import('../pkg/eyelight.js');
+  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const source = await readFile(new URL('examples/orders.eye', root), 'utf8');
+  const proof = runProgram(source, 'proof', '');
+  assert.match(proof, /boundary 1 level 0/);
+  const report = runProgram(source, 'check', proof);
+  assert.match(report, /^checked:/);
+  assert.doesNotMatch(report, /not applicable/);
+  for (let i = 1; i <= 9; i++) assert.match(report, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
+  assert.throws(() => runProgram(source, 'check', proof.replace('ge(15, 10)', 'ge(0, 10)')));
 });

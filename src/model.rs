@@ -22,6 +22,8 @@ pub enum Value {
     Symbol(String),
     Text(String),
     Integer(i64),
+    /// Opaque identity produced only by a checked fresh-witness firing.
+    Witness(String),
 }
 
 fn quoted(f: &mut fmt::Formatter<'_>, value: &str, quote: char) -> fmt::Result {
@@ -56,6 +58,10 @@ impl fmt::Display for Value {
             Self::Symbol(value) => symbol(f, value),
             Self::Text(value) => quoted(f, value, '"'),
             Self::Integer(value) => write!(f, "{value}"),
+            Self::Witness(value) => {
+                f.write_str("~")?;
+                quoted(f, value, '"')
+            }
         }
     }
 }
@@ -141,10 +147,98 @@ impl fmt::Display for Atom {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AggregateKind {
+    Count,
+    Sum,
+    Min,
+    Max,
+}
+
+impl fmt::Display for AggregateKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Count => "count",
+            Self::Sum => "sum",
+            Self::Min => "min",
+            Self::Max => "max",
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Aggregate {
+    pub kind: AggregateKind,
+    pub template: Vec<Term>,
+    pub body: Vec<Literal>,
+    pub result: Term,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Literal {
+    Relation(Goal),
+    Builtin(Goal),
+    Not(Goal),
+    Aggregate(Aggregate),
+    Fresh(Term),
+}
+
+impl Literal {
+    /// Aggregate-local variables are deliberately absent from outer projection.
+    pub fn variables(&self) -> BTreeSet<String> {
+        match self {
+            Self::Relation(g) | Self::Builtin(g) | Self::Not(g) => g.variables(),
+            Self::Aggregate(a) => term_variables(std::slice::from_ref(&a.result)),
+            Self::Fresh(t) => term_variables(std::slice::from_ref(t)),
+        }
+    }
+}
+
+pub(crate) fn term_variables(terms: &[Term]) -> BTreeSet<String> {
+    terms
+        .iter()
+        .filter_map(|t| {
+            if let Term::Variable(n) = t {
+                Some(n.clone())
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Relation(g) => write!(f, "{g}"),
+            Self::Builtin(g) => write!(f, "@{g}"),
+            Self::Not(g) => write!(f, "not {g}"),
+            Self::Fresh(t) => write!(f, "@fresh({t})"),
+            Self::Aggregate(a) => {
+                write!(f, "{} {{ ", a.kind)?;
+                for (i, t) in a.template.iter().enumerate() {
+                    if i > 0 {
+                        f.write_str(", ")?;
+                    }
+                    write!(f, "{t}")?;
+                }
+                f.write_str(" : ")?;
+                for (i, g) in a.body.iter().enumerate() {
+                    if i > 0 {
+                        f.write_str(", ")?;
+                    }
+                    write!(f, "{g}")?;
+                }
+                write!(f, " }} = {}", a.result)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rule {
     pub head: Goal,
-    pub body: Vec<Goal>,
+    pub body: Vec<Literal>,
 }
 
 impl fmt::Display for Rule {
@@ -162,7 +256,7 @@ impl fmt::Display for Rule {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Query {
-    pub goals: Vec<Goal>,
+    pub goals: Vec<Literal>,
     pub variables: Vec<String>,
 }
 
@@ -181,35 +275,6 @@ impl Program {
         self.queries.extend(other.queries);
     }
     pub fn validate(&self) -> Result<(), Error> {
-        for (index, rule) in self.rules.iter().enumerate() {
-            if rule.body.is_empty() || rule.body.len() > 64 {
-                return Err(Error::new(format!(
-                    "Rule {} needs 1 to 64 body goals.",
-                    index + 1
-                )));
-            }
-            let bound: BTreeSet<_> = rule.body.iter().flat_map(Goal::variables).collect();
-            if !rule.head.variables().is_subset(&bound) {
-                return Err(Error::new(format!(
-                    "Rule {} has a head variable absent from its body.",
-                    index + 1
-                )));
-            }
-        }
-        for (index, query) in self.queries.iter().enumerate() {
-            let bound: BTreeSet<_> = query.goals.iter().flat_map(Goal::variables).collect();
-            let projected: BTreeSet<_> = query.variables.iter().cloned().collect();
-            if query.goals.is_empty()
-                || query.goals.len() > 64
-                || projected.len() != query.variables.len()
-                || !projected.is_subset(&bound)
-            {
-                return Err(Error::new(format!(
-                    "Query {} has invalid goals or projected variables.",
-                    index + 1
-                )));
-            }
-        }
-        Ok(())
+        crate::language::plan(self).map(|_| ())
     }
 }

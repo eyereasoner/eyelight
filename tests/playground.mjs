@@ -1,13 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const root = new URL('../', import.meta.url);
-test('all selectable examples exist and use the initial language', async () => {
+test('all examples are selectable and available to shared links', async () => {
   const html = await readFile(new URL('playground.html', root), 'utf8');
-  for (const name of ['socrates', 'paths', 'family', 'values', 'rdf']) {
+  const js = await readFile(new URL('playground.js', root), 'utf8');
+  for (const file of await readdir(new URL('examples/', root))) {
+    if (!file.endsWith('.eye')) continue;
+    const name = file.slice(0, -4);
+    assert.ok(js.includes(`'${name}'`), `${name} missing from share allowlist`);
     assert.ok(html.includes(`value="${name}"`));
     assert.match(await readFile(new URL(`examples/${name}.eye`, root), 'utf8'), /\?- /);
   }

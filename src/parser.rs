@@ -1,4 +1,6 @@
-use crate::{Atom, Error, Goal, Program, Query, Rule, Term, Value};
+use crate::{
+    Aggregate, AggregateKind, Atom, Error, Goal, Literal, Program, Query, Rule, Term, Value,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Token {
@@ -7,6 +9,12 @@ enum Token {
     Text(String),
     Integer(i64),
     Left,
+    Brace,
+    CloseBrace,
+    Colon,
+    Equal,
+    At,
+    Witness,
     Right,
     Comma,
     Dot,
@@ -45,6 +53,11 @@ fn tokenize(source: &str) -> Result<Vec<(Token, usize)>, Error> {
         let fail = |message: &str| Error::new(format!("Line {start_line}: {message}"));
         let token = match character {
             '(' => Token::Left,
+            '{' => Token::Brace,
+            '}' => Token::CloseBrace,
+            '=' => Token::Equal,
+            '@' => Token::At,
+            '~' => Token::Witness,
             ')' => Token::Right,
             ',' => Token::Comma,
             '.' => Token::Dot,
@@ -56,6 +69,7 @@ fn tokenize(source: &str) -> Result<Vec<(Token, usize)>, Error> {
                     Token::Query
                 }
             }
+            ':' => Token::Colon,
             '\'' | '"' => {
                 let mut text = String::new();
                 loop {
@@ -154,6 +168,31 @@ impl Parser {
             Err(self.error(message))
         }
     }
+    fn term(&mut self) -> Result<Term, Error> {
+        if self.take(Token::Witness) {
+            let Token::Text(value) = self.peek().clone() else {
+                return Err(self.error("A witness needs a quoted identity after ~."));
+            };
+            self.position += 1;
+            return Ok(Term::Constant(Value::Witness(value)));
+        }
+        let term = match self.peek().clone() {
+            Token::Name(value) => Term::Constant(Value::Symbol(value)),
+            Token::Text(value) => Term::Constant(Value::Text(value)),
+            Token::Integer(value) => Term::Constant(Value::Integer(value)),
+            Token::Variable(name) if name == "_" => {
+                let name = format!("_${}", self.anonymous);
+                self.anonymous += 1;
+                Term::Variable(name)
+            }
+            Token::Variable(name) => Term::Variable(name),
+            _ => return Err(self.error(
+                "Expected an atom, string, integer, or variable; compound terms are not supported.",
+            )),
+        };
+        self.position += 1;
+        Ok(term)
+    }
     fn goal(&mut self) -> Result<Goal, Error> {
         let Token::Name(predicate) = self.peek().clone() else {
             return Err(self.error("Expected a predicate name."));
@@ -162,15 +201,7 @@ impl Parser {
         let mut terms = Vec::new();
         if self.take(Token::Left) {
             loop {
-                let term = match self.peek().clone() {
-                    Token::Name(value) => Term::Constant(Value::Symbol(value)),
-                    Token::Text(value) => Term::Constant(Value::Text(value)),
-                    Token::Integer(value) => Term::Constant(Value::Integer(value)),
-                    Token::Variable(name) if name == "_" => { let name = format!("_${}", self.anonymous); self.anonymous += 1; Term::Variable(name) }
-                    Token::Variable(name) => Term::Variable(name),
-                    _ => return Err(self.error("Expected an atom, string, integer, or variable; compound terms are not supported.")),
-                };
-                self.position += 1;
+                let term = self.term()?;
                 terms.push(term);
                 if terms.len() > 64 {
                     return Err(self.error("A relation supports at most 64 arguments."));
@@ -186,13 +217,68 @@ impl Parser {
         }
         Ok(Goal { predicate, terms })
     }
-    fn goals(&mut self) -> Result<Vec<Goal>, Error> {
-        let mut goals = vec![self.goal()?];
+    fn literal(&mut self) -> Result<Literal, Error> {
+        if self.take(Token::At) {
+            let goal = self.goal()?;
+            if goal.predicate == "fresh" {
+                if goal.terms.len() != 1 {
+                    return Err(self.error("@fresh needs one output variable."));
+                }
+                return Ok(Literal::Fresh(goal.terms[0].clone()));
+            }
+            return Ok(Literal::Builtin(goal));
+        }
+        if self.peek() == &Token::Name("not".into())
+            && !matches!(
+                self.tokens[self.position + 1].0,
+                Token::Left | Token::Comma | Token::Dot
+            )
+        {
+            self.position += 1;
+            return Ok(Literal::Not(self.goal()?));
+        }
+        if let Token::Name(name) = self.peek().clone() {
+            if self.tokens[self.position + 1].0 == Token::Brace {
+                let kind = match name.as_str() {
+                    "count" => AggregateKind::Count,
+                    "sum" => AggregateKind::Sum,
+                    "min" => AggregateKind::Min,
+                    "max" => AggregateKind::Max,
+                    _ => return Err(self.error("Use count, sum, min, or max before an aggregate.")),
+                };
+                self.position += 2;
+                let mut template = vec![self.term()?];
+                while self.take(Token::Comma) {
+                    if template.len() == 64 {
+                        return Err(self.error("Use at most 64 aggregate template terms."));
+                    }
+                    template.push(self.term()?);
+                }
+                self.expect(
+                    Token::Colon,
+                    "Separate the aggregate template and goals with :.",
+                )?;
+                let body = self.goals()?;
+                self.expect(Token::CloseBrace, "Close the aggregate with }.")?;
+                self.expect(Token::Equal, "Follow the aggregate with = Result.")?;
+                let result = self.term()?;
+                return Ok(Literal::Aggregate(Aggregate {
+                    kind,
+                    template,
+                    body,
+                    result,
+                }));
+            }
+        }
+        Ok(Literal::Relation(self.goal()?))
+    }
+    fn goals(&mut self) -> Result<Vec<Literal>, Error> {
+        let mut goals = vec![self.literal()?];
         while self.take(Token::Comma) {
             if goals.len() == 64 {
                 return Err(self.error("Use at most 64 goals in a rule or query."));
             }
-            goals.push(self.goal()?);
+            goals.push(self.literal()?);
         }
         Ok(goals)
     }
@@ -202,10 +288,10 @@ impl Parser {
             if self.take(Token::Query) {
                 let goals = self.goals()?;
                 let mut variables = Vec::new();
-                for term in goals.iter().flat_map(|goal| &goal.terms) {
-                    if let Term::Variable(name) = term {
-                        if !name.starts_with("_$") && !variables.contains(name) {
-                            variables.push(name.clone());
+                for goal in &goals {
+                    for name in literal_variable_order(goal) {
+                        if !name.starts_with("_$") && !variables.contains(&name) {
+                            variables.push(name);
                         }
                     }
                 }
@@ -214,11 +300,6 @@ impl Parser {
                 let head = self.goal()?;
                 if self.take(Token::Rule) {
                     let body = self.goals()?;
-                    let bound: std::collections::BTreeSet<_> =
-                        body.iter().flat_map(Goal::variables).collect();
-                    if !head.variables().is_subset(&bound) {
-                        return Err(self.error("Every head variable must occur in the rule body."));
-                    }
                     program.rules.push(Rule { head, body });
                 } else {
                     program.facts.push(head.ground().ok_or_else(|| {
@@ -228,8 +309,27 @@ impl Parser {
             }
             self.expect(Token::Dot, "End each fact, rule, or query with a period.")?;
         }
+        program.validate()?;
         Ok(program)
     }
+}
+
+fn literal_variable_order(literal: &Literal) -> Vec<String> {
+    let terms = match literal {
+        Literal::Relation(g) | Literal::Builtin(g) | Literal::Not(g) => g.terms.as_slice(),
+        Literal::Aggregate(a) => std::slice::from_ref(&a.result),
+        Literal::Fresh(t) => std::slice::from_ref(t),
+    };
+    terms
+        .iter()
+        .filter_map(|t| {
+            if let Term::Variable(n) = t {
+                Some(n.clone())
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 pub fn parse(source: &str) -> Result<Program, Error> {

@@ -1,4 +1,4 @@
-use eyelight::{check, parse, reason, Certificate, Error, Limits, Program, VERSION};
+use eyelight::{check_with_limits, parse, reason, Certificate, Error, Limits, Program, VERSION};
 use std::io::{self, Read};
 use std::process::ExitCode;
 
@@ -11,14 +11,14 @@ Usage: eyelight [OPTIONS] FILE...
   -p, --proof                Write a checkable proof certificate
   -c, --prove-and-check      Generate and check a certificate
       --check-proof FILE    Check a saved certificate against the source files
-      --max-facts N         Maximum distinct stored facts (default 1000000)
-      --max-matches N       Maximum candidate matches (default 10000000)
+      --max-facts N         Maximum stored fact/evidence steps (default 1000000)
+      --max-matches N       Maximum matching/work operations (default 10000000)
   -h, --help                Show this help
   -v, --version             Show the version
 
 Files use eyelight's .eye language: facts, Head :- Body, and ?- queries.
 Use - for stdin. Multiple files form one program, in the supplied order.
-Proof checking establishes positive support, not answer completeness.
+Proof checking verifies recorded claims, not answer completeness.
 ";
 
 fn read(path: &str) -> Result<String, Error> {
@@ -114,18 +114,22 @@ fn run() -> Result<String, Error> {
     }
     let mode = mode.unwrap_or("answers");
     if let Some(file) = proof {
-        return Ok(check(&program, &Certificate::parse(&read(&file)?)?)?
-            .require_valid()?
-            .to_string());
+        return Ok(
+            check_with_limits(&program, &Certificate::parse(&read(&file)?)?, limits)?
+                .require_valid()?
+                .to_string(),
+        );
     }
     let result = reason(&program, limits)?;
     match mode {
         "answers" => Ok(result.output(&program)),
         "explain" => Ok(result.explain(&program)),
         "proof" => Ok(result.certificate(&program).to_string()),
-        "checked" => Ok(check(&program, &result.certificate(&program))?
-            .require_valid()?
-            .to_string()),
+        "checked" => Ok(
+            check_with_limits(&program, &result.certificate(&program), limits)?
+                .require_valid()?
+                .to_string(),
+        ),
         _ => unreachable!(),
     }
 }

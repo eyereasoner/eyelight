@@ -134,6 +134,7 @@ fn malformed_metadata_and_variable_conclusions_are_rejected() {
 fn valid_does_not_mean_complete_or_prove_absence() {
     let p = parse(PROGRAM).unwrap();
     let empty = Certificate {
+        boundaries: vec![],
         steps: vec![],
         claims: vec![],
     };

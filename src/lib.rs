@@ -1,4 +1,4 @@
-//! Finite positive relational reasoning, with a separate certificate checker.
+//! Stratified relational reasoning, with a separate certificate checker.
 //!
 //! Parse a program with [`parse`], evaluate it with [`reason`], and inspect
 //! answers or save a [`Certificate`]. Checking replays recorded applications;
@@ -15,18 +15,22 @@
 //! ```
 
 mod engine;
+mod language;
 mod model;
 mod parser;
 mod proof;
+mod semantics;
 #[cfg(target_arch = "wasm32")]
 mod wasm;
 
 pub use engine::{reason, Answer, Limits, Run};
-pub use model::{Atom, Error, Goal, Program, Query, Rule, Term, Value};
+pub use model::{
+    Aggregate, AggregateKind, Atom, Error, Goal, Literal, Program, Query, Rule, Term, Value,
+};
 pub use parser::{parse, parse_atom};
 pub use proof::{
-    check, Certificate, Claim, Condition, ConditionReport, Failure, Justification, ProofLocation,
-    Report, Step,
+    check, check_with_limits, Boundary, Certificate, Claim, Condition, ConditionReport, Failure,
+    Justification, Owner, ProofLocation, Report, Step,
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -41,16 +45,20 @@ pub fn execute(
     let program = parse(source)?;
     if mode == "check" {
         let certificate = Certificate::parse(saved_proof)?;
-        return Ok(check(&program, &certificate)?.require_valid()?.to_string());
+        return Ok(check_with_limits(&program, &certificate, limits)?
+            .require_valid()?
+            .to_string());
     }
     let run = reason(&program, limits)?;
     match mode {
         "answers" => Ok(run.output(&program)),
         "explain" => Ok(run.explain(&program)),
         "proof" => Ok(run.certificate(&program).to_string()),
-        "checked" => Ok(check(&program, &run.certificate(&program))?
-            .require_valid()?
-            .to_string()),
+        "checked" => Ok(
+            check_with_limits(&program, &run.certificate(&program), limits)?
+                .require_valid()?
+                .to_string(),
+        ),
         _ => Err(Error::new(format!("Unknown mode {mode:?}."))),
     }
 }

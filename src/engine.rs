@@ -1,10 +1,14 @@
-use crate::{Atom, Certificate, Error, Goal, Justification, Program, Step, Term, Value};
+use crate::language::{plan, Plan, Relation};
+use crate::proof::context_goal;
+use crate::semantics::{aggregate, bind, builtin, witness, Budget};
+use crate::{
+    Atom, Boundary, Certificate, Error, Goal, Justification, Literal, Owner, Program, Step, Term,
+    Value,
+};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub(crate) type Bindings = BTreeMap<String, Value>;
-type Relation = (String, usize);
 type Position = (Relation, usize, Value);
-
 #[derive(Clone, Copy, Debug)]
 pub struct Limits {
     pub max_facts: usize,
@@ -18,20 +22,18 @@ impl Default for Limits {
         }
     }
 }
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Answer {
     pub values: Vec<Value>,
     pub premises: Vec<usize>,
 }
-
 #[derive(Clone, Debug)]
 pub struct Run {
     pub steps: Vec<Step>,
     pub answers: Vec<Vec<Answer>>,
     pub matches: usize,
+    pub boundaries: Vec<Boundary>,
 }
-
 pub(crate) fn match_goal(goal: &Goal, atom: &Atom, bindings: &mut Bindings) -> bool {
     if goal.predicate != atom.predicate || goal.terms.len() != atom.values.len() {
         return false;
@@ -71,20 +73,28 @@ pub(crate) fn instantiate(goal: &Goal, bindings: &Bindings) -> Option<Atom> {
 #[derive(Default)]
 struct Store {
     steps: Vec<Step>,
-    known: HashSet<Atom>,
+    known: HashMap<Atom, usize>,
+    decisions: HashMap<Step, usize>,
     relations: HashMap<Relation, Vec<usize>>,
     positions: HashMap<Position, Vec<usize>>,
+    boundaries: Vec<Boundary>,
 }
-
 impl Store {
     fn insert(
         &mut self,
         atom: Atom,
         justification: Justification,
         limit: usize,
-    ) -> Result<(), Error> {
-        if self.known.contains(&atom) {
-            return Ok(());
+    ) -> Result<usize, Error> {
+        if justification.ordinary() {
+            if let Some(id) = self.known.get(&atom) {
+                return Ok(*id);
+            }
+        } else if let Some(id) = self.decisions.get(&Step {
+            atom: atom.clone(),
+            justification: justification.clone(),
+        }) {
+            return Ok(*id);
         }
         if self.steps.len() >= limit {
             return Err(Error::new(format!(
@@ -92,23 +102,33 @@ impl Store {
             )));
         }
         let index = self.steps.len();
-        let relation = (atom.predicate.clone(), atom.values.len());
-        self.relations
-            .entry(relation.clone())
-            .or_default()
-            .push(index);
-        for (position, value) in atom.values.iter().enumerate() {
-            self.positions
-                .entry((relation.clone(), position, value.clone()))
+        if justification.ordinary() {
+            let relation = (atom.predicate.clone(), atom.values.len());
+            self.relations
+                .entry(relation.clone())
                 .or_default()
                 .push(index);
+            for (position, value) in atom.values.iter().enumerate() {
+                self.positions
+                    .entry((relation.clone(), position, value.clone()))
+                    .or_default()
+                    .push(index);
+            }
+            self.known.insert(atom.clone(), index + 1);
+        } else {
+            self.decisions.insert(
+                Step {
+                    atom: atom.clone(),
+                    justification: justification.clone(),
+                },
+                index + 1,
+            );
         }
-        self.known.insert(atom.clone());
         self.steps.push(Step {
             atom,
             justification,
         });
-        Ok(())
+        Ok(index + 1)
     }
     fn candidates(&self, goal: &Goal, bindings: &Bindings) -> &[usize] {
         let relation = (goal.predicate.clone(), goal.terms.len());
@@ -119,8 +139,8 @@ impl Store {
             .unwrap_or(&[]);
         for (position, term) in goal.terms.iter().enumerate() {
             let value = match term {
-                Term::Constant(value) => Some(value),
-                Term::Variable(name) => bindings.get(name),
+                Term::Constant(v) => Some(v),
+                Term::Variable(n) => bindings.get(n),
             };
             if let Some(value) = value {
                 let candidates = self
@@ -135,159 +155,352 @@ impl Store {
         }
         result
     }
-}
-
-struct Budget {
-    used: usize,
-    limit: usize,
-}
-impl Budget {
-    fn tick(&mut self) -> Result<(), Error> {
-        if self.used >= self.limit {
-            return Err(Error::new(format!(
-                "Incomplete: match limit ({}) reached; no complete answer is available.",
-                self.limit
-            )));
+    fn close(&mut self, level: usize, plan: &Plan, budget: &mut Budget) -> Result<(), Error> {
+        for _ in &self.steps {
+            budget.tick()?;
         }
-        self.used += 1;
+        let steps = self
+            .steps
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| {
+                s.justification.ordinary()
+                    && plan.level(&(s.atom.predicate.clone(), s.atom.values.len())) <= level
+            })
+            .map(|(i, _)| i + 1)
+            .collect();
+        self.boundaries.push(Boundary { level, steps });
         Ok(())
     }
+    fn boundary(&self, level: usize) -> Option<usize> {
+        self.boundaries
+            .iter()
+            .position(|b| b.level == level)
+            .map(|i| i + 1)
+    }
+    fn facts(&self, boundary: usize) -> Vec<Atom> {
+        self.boundaries[boundary - 1]
+            .steps
+            .iter()
+            .map(|id| self.steps[id - 1].atom.clone())
+            .collect()
+    }
+    fn materialize(&mut self, evidence: Vec<Evidence>, limit: usize) -> Result<Vec<usize>, Error> {
+        evidence
+            .into_iter()
+            .map(|e| match e {
+                Evidence::Fact(id) => Ok(id),
+                Evidence::Decision(s) => self.insert(s.atom, s.justification, limit),
+            })
+            .collect()
+    }
 }
-
+#[derive(Clone)]
+enum Evidence {
+    Fact(usize),
+    Decision(Step),
+}
+#[derive(Clone)]
 struct Match {
     bindings: Bindings,
-    premises: Vec<usize>,
+    evidence: Vec<Evidence>,
 }
 
-/// The seed is the newly inserted fact. Every firing is reached when its last
-/// missing premise enters the agenda; duplicate conclusions are stored once.
-fn join(
-    store: &Store,
-    goals: &[Goal],
+struct Join<'a> {
+    store: &'a Store,
+    program: &'a Program,
+    plan: &'a Plan,
+    owner: Owner,
+    goals: &'a [Literal],
     seed: Option<(usize, usize)>,
-    budget: &mut Budget,
-) -> Result<Vec<Match>, Error> {
+}
+impl Join<'_> {
     fn visit(
-        store: &Store,
-        goals: &[Goal],
-        seed: Option<(usize, usize)>,
+        &self,
         at: usize,
         current: Match,
         budget: &mut Budget,
-        output: &mut Vec<Match>,
+        out: &mut Vec<Match>,
     ) -> Result<(), Error> {
-        if at == goals.len() {
-            output.push(current);
+        if at == self.goals.len() {
+            out.push(current);
             return Ok(());
         }
-        if let Some((position, fact)) = seed {
-            if position == at {
-                let mut next = current;
-                budget.tick()?;
-                if match_goal(&goals[at], &store.steps[fact].atom, &mut next.bindings) {
-                    next.premises.push(fact + 1);
-                    visit(store, goals, seed, at + 1, next, budget, output)?;
-                }
-                return Ok(());
-            }
-        }
-        for &fact in store.candidates(&goals[at], &current.bindings) {
-            budget.tick()?;
+        let literal = &self.goals[at];
+        let mut proceed = |bindings, evidence, budget: &mut Budget| {
             let mut next = Match {
-                bindings: current.bindings.clone(),
-                premises: current.premises.clone(),
+                bindings,
+                evidence: current.evidence.clone(),
             };
-            if match_goal(&goals[at], &store.steps[fact].atom, &mut next.bindings) {
-                next.premises.push(fact + 1);
-                visit(store, goals, seed, at + 1, next, budget, output)?;
+            next.evidence.push(evidence);
+            self.visit(at + 1, next, budget, out)
+        };
+        match literal {
+            Literal::Relation(goal) => {
+                if let Some((position, fact)) = self.seed {
+                    if position == at {
+                        budget.tick()?;
+                        let mut bindings = current.bindings.clone();
+                        if match_goal(goal, &self.store.steps[fact].atom, &mut bindings) {
+                            proceed(bindings, Evidence::Fact(fact + 1), budget)?;
+                        }
+                        return Ok(());
+                    }
+                }
+                for &fact in self.store.candidates(goal, &current.bindings) {
+                    budget.tick()?;
+                    let mut bindings = current.bindings.clone();
+                    if match_goal(goal, &self.store.steps[fact].atom, &mut bindings) {
+                        proceed(bindings, Evidence::Fact(fact + 1), budget)?;
+                    }
+                }
+            }
+            Literal::Builtin(goal) => {
+                budget.tick()?;
+                if let Some((atom, bindings)) = builtin(goal, &current.bindings) {
+                    proceed(
+                        bindings,
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::Builtin,
+                        }),
+                        budget,
+                    )?;
+                }
+            }
+            Literal::Not(goal) => {
+                budget.tick()?;
+                let boundary = self
+                    .store
+                    .boundary(self.plan.boundary(literal))
+                    .ok_or_else(|| Error::new("A negative dependency stratum is not complete."))?;
+                let atom = instantiate(goal, &current.bindings)
+                    .ok_or_else(|| Error::new("Unbound negative goal."))?;
+                if !self.store.known.contains_key(&atom) {
+                    proceed(
+                        current.bindings.clone(),
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::Absent { boundary },
+                        }),
+                        budget,
+                    )?;
+                }
+            }
+            Literal::Aggregate(a) => {
+                let boundary = self
+                    .store
+                    .boundary(self.plan.boundary(literal))
+                    .ok_or_else(|| {
+                        Error::new("An aggregate dependency stratum is not complete.")
+                    })?;
+                if let Some(result) =
+                    aggregate(a, &current.bindings, &self.store.facts(boundary), budget)?
+                {
+                    let mut bindings = current.bindings.clone();
+                    if bind(&a.result, result, &mut bindings) {
+                        let goal = context_goal(self.program, self.owner, at + 1)
+                            .ok_or_else(|| Error::new("Invalid aggregate source context."))?;
+                        let atom = instantiate(&goal, &bindings)
+                            .ok_or_else(|| Error::new("Unbound aggregate grouping variable."))?;
+                        proceed(
+                            bindings,
+                            Evidence::Decision(Step {
+                                atom,
+                                justification: Justification::Aggregate {
+                                    owner: self.owner,
+                                    position: at + 1,
+                                    boundary,
+                                },
+                            }),
+                            budget,
+                        )?;
+                    }
+                }
+            }
+            Literal::Fresh(term) => {
+                budget.tick()?;
+                let Owner::Rule(rule) = self.owner else {
+                    return Err(Error::new("@fresh needs a rule context."));
+                };
+                let mut bindings = current.bindings.clone();
+                if bind(
+                    term,
+                    witness(rule, at + 1, &current.bindings),
+                    &mut bindings,
+                ) {
+                    let goal = context_goal(self.program, self.owner, at + 1)
+                        .ok_or_else(|| Error::new("Invalid witness source context."))?;
+                    let atom = instantiate(&goal, &bindings)
+                        .ok_or_else(|| Error::new("Unbound witness firing variable."))?;
+                    proceed(
+                        bindings,
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::Fresh {
+                                rule,
+                                position: at + 1,
+                            },
+                        }),
+                        budget,
+                    )?;
+                }
             }
         }
         Ok(())
     }
-    let mut output = Vec::new();
-    let mut initial = Bindings::new();
-    if let Some((position, fact)) = seed {
-        // Bind the seed first so earlier joins can use its argument indexes.
-        if !match_goal(&goals[position], &store.steps[fact].atom, &mut initial) {
-            return Ok(output);
+    fn run(&self, budget: &mut Budget) -> Result<Vec<Match>, Error> {
+        let mut initial = Bindings::new();
+        // Seed prebinding is safe for a positive conjunction. Other bodies keep
+        // source order, preserving aggregate-local scopes and witness context.
+        if self.goals.iter().all(|g| matches!(g, Literal::Relation(_))) {
+            if let Some((position, fact)) = self.seed {
+                if let Literal::Relation(g) = &self.goals[position] {
+                    if !match_goal(g, &self.store.steps[fact].atom, &mut initial) {
+                        return Ok(Vec::new());
+                    }
+                }
+            }
         }
+        let mut out = Vec::new();
+        self.visit(
+            0,
+            Match {
+                bindings: initial,
+                evidence: Vec::new(),
+            },
+            budget,
+            &mut out,
+        )?;
+        Ok(out)
     }
-    visit(
-        store,
-        goals,
-        seed,
-        0,
-        Match {
-            bindings: initial,
-            premises: Vec::new(),
-        },
-        budget,
-        &mut output,
-    )?;
-    Ok(output)
+}
+
+fn fire(
+    store: &mut Store,
+    program: &Program,
+    rule: usize,
+    matched: Match,
+    limit: usize,
+) -> Result<(), Error> {
+    let atom = instantiate(&program.rules[rule].head, &matched.bindings)
+        .ok_or_else(|| Error::new("A rule head remained unbound."))?;
+    if !store.known.contains_key(&atom) {
+        let premises = store.materialize(matched.evidence, limit)?;
+        store.insert(
+            atom,
+            Justification::Rule {
+                rule: rule + 1,
+                premises,
+            },
+            limit,
+        )?;
+    }
+    Ok(())
 }
 
 pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
-    program.validate()?;
+    let plan = plan(program)?;
     let mut store = Store::default();
     let mut budget = Budget {
         used: 0,
         limit: limits.max_matches,
     };
-    for (index, atom) in program.facts.iter().enumerate() {
-        store.insert(
-            atom.clone(),
-            Justification::Source(index + 1),
-            limits.max_facts,
-        )?;
+    for (i, atom) in program.facts.iter().enumerate() {
+        store.insert(atom.clone(), Justification::Source(i + 1), limits.max_facts)?;
     }
-    let mut triggers: HashMap<Relation, Vec<(usize, usize)>> = HashMap::new();
-    for (rule, clause) in program.rules.iter().enumerate() {
-        for (position, goal) in clause.body.iter().enumerate() {
-            triggers
-                .entry((goal.predicate.clone(), goal.terms.len()))
-                .or_default()
-                .push((rule, position));
-        }
-    }
-    let mut cursor = 0;
-    while cursor < store.steps.len() {
-        let atom = &store.steps[cursor].atom;
-        if let Some(entries) = triggers.get(&(atom.predicate.clone(), atom.values.len())) {
-            for &(rule_index, position) in entries {
-                let rule = &program.rules[rule_index];
-                budget.tick()?;
-                for matched in join(&store, &rule.body, Some((position, cursor)), &mut budget)? {
-                    let atom = instantiate(&rule.head, &matched.bindings)
-                        .ok_or_else(|| Error::new("A rule head remained unbound."))?;
-                    store.insert(
-                        atom,
-                        Justification::Rule {
-                            rule: rule_index + 1,
-                            premises: matched.premises,
-                        },
-                        limits.max_facts,
-                    )?;
+    let max = plan.levels.values().copied().max().unwrap_or(0);
+    for level in 0..=max {
+        let mut triggers: HashMap<Relation, Vec<(usize, usize)>> = HashMap::new();
+        for (rule, clause) in program.rules.iter().enumerate() {
+            if plan.rules[rule] != level {
+                continue;
+            }
+            let mut positive = false;
+            for (position, g) in clause.body.iter().enumerate() {
+                if let Literal::Relation(g) = g {
+                    positive = true;
+                    triggers
+                        .entry((g.predicate.clone(), g.terms.len()))
+                        .or_default()
+                        .push((rule, position));
+                }
+            }
+            if !positive {
+                let matches = Join {
+                    store: &store,
+                    program,
+                    plan: &plan,
+                    owner: Owner::Rule(rule + 1),
+                    goals: &clause.body,
+                    seed: None,
+                }
+                .run(&mut budget)?;
+                for matched in matches {
+                    fire(&mut store, program, rule, matched, limits.max_facts)?;
                 }
             }
         }
-        cursor += 1;
+        let mut cursor = 0;
+        while cursor < store.steps.len() {
+            let step = &store.steps[cursor];
+            if step.justification.ordinary() {
+                if let Some(entries) =
+                    triggers.get(&(step.atom.predicate.clone(), step.atom.values.len()))
+                {
+                    for &(rule, position) in entries {
+                        budget.tick()?;
+                        let matches = Join {
+                            store: &store,
+                            program,
+                            plan: &plan,
+                            owner: Owner::Rule(rule + 1),
+                            goals: &program.rules[rule].body,
+                            seed: Some((position, cursor)),
+                        }
+                        .run(&mut budget)?;
+                        for matched in matches {
+                            fire(&mut store, program, rule, matched, limits.max_facts)?;
+                        }
+                    }
+                }
+            }
+            cursor += 1;
+        }
+        let needed = program
+            .rules
+            .iter()
+            .flat_map(|r| &r.body)
+            .chain(program.queries.iter().flat_map(|q| &q.goals))
+            .any(|g| {
+                matches!(g, Literal::Not(_) | Literal::Aggregate(_)) && plan.boundary(g) == level
+            });
+        if needed {
+            store.close(level, &plan, &mut budget)?;
+        }
     }
     let mut answers = Vec::new();
-    for query in &program.queries {
+    for (index, query) in program.queries.iter().enumerate() {
         let mut seen = HashSet::new();
         let mut result = Vec::new();
-        for matched in join(&store, &query.goals, None, &mut budget)? {
+        for matched in (Join {
+            store: &store,
+            program,
+            plan: &plan,
+            owner: Owner::Query(index + 1),
+            goals: &query.goals,
+            seed: None,
+        })
+        .run(&mut budget)?
+        {
             let values: Vec<_> = query
                 .variables
                 .iter()
-                .map(|name| matched.bindings[name].clone())
+                .map(|n| matched.bindings[n].clone())
                 .collect();
             if seen.insert(values.clone()) {
-                result.push(Answer {
-                    values,
-                    premises: matched.premises,
-                });
+                let premises = store.materialize(matched.evidence, limits.max_facts)?;
+                result.push(Answer { values, premises });
             }
         }
         answers.push(result);
@@ -296,9 +509,9 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
         steps: store.steps,
         answers,
         matches: budget.used,
+        boundaries: store.boundaries,
     })
 }
-
 pub(crate) fn query_text(query: &crate::Query) -> String {
     format!(
         "?- {}.",
@@ -375,6 +588,12 @@ impl Run {
                         .collect::<Vec<_>>()
                         .join(", ")
                 ),
+                Justification::Builtin => "built-in re-decision".into(),
+                Justification::Absent { boundary } => format!("absent from boundary {boundary}"),
+                Justification::Aggregate { boundary, .. } => {
+                    format!("aggregate over boundary {boundary}")
+                }
+                Justification::Fresh { rule, .. } => format!("fresh witness for rule {rule}"),
             };
             text.push_str(&format!(
                 "[{}] {}. ({justification})\n",

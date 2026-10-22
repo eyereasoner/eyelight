@@ -8,8 +8,9 @@ Keep diagnostics specific and user-facing text direct.
 
 - All Rust files live directly in `src/`: `model.rs` holds values and clauses;
   `parser.rs` parses `.eye`; `engine.rs` evaluates; `proof.rs` generates and
-  checks certificates. `lib.rs` exposes the API, `main.rs` the CLI, and
-  `wasm.rs` the browser bridge.
+  checks certificates. `language.rs` validates modes and strata; `semantics.rs`
+  supplies pure built-ins, aggregates, and finite-model matching. `lib.rs` exposes
+  the API, `main.rs` the CLI, and `wasm.rs` the browser bridge.
 - `examples/*.eye`: runnable programs with clear header comments describing
   the situation, result, and language feature. Do not mention project provenance.
 - `tests/`: language, CLI, proof, worker, Pages, browser, and release checks.
@@ -21,18 +22,28 @@ Keep diagnostics specific and user-facing text direct.
 
 ## Language and proofs
 
-Read `SPEC.md` before changing language or proof behavior. The language is finite
-positive relational rules, with safe heads and structural value identity. Queries
-select output and never become inference evidence. Arithmetic, negation,
-aggregation, existential heads, and quoted graphs need an explicit semantic design
-before implementation. Keep the core small and direct; optimize with measurements.
+Read `SPEC.md` before changing language or proof behavior. Eyelight implements
+Datalog-style rules with stratified negation, set aggregation, explicit `@`
+built-ins, and final-rule `@fresh` witnesses. Ordinary predicate names keep their
+relational meaning. Respect left-to-right safety and aggregate-local scopes.
+Reject negative/aggregate cycles and recursive value-producing rules. Queries
+select output and never become inference evidence.
 
-The checker validates recorded applications without running inference search.
-Source assertions are assumed; checking does not prove completeness or absence.
-Preserve the C1–C9 contract. C5, C6, and C8 are explicitly not applicable while
-their language features remain unsupported; implement their checks when adding
-those features. Library callers must inspect `Report::valid()` or use
-`require_valid()`: `Ok(report)` can contain verification failures.
+Preserve the C1–C9 contract. C5 re-decides built-ins and aggregates. C6 verifies
+complete closed stratum prefixes, including omitted derivable facts; a scan of
+only the displayed proof facts is insufficient. C8 verifies typed witnesses tied
+to one rule firing. Keep auxiliary decisions out of ordinary relation indexes.
+All nine checks must execute on `examples/orders.eye`. Feature-free programs may
+report the corresponding conditions not applicable.
+
+The checker must not call the evaluator or fill gaps in a supplied boundary.
+Source assertions are assumed; acceptance establishes recorded claims, not
+answer completeness or external-world truth. `Ok(report)` can contain semantic
+failures: library callers must inspect `Report::valid()` or use `require_valid()`.
+`check_with_limits` bounds evidence size and finite-model matching work.
+
+Keep the core small and direct; optimize with measurements. New semantic features
+need an explicit design and matching changes to the checker and specification.
 
 Every meaningful behavior change needs a focused regression. Every proof-checking
 change needs a forged certificate the checker rejects. Preserve the exhaustive

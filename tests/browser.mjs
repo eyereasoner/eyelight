@@ -101,6 +101,22 @@ try {
   assert.match(await run('answers'), /fact must be ground/);
   assert.ok(await evaluate('document.getElementById("output").classList.contains("error")'));
 
+  for (const name of ['arithmetic', 'negation', 'aggregation', 'witnesses', 'orders']) {
+    await set('example', name, 'change');
+    await wait(`!document.getElementById("source").disabled && document.getElementById("example").value === ${JSON.stringify(name)}`, `${name} loaded`);
+    const result = await run('checked');
+    assert.match(result, /^checked:/, name);
+    if (name === 'orders') {
+      assert.doesNotMatch(result, /not applicable/);
+      for (let i = 1; i <= 9; i++) assert.match(result, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
+      const certificate = await run('proof');
+      const forged = certificate.replace('ge(15, 10)', 'ge(0, 10)');
+      assert.notEqual(forged, certificate);
+      await set('saved-proof', forged);
+      assert.match(await run('check'), /\[C5 re-decision\]/);
+    }
+  }
+
   await set('example', 'paths', 'change');
   await wait('!document.getElementById("source").disabled && document.getElementById("source").value.includes("museum")', 'paths loaded');
   const paths = await run('answers');
@@ -153,6 +169,14 @@ try {
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'phone layout overflows');
   assert.ok(await evaluate('document.querySelector(".output-panel").getBoundingClientRect().top > document.querySelector(".editors .panel").getBoundingClientRect().top'), 'phone panels should stack');
   await screenshot('mobile');
+  await set('example', 'orders', 'change');
+  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "orders"', 'mobile voucher loaded');
+  const mobileVoucher = await run('checked');
+  assert.match(mobileVoucher, /^checked:/);
+  assert.doesNotMatch(mobileVoucher, /not applicable/);
+  assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile voucher layout overflows');
+  await screenshot('mobile-all-conditions');
+
   if (pagesRoot) {
     // Check the compatibility route as well as the directory route used above.
     await navigate(new URL('playground.html#example=socrates', pagesRoot).href);
@@ -179,5 +203,5 @@ try {
     }
   }
   assert.deepEqual(exceptions, []);
-  console.log('Browser checks passed: real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
+  console.log('Browser checks passed: all nine proof conditions on desktop/mobile, new examples, forged built-ins, real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
 } finally { socket.close(); }

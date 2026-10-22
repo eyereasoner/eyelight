@@ -223,6 +223,7 @@ fn exhaustive_small_forged_certificates_never_establish_a_false_query_answer() {
         for second in &steps {
             for premise in 1..=2 {
                 let certificate = Certificate {
+                    boundaries: vec![],
                     steps: vec![first.clone(), second.clone()],
                     claims: vec![Claim::Answer {
                         query: 1,
