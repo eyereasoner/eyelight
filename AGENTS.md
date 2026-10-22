@@ -14,6 +14,7 @@ Keep diagnostics specific and user-facing text direct.
 - `examples/*.pl`: runnable programs with clear header comments describing
   the situation, result, and language feature. Do not mention project provenance.
 - `tests/`: language, CLI, proof, worker, Pages, browser, and release checks.
+- `benches/taxonomy.rs`: standalone taxonomy timing benchmark.
 - `playground.html`, `playground.css`, `playground.js`, `playground-worker.js`:
   browser UI and cancellable worker. `pkg/` is the committed WebAssembly build.
 - `README.md`: guide. `SPEC.md`: language and proof contract.

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-cargo test --release --locked --test taxonomy measure_taxonomy_scaling -- --ignored --exact --nocapture --test-threads=1
+cargo bench --locked --bench taxonomy

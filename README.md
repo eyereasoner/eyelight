@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.4** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.5** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -121,7 +121,8 @@ Regenerate the programs with `node scripts/generate-taxonomy.mjs`, or verify the
 without writing with `node scripts/generate-taxonomy.mjs --check`. Run
 `./scripts/bench-taxonomy` on a quiet machine for three-run median timings of
 parsing, reasoning, certificate generation, writing, reading, checking, and
-explanation. Ordinary tests enforce work and evidence-size bounds rather than
+explanation. This runs a standalone Cargo benchmark outside the test harness.
+Ordinary tests enforce work and evidence-size bounds rather than
 machine-dependent elapsed times, and reject a forged deep-chain conclusion.
 
 ## Keep the evidence
