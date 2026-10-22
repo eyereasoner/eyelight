@@ -1,12 +1,13 @@
 // Optional real-browser check. Start the local HTTP server and Chrome with
 // --remote-debugging-port=9226, then run this script with Node.js 22 or later.
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const base = process.argv[2] || 'http://127.0.0.1:8766/playground.html';
 const debug = process.argv[3] || 'http://127.0.0.1:9226';
 const screenshots = process.argv[4];
 const pagesRoot = process.argv[5];
+const expectedVersion = /^version\s*=\s*"([^"]+)"/m.exec(await readFile(new URL('../Cargo.toml', import.meta.url), 'utf8'))[1];
 const tabs = await (await fetch(`${debug}/json`)).json();
 const tab = tabs.find(tab => tab.type === 'page');
 assert.ok(tab, 'Chrome needs an open page');
@@ -71,7 +72,7 @@ try {
   assert.match(await evaluate('document.getElementById("output").textContent'), /first answer/);
   assert.match(await run('answers'), /Who = socrates/);
   assert.match(await run('explain'), /rule 1; uses \[1\]/);
-  assert.equal(await evaluate('document.getElementById("version").textContent'), 'v0.1.0');
+  assert.equal(await evaluate('document.getElementById("version").textContent'), `v${expectedVersion}`);
   const widths = await evaluate('[...document.querySelectorAll(".editors > .panel")].map(e => e.getBoundingClientRect().width)');
   assert.ok(Math.abs(widths[0] - widths[1]) < 1);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'));

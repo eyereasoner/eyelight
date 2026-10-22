@@ -7,3 +7,4 @@ cargo clippy --release --all-targets --locked -- -D warnings
 cargo doc --no-deps --locked
 node tests/playground.mjs
 node tests/pages.mjs
+node tests/release.mjs

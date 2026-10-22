@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.0** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.1** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -205,6 +205,33 @@ google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/eyeli
 node tests/browser.mjs
 ```
 
+## Make a release
+
+From a reviewed checkout on `main`:
+
+```sh
+./release                         # patch: 0.1.0 → 0.1.1
+./release minor                   # minor: 0.1.0 → 0.2.0
+./release major                   # major: 0.1.0 → 1.0.0
+./release patch "Improve proof diagnostics"
+```
+
+The first argument defaults to `patch`. The optional second argument becomes the commit message, annotated tag message, and GitHub release notes; it defaults to `Release v<version>`.
+
+Install [cargo-edit](https://github.com/killercup/cargo-edit), [wasm-pack](https://github.com/drager/wasm-pack), and the [GitHub CLI](https://cli.github.com/), along with Rust, the `wasm32-unknown-unknown` target, and Node.js 22 or later. Sign in once with `gh auth login`. The script needs permission to push `main` and tags and create releases in the `origin` repository.
+
+The script switches to `main`, pulls with `--ff-only`, bumps `Cargo.toml` with `cargo set-version`, and synchronizes the guide, specification, and playground version labels. It rebuilds WebAssembly, runs `./scripts/test-all` and Wasm clippy, then commits **all working-tree changes**, creates an annotated `v<version>` tag, pushes the branch and tag together, and creates the GitHub release. Review `git status` and `git diff` first. The push also starts CI and the Pages deployment.
+
+A failed build or check stops before committing or publishing, leaving the local version changes available for inspection. Resolve the failure and finish that version rather than bumping again. If a commit and tag were created but publication stopped, retry only the unfinished steps, substituting the actual tag:
+
+```sh
+git push --atomic origin main v0.1.1
+git tag --list v0.1.1 --format='%(contents)' |
+  gh release create v0.1.1 --title=v0.1.1 --notes-file -
+```
+
+Skip the push if it already succeeded, and create the GitHub release only if it is still missing. The release contains GitHub's source archives. A separate tag workflow is not needed.
+
 ## Publish the website
 
 The **Deploy GitHub Pages** workflow builds the site on pushes to `main` and can also be started manually. Set the repository's Pages source to **GitHub Actions**. The workflow checks the website and committed WebAssembly package, renders the guide and specification with Jekyll, and deploys the resulting static artifact.
@@ -224,5 +251,6 @@ Open the published [guide](https://eyereasoner.github.io/eyelight/), [specificat
 | `playground*.js` | UI and cancellable worker |
 | `scripts/prepare-pages.mjs`, `scripts/pages-layout.html` | Pages staging and documentation layout |
 | `.github/workflows/pages.yml` | Website build and deployment |
+| `release`, `scripts/sync-version.mjs` | Version bump, browser rebuild, checks, and publication |
 
 MIT licensed. See [LICENSE](https://github.com/eyereasoner/eyelight/blob/main/LICENSE).

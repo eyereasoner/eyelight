@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+usage() { printf 'Usage: ./release [patch|minor|major] ["release message"]\nDefault: patch, with an automatic release message.\n'; }
+if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then usage; exit 0; fi
+if [[ $# -gt 2 ]]; then usage >&2; exit 1; fi
+release_kind=${1:-patch}
+case "$release_kind" in
+  patch|minor|major) ;;
+  *) usage >&2; exit 1 ;;
+esac
+if [[ $# -eq 2 && -z "${2//[[:space:]]/}" ]]; then
+  printf 'Error: the release message cannot be empty.\n' >&2
+  exit 1
+fi
+
+for tool in git cargo node wasm-pack gh; do
+  command -v "$tool" >/dev/null || { printf 'Error: %s is required.\n' "$tool" >&2; exit 1; }
+done
+cargo set-version --help >/dev/null 2>&1 || { printf 'Install cargo-edit first: cargo install --locked cargo-edit\n' >&2; exit 1; }
+node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { console.error("Node.js 22 or later is required."); process.exit(1); }'
+gh auth status
+git switch main
+git pull --ff-only origin main
+
+cargo set-version --bump "$release_kind"
+release_tag="v$(node scripts/sync-version.mjs)"
+release_message=${2-"Release $release_tag"}
+if git show-ref --verify --quiet "refs/tags/$release_tag"; then
+  printf 'Error: tag %s already exists. Finish that release instead of bumping again.\n' "$release_tag" >&2
+  exit 1
+fi
+./scripts/build-playground
+./scripts/test-all
+cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
+git diff --check
+
+# Include the changes being released, the version, and the matching browser build.
+git add -A
+git commit -m "$release_message"
+git tag -a "$release_tag" -m "$release_message"
+git push --atomic origin main "$release_tag"
+if ! gh release create "$release_tag" --title="$release_tag" --notes="$release_message"; then
+  printf 'The branch and tag %s were pushed, but GitHub Release creation failed. Retry that step; do not bump again. See README.md.\n' "$release_tag" >&2
+  exit 1
+fi
+printf 'Released %s: %s\n' "$release_tag" "$release_message"

@@ -54,7 +54,15 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   const { initSync, runProgram, version } = await import('../pkg/eyelight.js');
   initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
   const cargo = await readFile(new URL('Cargo.toml', root), 'utf8');
-  assert.equal(version(), /^version\s*=\s*"([^"]+)"/m.exec(cargo)[1]);
+  const expectedVersion = /^version\s*=\s*"([^"]+)"/m.exec(cargo)[1];
+  assert.equal(version(), expectedVersion);
+  const readme = await readFile(new URL('README.md', root), 'utf8');
+  const spec = await readFile(new URL('SPEC.md', root), 'utf8');
+  const playground = await readFile(new URL('playground.html', root), 'utf8');
+  assert.ok(readme.includes(`**Version ${expectedVersion}**`));
+  assert.ok(spec.includes(`Version **${expectedVersion}**`));
+  assert.ok(playground.includes(`id="version">v${expectedVersion}</span>`));
+  assert.ok(playground.includes(`eyelight · version ${expectedVersion}</span>`));
   const source = await readFile(new URL('examples/socrates.eye', root), 'utf8');
   const report = runProgram(source, 'checked', '');
   assert.match(report, /^checked: 2 steps, 1 claim/);
