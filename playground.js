@@ -113,7 +113,7 @@ async function loadExample(name) {
   if (busy) stop();
   $('source').disabled = true; $('example').disabled = true; $('run').disabled = true;
   try {
-    const response = await fetch(new URL(`./examples/${name}.eye`, import.meta.url));
+    const response = await fetch(new URL(`./examples/${name}.pl`, import.meta.url));
     if (!response.ok) throw new Error(`Cannot load example ${name}: HTTP ${response.status}.`);
     const source = await response.text();
     restore({ source, mode: 'answers', proof: '' });

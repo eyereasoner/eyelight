@@ -3,7 +3,7 @@ use eyelight::{
     ProofLocation, Report, Step,
 };
 
-const SOCRATES: &str = include_str!("../examples/socrates.eye");
+const SOCRATES: &str = include_str!("../examples/socrates.pl");
 
 fn inspect(source: &str, proof: &str) -> Report {
     check(&parse(source).unwrap(), &Certificate::parse(proof).unwrap()).unwrap()

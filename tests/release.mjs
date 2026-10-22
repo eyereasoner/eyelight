@@ -88,7 +88,7 @@ if (kind === 'gh' && args[0] === 'release') {
 for (const [args, version] of [[[], '0.1.1'], [['patch'], '0.1.1'], [['minor'], '0.2.0'], [['major'], '1.0.0']]) {
   test(`release ${args[0] ?? '(default)'} synchronizes, verifies, and publishes one version`, async t => {
     const f = await fixture(t);
-    await writeFile(join(f.work, 'feature.eye'), 'fact(added).\n');
+    await writeFile(join(f.work, 'feature.pl'), 'fact(added).\n');
     const result = f.release(args);
     assert.equal(result.status, 0, result.stderr);
     const tag = `v${version}`;
@@ -97,7 +97,7 @@ for (const [args, version] of [[[], '0.1.1'], [['patch'], '0.1.1'], [['minor'], 
     assert.equal(f.git('log', '-1', '--format=%s'), `Release ${tag}`);
     assert.equal(f.git('--git-dir', f.remote, 'rev-parse', 'main'), f.git('rev-parse', 'HEAD'));
     assert.equal(f.git('--git-dir', f.remote, 'rev-parse', tag), f.git('rev-parse', tag));
-    assert.equal(f.git('show', `${tag}:feature.eye`), 'fact(added).');
+    assert.equal(f.git('show', `${tag}:feature.pl`), 'fact(added).');
     for (const file of ['README.md', 'SPEC.md', 'playground.html', 'pkg/build-version.txt']) {
       assert.ok((await readFile(join(f.work, file), 'utf8')).includes(version), file);
     }

@@ -73,6 +73,7 @@ try {
   assert.match(await run('answers'), /Who = socrates/);
   assert.match(await run('explain'), /rule 1; uses \[1\]/);
   assert.equal(await evaluate('document.getElementById("version").textContent'), `v${expectedVersion}`);
+  assert.equal(await evaluate('document.querySelector(".editors .panel-heading > span").textContent'), '.pl');
   const widths = await evaluate('[...document.querySelectorAll(".editors > .panel")].map(e => e.getBoundingClientRect().width)');
   assert.ok(Math.abs(widths[0] - widths[1]) < 1);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'));

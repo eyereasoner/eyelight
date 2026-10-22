@@ -192,7 +192,7 @@ fn witness_identity_is_typed_stable_scoped_and_carried_by_rules() {
 
 #[test]
 fn full_example_exercises_every_condition_with_no_not_applicable_entries() {
-    let (p, r) = run(include_str!("../examples/orders.eye"));
+    let (p, r) = run(include_str!("../examples/orders.pl"));
     let report = check(&p, &r.certificate(&p)).unwrap();
     for c in &report.conditions {
         assert_eq!(c.not_applicable, None, "{report}");
@@ -266,7 +266,7 @@ fn strata_are_independent_of_source_order_and_merged_files() {
 
 #[test]
 fn explicit_checker_limits_cover_evidence_and_closed_model_matching() {
-    let (p, r) = run(include_str!("../examples/orders.eye"));
+    let (p, r) = run(include_str!("../examples/orders.pl"));
     let c = r.certificate(&p);
     assert!(eyelight::check_with_limits(
         &p,

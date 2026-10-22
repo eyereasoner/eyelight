@@ -41,7 +41,7 @@ fn stdin_answers_explanation_and_generated_proof_check() {
 }
 #[test]
 fn saved_proof_from_stdin_is_checked_against_source() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.eye");
+    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
     let result = cli(&["-p", source], "");
     assert!(result.status.success());
     let proof = String::from_utf8(result.stdout).unwrap();
@@ -75,12 +75,16 @@ fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
 }
 #[test]
 fn help_version_and_multiple_source_files_work() {
-    assert!(cli(&[], "").status.success());
+    let help = cli(&[], "");
+    assert!(help.status.success());
+    assert!(String::from_utf8(help.stdout)
+        .unwrap()
+        .contains("Prolog-style .pl syntax"));
     assert_eq!(
         String::from_utf8(cli(&["--version"], "").stdout).unwrap(),
         format!("eyelight {}\n", eyelight::VERSION)
     );
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.eye");
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
     let result = cli(&[path, "-"], "human(hypatia).");
     assert!(result.status.success());
     assert!(String::from_utf8(result.stdout)
@@ -90,7 +94,7 @@ fn help_version_and_multiple_source_files_work() {
 
 #[test]
 fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/orders.eye");
+    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/orders.pl");
     let result = cli(&["-c", source], "");
     assert!(
         result.status.success(),

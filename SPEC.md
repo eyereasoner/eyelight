@@ -1,10 +1,10 @@
 # Eyelight language and proof contract
 
-Version **0.1.2**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
+Version **0.1.3**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
 
 ## 1. Program
 
-A program consists of ground facts, rules, and queries. Statements end in a period. Whitespace separates tokens but is otherwise insignificant. `%` and `#` introduce comments through the end of the line outside quotes.
+Programs use the `.pl` extension and Prolog-style clause syntax. A program consists of ground facts, rules, and queries. Statements end in a period. Whitespace separates tokens but is otherwise insignificant. `%` and `#` introduce comments through the end of the line outside quotes.
 
 ```prolog
 human(socrates).
@@ -185,7 +185,7 @@ The checker implements the following C1–C9 contract:
 | **C8 · Witness integrity** | Every fresh decision names a fresh source goal and carries exactly the typed witness determined by that source-rule firing. A witness from another firing cannot be substituted, reused, or supplied as a source assertion. C1 checks the context when the decision is consumed. |
 | **C9 · Query isolation** | Query answers are selections, never inference steps. Each answer matches every source-query goal with the correct evidence kind and consistent bindings. Derived claims are forbidden when queries are present. Query aggregate evidence cannot become rule evidence. |
 
-Reports list all nine conditions in order. C5 is applicable when a program uses built-ins or aggregates; C6 when it uses negation or aggregates; C8 when it uses `@fresh`. A program without the corresponding feature reports **not applicable** with zero checks and failures. The [voucher example](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.eye) performs nonzero successful checks under every condition.
+Reports list all nine conditions in order. C5 is applicable when a program uses built-ins or aggregates; C6 when it uses negation or aggregates; C8 when it uses `@fresh`. A program without the corresponding feature reports **not applicable** with zero checks and failures. The [voucher example](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) performs nonzero successful checks under every condition.
 
 Counts describe attempted local checks, not a count of established conclusions. C1 counts source/rule steps; C2 rule and boundary dependency lists; C3 steps, claims, and boundaries; C4 individual references; C5 decisions; C6 boundary models and decisions; C7 steps, boundaries, and resolved derived claims; C8 fresh decisions; C9 query applications or derived-claim mode checks. Checks requiring unresolved references are skipped, with the missing evidence reported under C4.
 

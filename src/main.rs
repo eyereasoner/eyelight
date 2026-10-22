@@ -16,7 +16,7 @@ Usage: eyelight [OPTIONS] FILE...
   -h, --help                Show this help
   -v, --version             Show the version
 
-Files use eyelight's .eye language: facts, Head :- Body, and ?- queries.
+Files use Prolog-style .pl syntax: facts, Head :- Body, and ?- queries.
 Use - for stdin. Multiple files form one program, in the supplied order.
 Proof checking verifies recorded claims, not answer completeness.
 ";

@@ -267,7 +267,7 @@ fn c9_does_not_allow_a_query_aggregate_to_become_rule_evidence() {
 
 #[test]
 fn c6_detects_removal_of_any_member_of_a_completed_recursive_boundary() {
-    let (p, c) = proof(include_str!("../examples/negation.eye"));
+    let (p, c) = proof(include_str!("../examples/negation.pl"));
     assert!(c.boundaries[0]
         .steps
         .iter()

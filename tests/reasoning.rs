@@ -11,16 +11,16 @@ fn output(source: &str) -> String {
 #[test]
 fn all_examples_produce_answers_and_check() {
     for source in [
-        include_str!("../examples/socrates.eye"),
-        include_str!("../examples/paths.eye"),
-        include_str!("../examples/family.eye"),
-        include_str!("../examples/values.eye"),
-        include_str!("../examples/rdf.eye"),
-        include_str!("../examples/arithmetic.eye"),
-        include_str!("../examples/negation.eye"),
-        include_str!("../examples/aggregation.eye"),
-        include_str!("../examples/witnesses.eye"),
-        include_str!("../examples/orders.eye"),
+        include_str!("../examples/socrates.pl"),
+        include_str!("../examples/paths.pl"),
+        include_str!("../examples/family.pl"),
+        include_str!("../examples/values.pl"),
+        include_str!("../examples/rdf.pl"),
+        include_str!("../examples/arithmetic.pl"),
+        include_str!("../examples/negation.pl"),
+        include_str!("../examples/aggregation.pl"),
+        include_str!("../examples/witnesses.pl"),
+        include_str!("../examples/orders.pl"),
     ] {
         let program = parse(source).unwrap();
         let run = reason(&program, Limits::default()).unwrap();
@@ -36,7 +36,7 @@ fn all_examples_produce_answers_and_check() {
 #[test]
 fn socrates_has_one_exact_answer() {
     assert_eq!(
-        output(include_str!("../examples/socrates.eye")),
+        output(include_str!("../examples/socrates.pl")),
         "?- mortal(Who).\nWho = socrates.\n"
     );
 }

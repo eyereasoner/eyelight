@@ -7,11 +7,11 @@ Keep diagnostics specific and user-facing text direct.
 ## Repository map
 
 - All Rust files live directly in `src/`: `model.rs` holds values and clauses;
-  `parser.rs` parses `.eye`; `engine.rs` evaluates; `proof.rs` generates and
+  `parser.rs` parses `.pl`; `engine.rs` evaluates; `proof.rs` generates and
   checks certificates. `language.rs` validates modes and strata; `semantics.rs`
   supplies pure built-ins, aggregates, and finite-model matching. `lib.rs` exposes
   the API, `main.rs` the CLI, and `wasm.rs` the browser bridge.
-- `examples/*.eye`: runnable programs with clear header comments describing
+- `examples/*.pl`: runnable programs with clear header comments describing
   the situation, result, and language feature. Do not mention project provenance.
 - `tests/`: language, CLI, proof, worker, Pages, browser, and release checks.
 - `playground.html`, `playground.css`, `playground.js`, `playground-worker.js`:
@@ -33,7 +33,7 @@ Preserve the C1–C9 contract. C5 re-decides built-ins and aggregates. C6 verifi
 complete closed stratum prefixes, including omitted derivable facts; a scan of
 only the displayed proof facts is insufficient. C8 verifies typed witnesses tied
 to one rule firing. Keep auxiliary decisions out of ordinary relation indexes.
-All nine checks must execute on `examples/orders.eye`. Feature-free programs may
+All nine checks must execute on `examples/orders.pl`. Feature-free programs may
 report the corresponding conditions not applicable.
 
 The checker must not call the evaluator or fill gaps in a supplied boundary.
@@ -53,8 +53,8 @@ small-graph oracle test. Keep implementation, specification, and examples consis
 
 ```sh
 cargo build --release --locked
-./target/release/eyelight examples/socrates.eye
-./target/release/eyelight --prove-and-check examples/socrates.eye
+./target/release/eyelight examples/socrates.pl
+./target/release/eyelight --prove-and-check examples/socrates.pl
 ./scripts/test-all
 cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 ./scripts/build-playground

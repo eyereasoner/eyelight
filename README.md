@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.2** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.3** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -22,7 +22,7 @@ mortal(Person) :- human(Person).
 Who = socrates.
 ```
 
-Eyelight's `.eye` language uses familiar clause notation. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete language.
+Eyelight programs use Prolog-style clause syntax and the `.pl` extension. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete language.
 
 ## Run your first program
 
@@ -30,9 +30,9 @@ With Rust and Cargo installed:
 
 ```sh
 cargo build --release --locked
-./target/release/eyelight examples/socrates.eye
-./target/release/eyelight --explain examples/socrates.eye
-./target/release/eyelight --prove-and-check examples/socrates.eye
+./target/release/eyelight examples/socrates.pl
+./target/release/eyelight --explain examples/socrates.pl
+./target/release/eyelight --prove-and-check examples/socrates.pl
 ```
 
 Install from this checkout if you want `eyelight` on your path:
@@ -62,22 +62,22 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 
 | Example | What it shows |
 | --- | --- |
-| [Socrates](https://github.com/eyereasoner/eyelight/blob/main/examples/socrates.eye) | A first conclusion and query |
-| [Paths](https://github.com/eyereasoner/eyelight/blob/main/examples/paths.eye) | Recursive reachability with cycles |
-| [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.eye) | Joins and shared variables |
-| [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.eye) | Distinct atoms, strings, and integers |
-| [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.eye) | IRIs represented in an ordinary triple relation |
-| [Price calculations](https://github.com/eyereasoner/eyelight/blob/main/examples/arithmetic.eye) | Arithmetic, comparisons, and string built-ins |
-| [Outside the network](https://github.com/eyereasoner/eyelight/blob/main/examples/negation.eye) | Stratified negation after recursive reachability |
-| [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.eye) | Grouped counts, sums, minima, and maxima |
-| [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.eye) | Witnesses scoped to individual rule firings |
-| [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.eye) | Every C1–C9 condition actively checked |
+| [Socrates](https://github.com/eyereasoner/eyelight/blob/main/examples/socrates.pl) | A first conclusion and query |
+| [Paths](https://github.com/eyereasoner/eyelight/blob/main/examples/paths.pl) | Recursive reachability with cycles |
+| [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.pl) | Joins and shared variables |
+| [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.pl) | Distinct atoms, strings, and integers |
+| [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.pl) | IRIs represented in an ordinary triple relation |
+| [Price calculations](https://github.com/eyereasoner/eyelight/blob/main/examples/arithmetic.pl) | Arithmetic, comparisons, and string built-ins |
+| [Outside the network](https://github.com/eyereasoner/eyelight/blob/main/examples/negation.pl) | Stratified negation after recursive reachability |
+| [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
+| [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
+| [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
 
 ## Keep the evidence
 
 ```sh
-./target/release/eyelight -p examples/socrates.eye > /tmp/socrates.proof
-./target/release/eyelight --check-proof /tmp/socrates.proof examples/socrates.eye
+./target/release/eyelight -p examples/socrates.pl > /tmp/socrates.proof
+./target/release/eyelight --check-proof /tmp/socrates.proof examples/socrates.pl
 ```
 
 The certificate is small enough to read:
@@ -151,7 +151,7 @@ Ada receives a voucher for a total of 15. Bea is blocked. `Price` and `Item` are
 `@fresh(Voucher)` creates a typed opaque witness belonging to that rule firing. It must be a rule's final goal and bind a new variable. Witnesses are deterministic within the program; they are not globally unique random identifiers. Source programs cannot supply witness constants.
 
 ```sh
-./target/release/eyelight -c examples/orders.eye
+./target/release/eyelight -c examples/orders.pl
 ```
 
 This checks all nine conditions: C5 recomputes calculations and aggregates, C6 verifies complete lower-stratum boundaries and absence tests, and C8 verifies witness identity. Other conditions validate the rule applications, references, dependency order, relevance, and query isolation.
@@ -179,9 +179,9 @@ Choose one output option per invocation. Success returns status 0. Parse errors,
 Files are parsed separately and merged in the supplied order. Variables belong to individual clauses and queries. Use `-` for stdin, once per invocation:
 
 ```sh
-./target/release/eyelight rules.eye data.eye
-./target/release/eyelight - < examples/socrates.eye
-./target/release/eyelight --check-proof - examples/socrates.eye < /tmp/socrates.proof
+./target/release/eyelight rules.pl data.pl
+./target/release/eyelight - < examples/socrates.pl
+./target/release/eyelight --check-proof - examples/socrates.pl < /tmp/socrates.proof
 ```
 
 Use the same source order when checking a saved certificate. Source-fact, rule, and query IDs are numbered separately from 1 in that order.
@@ -295,7 +295,7 @@ Open the published [guide](https://eyereasoner.github.io/eyelight/), [specificat
 | File | Responsibility |
 | --- | --- |
 | `src/model.rs` | Values, facts, rules, queries, and validation |
-| `src/parser.rs` | The `.eye` language |
+| `src/parser.rs` | The `.pl` program syntax |
 | `src/language.rs` | Safety, built-in modes, strata, and recursion restrictions |
 | `src/semantics.rs` | Pure interpreted relations, aggregates, and finite-model matching |
 | `src/engine.rs` | Indexed joins, agenda, limits, and answer rendering |

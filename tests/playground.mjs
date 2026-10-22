@@ -9,11 +9,11 @@ test('all examples are selectable and available to shared links', async () => {
   const html = await readFile(new URL('playground.html', root), 'utf8');
   const js = await readFile(new URL('playground.js', root), 'utf8');
   for (const file of await readdir(new URL('examples/', root))) {
-    if (!file.endsWith('.eye')) continue;
-    const name = file.slice(0, -4);
+    if (!file.endsWith('.pl')) continue;
+    const name = file.slice(0, -3);
     assert.ok(js.includes(`'${name}'`), `${name} missing from share allowlist`);
     assert.ok(html.includes(`value="${name}"`));
-    assert.match(await readFile(new URL(`examples/${name}.eye`, root), 'utf8'), /\?- /);
+    assert.match(await readFile(new URL(`examples/${name}.pl`, root), 'utf8'), /\?- /);
   }
 });
 test('worker runs the engine off the UI thread and reports failures', async () => {
