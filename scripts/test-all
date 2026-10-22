@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+cargo fmt --check
+cargo test --release --locked
+cargo clippy --release --all-targets --locked -- -D warnings
+cargo doc --no-deps --locked
+node tests/playground.mjs

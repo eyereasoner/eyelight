@@ -1,0 +1,22 @@
+[package]
+name = "eyelight"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jos De Roo"]
+license = "MIT"
+description = "A small relational reasoner with independently checked proof certificates."
+default-run = "eyelight"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]

@@ -1,0 +1,6 @@
+/target/
+/pkg/.gitignore
+/pkg/package.json
+/pkg/README.md
+/pkg/LICENSE*
+/_site/

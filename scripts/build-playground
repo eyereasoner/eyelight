@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+wasm-pack build --target web --out-dir pkg --release
+rm -f pkg/.gitignore pkg/package.json pkg/README.md pkg/LICENSE*

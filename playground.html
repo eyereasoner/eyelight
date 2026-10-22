@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore small logical programs, follow their explanations, and check their proofs with eyelight.">
+  <title>eyelight · a little logic, clearly explained</title>
+  <link rel="icon" href="assets/eyelight.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="eyelight home"><img src="assets/eyelight.svg" width="64" height="64" alt=""><span>eyelight<span class="version" id="version">v0.1.0</span></span></a>
+      <a class="guide-link" href="README.md">A short guide ↗</a>
+    </header>
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">SMALL PROGRAMS. VISIBLE REASONING.</p>
+      <h1 id="title">A little logic.<br><span>A clear line to the answer.</span></h1>
+      <p>Give eyelight facts and rules. Ask a question.<br class="wide-only"> Follow the explanation, or check the proof.</p>
+    </section>
+    <section class="workspace" aria-label="Reasoning playground">
+      <div class="toolbar">
+        <div class="actions">
+          <button type="button" id="run" class="run">▶ Run</button>
+          <button type="button" id="stop" class="stop" disabled>■ Stop</button>
+          <button type="button" id="share" class="share">↗ Share link</button>
+        </div>
+        <div class="selectors">
+          <label>Explore<select id="example"><option value="">Your program</option><option value="socrates" selected>Socrates</option><option value="paths">Paths &amp; cycles</option><option value="family">Family connections</option><option value="values">Names, text &amp; numbers</option><option value="rdf">RDF-shaped relations</option></select></label>
+          <label>Show<select id="mode"><option value="answers">Answers</option><option value="explain">Explanation</option><option value="proof">Proof certificate</option><option value="checked">Generate &amp; check proof</option><option value="check">Check saved proof</option></select></label>
+        </div>
+      </div>
+      <div id="share-box" class="share-box" hidden><label for="share-url">Your share link</label><input id="share-url" readonly><button type="button" id="close-share" aria-label="Close share link">×</button></div>
+      <div class="editors">
+        <section class="panel" aria-labelledby="source-heading">
+          <div class="panel-heading"><h2 id="source-heading"><span class="dot green"></span>Your program</h2><span>.eye</span></div>
+          <label class="sr-only" for="source">Facts, rules, and queries</label>
+          <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="source-hint">% A first conclusion
+human(socrates).
+mortal(Person) :- human(Person).
+
+?- mortal(Who).
+</textarea>
+          <p class="panel-hint" id="source-hint">Facts end in <code>.</code> · Rules use <code>:-</code> · Questions start with <code>?-</code></p>
+        </section>
+        <section class="panel output-panel" aria-labelledby="output-heading">
+          <div class="panel-heading"><h2 id="output-heading"><span class="dot blue"></span>The result</h2><button type="button" id="copy">Copy</button></div>
+          <pre id="output" tabindex="0" aria-label="Program output">Your first answer is one click away.
+
+Press Run to find out who is mortal.</pre>
+          <p class="panel-hint" id="status" role="status" aria-live="polite">Ready when you are.</p>
+        </section>
+      </div>
+      <section class="panel saved-proof" id="saved-proof-panel" hidden aria-labelledby="proof-heading">
+        <div class="panel-heading"><h2 id="proof-heading"><span class="dot coral"></span>Proof to check</h2><span>Keep its matching program above</span></div>
+        <label class="sr-only" for="saved-proof">Saved proof certificate</label>
+        <textarea id="saved-proof" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Paste an eyelight-proof 1 certificate here."></textarea>
+      </section>
+    </section>
+    <section class="notes" aria-label="How it works">
+      <article><span class="number">01</span><h2>Say what you know.</h2><p>A fact names a relationship. A rule connects it to something that follows.</p></article>
+      <article><span class="number">02</span><h2>Ask what follows.</h2><p>Questions select answers. Repeated facts and paths produce one answer per distinct binding.</p></article>
+      <article><span class="number">03</span><h2>See the evidence.</h2><p>Explanations show the route. Checking verifies positive support; it assumes source facts and does not prove completeness.</p></article>
+    </section>
+    <footer><span>eyelight · version 0.1.0</span><span>Runs in your browser. Your program stays on your device unless you share it.</span></footer>
+  </main>
+  <script type="module" src="playground.js"></script>
+</body>
+</html>
