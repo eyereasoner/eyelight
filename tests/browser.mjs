@@ -6,6 +6,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 const base = process.argv[2] || 'http://127.0.0.1:8766/playground.html';
 const debug = process.argv[3] || 'http://127.0.0.1:9226';
 const screenshots = process.argv[4];
+const pagesRoot = process.argv[5];
 const tabs = await (await fetch(`${debug}/json`)).json();
 const tab = tabs.find(tab => tab.type === 'page');
 assert.ok(tab, 'Chrome needs an open page');
@@ -151,6 +152,31 @@ try {
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'phone layout overflows');
   assert.ok(await evaluate('document.querySelector(".output-panel").getBoundingClientRect().top > document.querySelector(".editors .panel").getBoundingClientRect().top'), 'phone panels should stack');
   await screenshot('mobile');
+  if (pagesRoot) {
+    // Check the compatibility route as well as the directory route used above.
+    await navigate(new URL('playground.html#example=socrates', pagesRoot).href);
+    assert.match(await run('checked'), /checked: 2 steps, 1 claim/);
+    for (const [name, width, mobile] of [['desktop', 1280, false], ['mobile', 390, true]]) {
+      await command('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile });
+      for (const route of ['', 'SPEC/']) {
+        const url = new URL(route, pagesRoot).href;
+        await command('Page.navigate', { url });
+        await wait(`location.href === ${JSON.stringify(url)} && document.readyState === "complete" && !!document.querySelector(".documentation article h1")`, 'rendered documentation');
+        assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `${name} documentation overflows`);
+        assert.ok(await evaluate('[...document.images].every(image => image.complete && image.naturalWidth > 0)'));
+        const links = await evaluate('[...document.querySelectorAll("a[href]")].map(a => a.href)');
+        assert.ok(links.every(link => !/\.md(?:#|$)/.test(link)), 'documentation links should open rendered pages');
+        for (const link of new Set(links)) {
+          const target = new URL(link);
+          if (target.origin !== new URL(pagesRoot).origin) continue;
+          assert.ok(target.pathname.startsWith(new URL(pagesRoot).pathname), 'link escaped the Pages base path');
+          assert.ok(await evaluate(`fetch(${JSON.stringify(link)}).then(response => response.ok)`), `broken link: ${link}`);
+        }
+        if (route) assert.ok(await evaluate('!!document.getElementById("8-verification")'), 'proof contract anchor missing');
+        await screenshot(`${route ? 'specification' : 'guide'}-${name}`);
+      }
+    }
+  }
   assert.deepEqual(exceptions, []);
   console.log('Browser checks passed: real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
 } finally { socket.close(); }

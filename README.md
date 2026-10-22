@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.0** · [Language](SPEC.md) · [Playground](playground.html) · [Examples](examples/)
+**Version 0.1.0** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -22,7 +22,7 @@ mortal(Person) :- human(Person).
 Who = socrates.
 ```
 
-Eyelight's `.eye` language uses familiar clause notation. It implements **finite positive relational rules**, a deliberately small Datalog-style language. It does not parse N3 or implement general Prolog. The [specification](SPEC.md) describes the complete first-version language.
+Eyelight's `.eye` language uses familiar clause notation. It implements **finite positive relational rules**, a deliberately small Datalog-style language. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete first-version language.
 
 ## Run your first program
 
@@ -62,11 +62,11 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 
 | Example | What it shows |
 | --- | --- |
-| [Socrates](examples/socrates.eye) | A first conclusion and query |
-| [Paths](examples/paths.eye) | Recursive reachability with cycles |
-| [Family](examples/family.eye) | Joins and shared variables |
-| [Values](examples/values.eye) | Distinct atoms, strings, and integers |
-| [RDF-shaped data](examples/rdf.eye) | IRIs represented in an ordinary triple relation |
+| [Socrates](https://github.com/eyereasoner/eyelight/blob/main/examples/socrates.eye) | A first conclusion and query |
+| [Paths](https://github.com/eyereasoner/eyelight/blob/main/examples/paths.eye) | Recursive reachability with cycles |
+| [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.eye) | Joins and shared variables |
+| [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.eye) | Distinct atoms, strings, and integers |
+| [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.eye) | IRIs represented in an ordinary triple relation |
 
 ## Keep the evidence
 
@@ -106,7 +106,7 @@ Source assertions are assumed. Answer completeness is not checked.
 
 A valid certificate establishes **positive support for its claims**. It assumes the source assertions, does not authenticate their authors, and does not establish that every answer was found. A failed query prints `false.` but has no positive claim to certify. A certificate with zero claims proves no answers and no absence. The checker shares the term representation and closed matching primitives with the evaluator; it has a separate verification loop and performs no inference search.
 
-The [C1–C9 contract](SPEC.md#8-verification) defines the requirements and counting units. Invalid reports identify the failing condition and affected step or claim. C5, C6, and C8 are explicitly not applicable to the current language: it has no interpreted built-ins, trust obligations, inference fuses, or existential generation. Certificates cannot add those features through unsupported metadata.
+The [C1–C9 contract](https://eyereasoner.github.io/eyelight/SPEC/#8-verification) defines the requirements and counting units. Invalid reports identify the failing condition and affected step or claim. C5, C6, and C8 are explicitly not applicable to the current language: it has no interpreted built-ins, trust obligations, inference fuses, or existential generation. Certificates cannot add those features through unsupported metadata.
 
 ## Use the command line
 
@@ -187,6 +187,8 @@ The finite value domain and safe heads guarantee a finite positive closure. Actu
 
 ## Develop and verify
 
+The development checks use Rust, Cargo, and Node.js 22 or later. CI uses Node.js 24.
+
 ```sh
 ./scripts/test-all
 cargo clippy --target wasm32-unknown-unknown --lib -- -D warnings
@@ -203,6 +205,14 @@ google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/eyeli
 node tests/browser.mjs
 ```
 
+## Publish the website
+
+The **Deploy GitHub Pages** workflow builds the site on pushes to `main` and can also be started manually. Set the repository's Pages source to **GitHub Actions**. The workflow checks the website and committed WebAssembly package, renders the guide and specification with Jekyll, and deploys the resulting static artifact.
+
+Open the published [guide](https://eyereasoner.github.io/eyelight/), [specification](https://eyereasoner.github.io/eyelight/SPEC/), or [playground](https://eyereasoner.github.io/eyelight/playground/). Documentation links in this repository point to those rendered pages. The `playground.html` route remains available too.
+
+`node scripts/prepare-pages.mjs` prepares `_pages/` for the Jekyll build; `_site/` holds the rendered artifact. Both directories are ignored by Git. The Pages action supplies `PAGES_BASE_PATH`, so local links and assets work beneath `/eyelight/` or a different configured prefix. The site uses the committed `pkg/`; changing the package version requires rebuilding it before publishing. The deployment check rejects a browser package whose exported version differs from `Cargo.toml`.
+
 | File | Responsibility |
 | --- | --- |
 | `src/model.rs` | Values, facts, rules, queries, and validation |
@@ -212,5 +222,7 @@ node tests/browser.mjs
 | `src/main.rs` | Native command line and file I/O |
 | `src/wasm.rs` | Browser bindings |
 | `playground*.js` | UI and cancellable worker |
+| `scripts/prepare-pages.mjs`, `scripts/pages-layout.html` | Pages staging and documentation layout |
+| `.github/workflows/pages.yml` | Website build and deployment |
 
-MIT licensed. See [LICENSE](LICENSE).
+MIT licensed. See [LICENSE](https://github.com/eyereasoner/eyelight/blob/main/LICENSE).

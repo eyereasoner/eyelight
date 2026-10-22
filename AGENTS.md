@@ -20,3 +20,7 @@ Run `./scripts/test-all` after code changes. Browser changes also need a real br
 Every meaningful behavior change needs a focused regression. Every proof-checking change needs a forged certificate the checker rejects. Preserve the exhaustive small-graph oracle test. Examples need a clear header describing the modeled situation, results, and language feature.
 
 `Cargo.toml` is the version source. Follow the user's instructions for committing, pushing, and releasing. Review the complete working tree before any commit. Do not publish or create a remote repository without authorization.
+
+## Website
+
+`scripts/prepare-pages.mjs` stages the guide, specification, playground, and its assets in `_pages/`. The Pages workflow renders Jekyll into `_site/` and deploys it. Keep Markdown documentation links pointed at the rendered Pages URLs; source-code and example links can point at GitHub. Preserve the `/eyelight/` base path and the `/playground/` and `playground.html` routes. Run `node tests/pages.mjs` and verify the rendered site in a browser after website changes.

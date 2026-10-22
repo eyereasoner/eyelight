@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title | escape }}</title>
+  <link rel="icon" href="{{ '/assets/eyelight.svg' | relative_url }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ '/playground.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/docs.css' | relative_url }}">
+</head>
+<body>
+  <main class="documentation">
+    <header class="masthead">
+      <a class="brand" href="{{ '/' | relative_url }}"><img src="{{ '/assets/eyelight.svg' | relative_url }}" width="64" height="64" alt=""><span>eyelight</span></a>
+      <nav class="site-nav" aria-label="Project">
+        <a href="{{ '/' | relative_url }}">Guide</a>
+        <a href="{{ '/playground/' | relative_url }}">Playground</a>
+        <a href="{{ '/SPEC/' | relative_url }}">Specification</a>
+        <a href="https://github.com/eyereasoner/eyelight">Repository ↗</a>
+      </nav>
+    </header>
+    <article>{{ content }}</article>
+    <footer><span>eyelight · small programs, visible reasoning</span><a href="https://github.com/eyereasoner/eyelight/blob/main/LICENSE">MIT licensed</a></footer>
+  </main>
+</body>
+</html>

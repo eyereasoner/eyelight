@@ -88,6 +88,16 @@ main {
   font-size:14px;
   font-weight:650
 }
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.site-nav [aria-current="page"] {
+  text-decoration-thickness: 2px;
+}
 .intro {
   padding:48px 0 34px
 }
@@ -449,6 +459,16 @@ footer {
 @media(prefers-reduced-motion:reduce) {
   button {
     transition:none
+  }
+}
+@media (max-width: 760px) {
+  .masthead {
+    flex-wrap: wrap;
+  }
+  .site-nav {
+    width: 100%;
+    gap: 10px 16px;
+    font-size: 12px;
   }
 }
 @media(max-width:760px) {
