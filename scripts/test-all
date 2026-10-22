@@ -5,6 +5,7 @@ cargo fmt --check
 cargo test --release --locked
 cargo clippy --release --all-targets --locked -- -D warnings
 cargo doc --no-deps --locked
+node scripts/generate-taxonomy.mjs --check
 node tests/playground.mjs
 node tests/pages.mjs
 node tests/release.mjs

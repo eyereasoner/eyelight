@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.3** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.4** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -72,6 +72,57 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 | [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
 | [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
 | [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
+
+## Follow a deep taxonomy
+
+The taxonomy examples classify one individual through a chain of **10, 100,
+1,000, 10,000, or 100,000 levels**. Each level also derives two side labels.
+The final query returns `Result = true`; its certificate retains the classification
+chain and leaves out the side branches.
+
+| Depth | Program |
+| --- | --- |
+| 10 | [deep-taxonomy-10.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-10.pl) |
+| 100 | [deep-taxonomy-100.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-100.pl) |
+| 1,000 | [deep-taxonomy-1000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-1000.pl) |
+| 10,000 | [deep-taxonomy-10000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-10000.pl) |
+| 100,000 | [deep-taxonomy-100000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-100000.pl) |
+
+All five are available in the playground. Run the largest natively with the
+default resource limits:
+
+```sh
+./target/release/eyelight -c examples/deep-taxonomy-100000.pl
+```
+
+It checks a certificate with 100,003 steps and one claim. At depth `d`, the
+program has `3d + 2` rules, stores `3d + 3` facts, and performs `6d + 5` counted
+matching/work operations. Rule dispatch uses ground tuples or fixed arguments
+rather than trying every classification rule against every fact. Proof selection
+and explanation rule selection use iterative marking in source order. These
+chains have expected linear work and storage with hash indexes; this is not a
+linear-time guarantee for arbitrary joins or closed-boundary proofs.
+
+Native `-c` measurements on 23 October 2026 (AMD Ryzen 5 7520U, Linux under
+WSL2, Rust 1.99.1, release build; median of three runs on a quiet machine):
+
+| Depth | Parse, reason, generate, and check | Peak resident memory |
+| --- | ---: | ---: |
+| 1,000 | 0.029 s | 7.7 MiB |
+| 10,000 | 0.309 s | 64.8 MiB |
+| 100,000 | 3.991 s | 570.5 MiB |
+
+Elapsed time and memory depend on the machine and allocator. The
+[phase measurements](https://github.com/eyereasoner/eyelight/blob/main/reports/taxonomy-scaling.csv)
+include certificate text round trips and explanations as well; their total also
+includes freeing the run. Each column is an independent three-run median.
+
+Regenerate the programs with `node scripts/generate-taxonomy.mjs`, or verify them
+without writing with `node scripts/generate-taxonomy.mjs --check`. Run
+`./scripts/bench-taxonomy` on a quiet machine for three-run median timings of
+parsing, reasoning, certificate generation, writing, reading, checking, and
+explanation. Ordinary tests enforce work and evidence-size bounds rather than
+machine-dependent elapsed times, and reject a forged deep-chain conclusion.
 
 ## Keep the evidence
 

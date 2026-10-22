@@ -155,35 +155,43 @@ impl Certificate {
                 })
                 .collect()
         };
-        let mut needed = BTreeSet::new();
-        let mut used_boundaries = BTreeSet::new();
+        // Dense step IDs already provide topological order. Mark dependencies
+        // directly, then scan once; sorting a set would add a log(depth) cost.
+        let mut needed = vec![false; run.steps.len()];
+        let mut used_boundaries = vec![false; run.boundaries.len()];
         let mut pending: Vec<_> = claims.iter().flat_map(claim_premises).collect();
         while let Some(id) = pending.pop() {
-            if needed.insert(id) {
+            if !std::mem::replace(&mut needed[id - 1], true) {
                 let step = &run.steps[id - 1];
                 if let Justification::Rule { premises, .. } = &step.justification {
                     pending.extend(premises);
                 }
                 if let Some(b) = step.justification.boundary() {
-                    if used_boundaries.insert(b) {
+                    if !std::mem::replace(&mut used_boundaries[b - 1], true) {
                         pending.extend(&run.boundaries[b - 1].steps);
                     }
                 }
             }
         }
         let mut names = vec![0; run.steps.len() + 1];
-        for (i, id) in needed.iter().enumerate() {
-            names[*id] = i + 1;
+        let mut count = 0;
+        for (index, used) in needed.iter().enumerate() {
+            if *used {
+                count += 1;
+                names[index + 1] = count;
+            }
         }
         let mut boundary_names = vec![0; run.boundaries.len() + 1];
         let boundaries = used_boundaries
             .into_iter()
             .enumerate()
-            .map(|(i, b)| {
-                boundary_names[b] = i + 1;
+            .filter(|(_, used)| *used)
+            .enumerate()
+            .map(|(new, (index, _))| {
+                boundary_names[index + 1] = new + 1;
                 Boundary {
-                    level: run.boundaries[b - 1].level,
-                    steps: run.boundaries[b - 1]
+                    level: run.boundaries[index].level,
+                    steps: run.boundaries[index]
                         .steps
                         .iter()
                         .map(|id| names[*id])
@@ -193,8 +201,10 @@ impl Certificate {
             .collect();
         let steps = needed
             .into_iter()
-            .map(|id| {
-                let mut step = run.steps[id - 1].clone();
+            .enumerate()
+            .filter(|(_, used)| *used)
+            .map(|(index, _)| {
+                let mut step = run.steps[index].clone();
                 match &mut step.justification {
                     Justification::Rule { premises, .. } => {
                         for p in premises {

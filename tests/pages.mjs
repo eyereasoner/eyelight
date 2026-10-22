@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { preparePages } from '../scripts/prepare-pages.mjs';
@@ -17,6 +17,9 @@ test('website stages rendered documentation and every playground dependency', as
       'examples/values.pl', 'examples/rdf.pl', 'examples/arithmetic.pl', 'examples/negation.pl',
       'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE', '_layouts/default.html']) {
       assert.ok((await stat(join(directory, file))).isFile(), file);
+    }
+    for (const file of await readdir(new URL('examples/', root))) {
+      if (file.endsWith('.pl')) assert.ok((await stat(join(directory, 'examples', file))).isFile(), file);
     }
     for (const file of ['index.md', 'SPEC/index.md']) {
       const document = await readFile(join(directory, file), 'utf8');
@@ -82,4 +85,16 @@ test('browser engine checks all nine conditions on the voucher example', async (
   assert.doesNotMatch(report, /not applicable/);
   for (let i = 1; i <= 9; i++) assert.match(report, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
   assert.throws(() => runProgram(source, 'check', proof.replace('ge(15, 10)', 'ge(0, 10)')));
+});
+
+
+test('browser engine checks the 100,000-level taxonomy within default limits', async () => {
+  const { initSync, runProgram } = await import('../pkg/eyelight.js');
+  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const source = await readFile(new URL('examples/deep-taxonomy-100000.pl', root), 'utf8');
+  assert.equal(runProgram(source, 'answers', ''), '?- test(Result).\nResult = true.\n');
+  const report = runProgram(source, 'checked', '');
+  assert.match(report, /^checked: 100003 steps, 1 claim/);
+  assert.match(report, /C1 resolution: 100003 checked, 0 failed/);
+  assert.match(report, /C7 relevance: 100003 checked, 0 failed/);
 });

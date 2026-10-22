@@ -1,6 +1,6 @@
 # Eyelight language and proof contract
 
-Version **0.1.3**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
+Version **0.1.4**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
 
 ## 1. Program
 
@@ -121,7 +121,7 @@ Facts have set semantics. Ordinary positive rules denote their least closure. A 
 
 A relation's stratum is at least that of every positive dependency and strictly greater than every negative or aggregate dependency. An aggregate rule has stratum at least one even when its inner goals use only built-ins. The implementation rejects dependency cycles containing a strict edge, and finishes each stratum's positive fixed point before evaluating the next. Queries run after all strata finish.
 
-Within a stratum, an agenda and indexes by relation and argument value drive joins. Built-in decisions, negative tests, aggregates, and fresh-witness records are separate proof evidence; they never enter ordinary relation indexes.
+Within a stratum, an agenda and indexes by relation and argument value drive joins. Built-in decisions, negative tests, aggregates, and fresh-witness records are separate proof evidence; they never enter ordinary relation indexes. Fully ground positive body goals are dispatched by their complete tuple; other goals with constants use one fixed argument, and all-variable goals use their relation. Matching still checks every argument and shared binding. The packaged deep taxonomies through 100,000 levels have expected linear dispatch and matching work in their depth. This does not bound arbitrary joins by their input size.
 
 Value-producing built-ins, aggregates, and `@fresh` cannot occur in rules defining a recursive relation, including indirect recursion. This deliberately conservative restriction prevents recursive value generation. Comparisons and other tests on already bound values remain usable in positive recursion. Together with finite source data, this gives finite strata and a finite closure. General recursive arithmetic and unrestricted existential generation are unsupported.
 
@@ -167,7 +167,7 @@ The checker verifies each boundary includes the prefix's source facts and is clo
 
 An `answer QUERY [PREMISES]` claim supplies complete evidence for its source query. With no queries, `derived STEP` instead claims a new rule conclusion. A queried program cannot use `derived` claims. Query answers are selections, never inference steps or premise providers. Query-owned aggregate evidence cannot satisfy a rule-owned aggregate goal.
 
-The generator keeps selected claims, their transitive dependencies, and complete boundaries they require, then renumbers them. Boundaries can make proofs considerably larger than proofs of positive rules alone: completeness requires all members of the relevant stratum prefix.
+The generator keeps selected claims, their transitive dependencies, and complete boundaries they require, then renumbers them. It marks dependencies iteratively and scans retained IDs in order, so a deep proof chain does not require recursive traversal or sorting. Boundaries can make proofs considerably larger than proofs of positive rules alone: completeness requires all members of the relevant stratum prefix.
 
 ## 8. Verification
 

@@ -118,6 +118,16 @@ try {
     }
   }
 
+  await set('example', 'deep-taxonomy-100000', 'change');
+  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "deep-taxonomy-100000"', 'deep taxonomy loaded');
+  assert.equal(await run('answers'), '?- test(Result).\nResult = true.\n');
+  const deepReport = await run('checked');
+  assert.match(deepReport, /^checked: 100003 steps, 1 claim/);
+  await set('mode', 'answers', 'change');
+  await evaluate('document.getElementById("share").click()');
+  await wait('!document.getElementById("share-box").hidden', 'deep taxonomy share opened');
+  assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=deep-taxonomy-100000');
+
   await set('example', 'paths', 'change');
   await wait('!document.getElementById("source").disabled && document.getElementById("source").value.includes("museum")', 'paths loaded');
   const paths = await run('answers');
@@ -177,6 +187,10 @@ try {
   assert.doesNotMatch(mobileVoucher, /not applicable/);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile voucher layout overflows');
   await screenshot('mobile-all-conditions');
+  await set('example', 'deep-taxonomy-1000', 'change');
+  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "deep-taxonomy-1000"', 'mobile taxonomy loaded');
+  assert.match(await run('checked'), /^checked: 1003 steps, 1 claim/);
+  assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile taxonomy layout overflows');
 
   if (pagesRoot) {
     // Check the compatibility route as well as the directory route used above.
@@ -204,5 +218,5 @@ try {
     }
   }
   assert.deepEqual(exceptions, []);
-  console.log('Browser checks passed: all nine proof conditions on desktop/mobile, new examples, forged built-ins, real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
+  console.log('Browser checks passed: depth-100000 taxonomy, short taxonomy share, mobile taxonomy, all nine proof conditions on desktop/mobile, new examples, forged built-ins, real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
 } finally { socket.close(); }

@@ -17,7 +17,8 @@ Keep diagnostics specific and user-facing text direct.
 - `playground.html`, `playground.css`, `playground.js`, `playground-worker.js`:
   browser UI and cancellable worker. `pkg/` is the committed WebAssembly build.
 - `README.md`: guide. `SPEC.md`: language and proof contract.
-- `scripts/`: checks, browser build, Pages staging, and version label syncing.
+- `scripts/`: checks, browser build, Pages staging, version label syncing, and
+  reproducible taxonomy generation and scaling measurements.
   `release`: release entry point. `.github/workflows/`: CI and Pages deployment.
 
 ## Language and proofs
@@ -71,6 +72,13 @@ Rebuild `pkg/` after Rust changes, and run Wasm clippy. The build requires
 `wasm-pack` and the `wasm32-unknown-unknown` Rust target. Documentation-only changes
 need a review and `git diff --check`; run Pages tests when changing website links
 or staging. Avoid new dependencies or machinery without a concrete need.
+
+Keep the packaged deep taxonomies through depth 100,000 working within default
+limits. `node scripts/generate-taxonomy.mjs --check` verifies the generated
+examples. `./scripts/bench-taxonomy` measures each pipeline phase with three-run
+medians; run it on a quiet machine without concurrent builds. Regression tests
+bound counted work and proof size, never wall-clock time. Large certificates and
+explanations should be redirected to files rather than printed in full.
 
 ## Website
 

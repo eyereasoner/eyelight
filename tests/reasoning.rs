@@ -218,18 +218,20 @@ fn library_cannot_bypass_safe_rule_validation() {
 #[test]
 fn long_derivations_have_iterative_proof_traversal() {
     let mut source = String::from("p0(a).");
-    for index in 1..=5000 {
+    const DEPTH: usize = 100_000;
+    for index in 1..=DEPTH {
         source.push_str(&format!("p{index}(X) :- p{}(X).", index - 1));
     }
-    source.push_str("?- p5000(Who).");
+    source.push_str(&format!("?- p{DEPTH}(Who)."));
     let p = parse(&source).unwrap();
     let run = reason(&p, Limits::default()).unwrap();
     assert_eq!(run.answers[0][0].values, vec![Value::Symbol("a".into())]);
     let certificate = run.certificate(&p);
-    assert_eq!(certificate.steps.len(), 5001);
+    assert_eq!(certificate.steps.len(), DEPTH + 1);
+    assert!(run.matches <= 2 * DEPTH + 2);
     let report = check(&p, &certificate).unwrap();
     assert!(report.valid(), "{report}");
-    assert_eq!(report.rule_applications, 5000);
+    assert_eq!(report.rule_applications, DEPTH);
 }
 
 #[test]

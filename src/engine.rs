@@ -195,6 +195,66 @@ impl Store {
             .collect()
     }
 }
+type Trigger = (usize, usize);
+
+#[derive(Default)]
+struct RelationTriggers {
+    variables: Vec<Trigger>,
+    ground: HashMap<Vec<Value>, Vec<Trigger>>,
+    constants: Vec<HashMap<Value, Vec<Trigger>>>,
+}
+
+#[derive(Default)]
+struct Triggers(HashMap<Relation, RelationTriggers>);
+impl Triggers {
+    fn insert(&mut self, goal: &Goal, trigger: Trigger) {
+        let entries = self
+            .0
+            .entry((goal.predicate.clone(), goal.terms.len()))
+            .or_default();
+        if let Some(atom) = goal.ground() {
+            // Fully ground rules use the whole tuple, so a shared individual
+            // cannot hide the selective class argument in either column.
+            entries.ground.entry(atom.values).or_default().push(trigger);
+        } else if let Some((position, value)) =
+            goal.terms.iter().enumerate().rev().find_map(|(i, t)| {
+                if let Term::Constant(v) = t {
+                    Some((i, v))
+                } else {
+                    None
+                }
+            })
+        {
+            // Store a partial goal once. The join still checks every other
+            // constant and variable binding after this fixed-argument lookup.
+            entries
+                .constants
+                .resize_with(goal.terms.len(), HashMap::new);
+            entries.constants[position]
+                .entry(value.clone())
+                .or_default()
+                .push(trigger);
+        } else {
+            entries.variables.push(trigger);
+        }
+    }
+    fn candidates(&self, atom: &Atom) -> Vec<Trigger> {
+        let Some(entries) = self.0.get(&(atom.predicate.clone(), atom.values.len())) else {
+            return Vec::new();
+        };
+        let mut result = entries.variables.clone();
+        if let Some(triggers) = entries.ground.get(&atom.values) {
+            result.extend(triggers);
+        }
+        for (value, index) in atom.values.iter().zip(&entries.constants) {
+            if let Some(triggers) = index.get(value) {
+                result.extend(triggers);
+            }
+        }
+        result
+    }
+}
+
 #[derive(Clone)]
 enum Evidence {
     Fact(usize),
@@ -411,7 +471,7 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
     }
     let max = plan.levels.values().copied().max().unwrap_or(0);
     for level in 0..=max {
-        let mut triggers: HashMap<Relation, Vec<(usize, usize)>> = HashMap::new();
+        let mut triggers = Triggers::default();
         for (rule, clause) in program.rules.iter().enumerate() {
             if plan.rules[rule] != level {
                 continue;
@@ -420,10 +480,7 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
             for (position, g) in clause.body.iter().enumerate() {
                 if let Literal::Relation(g) = g {
                     positive = true;
-                    triggers
-                        .entry((g.predicate.clone(), g.terms.len()))
-                        .or_default()
-                        .push((rule, position));
+                    triggers.insert(g, (rule, position));
                 }
             }
             if !positive {
@@ -445,23 +502,19 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
         while cursor < store.steps.len() {
             let step = &store.steps[cursor];
             if step.justification.ordinary() {
-                if let Some(entries) =
-                    triggers.get(&(step.atom.predicate.clone(), step.atom.values.len()))
-                {
-                    for &(rule, position) in entries {
-                        budget.tick()?;
-                        let matches = Join {
-                            store: &store,
-                            program,
-                            plan: &plan,
-                            owner: Owner::Rule(rule + 1),
-                            goals: &program.rules[rule].body,
-                            seed: Some((position, cursor)),
-                        }
-                        .run(&mut budget)?;
-                        for matched in matches {
-                            fire(&mut store, program, rule, matched, limits.max_facts)?;
-                        }
+                for (rule, position) in triggers.candidates(&step.atom) {
+                    budget.tick()?;
+                    let matches = Join {
+                        store: &store,
+                        program,
+                        plan: &plan,
+                        owner: Owner::Rule(rule + 1),
+                        goals: &program.rules[rule].body,
+                        seed: Some((position, cursor)),
+                    }
+                    .run(&mut budget)?;
+                    for matched in matches {
+                        fire(&mut store, program, rule, matched, limits.max_facts)?;
                     }
                 }
             }
@@ -566,16 +619,16 @@ impl Run {
         let certificate = self.certificate(program);
         let mut text = self.output(program);
         text.push_str("\nExplanation\n");
-        let rules: std::collections::BTreeSet<_> = certificate
-            .steps
-            .iter()
-            .filter_map(|step| match step.justification {
-                Justification::Rule { rule, .. } => Some(rule),
-                _ => None,
-            })
-            .collect();
-        for rule in rules {
-            text.push_str(&format!("Rule {rule}: {}\n", program.rules[rule - 1]));
+        let mut rules = vec![false; program.rules.len()];
+        for step in &certificate.steps {
+            if let Justification::Rule { rule, .. } = step.justification {
+                rules[rule - 1] = true;
+            }
+        }
+        for (index, used) in rules.into_iter().enumerate() {
+            if used {
+                text.push_str(&format!("Rule {}: {}\n", index + 1, program.rules[index]));
+            }
         }
         for (index, step) in certificate.steps.iter().enumerate() {
             let justification = match &step.justification {
