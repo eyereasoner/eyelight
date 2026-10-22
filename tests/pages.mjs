@@ -98,3 +98,19 @@ test('browser engine checks the 100,000-level taxonomy within default limits', a
   assert.match(report, /C1 resolution: 100003 checked, 0 failed/);
   assert.match(report, /C7 relevance: 100003 checked, 0 failed/);
 });
+
+
+test('browser engine discovers and checks three routes across the full airport graph', async () => {
+  const { initSync, runProgram } = await import('../pkg/eyelight.js');
+  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const source = await readFile(new URL('examples/path-discovery.pl', root), 'utf8');
+  const answers = runProgram(source, 'answers', '');
+  assert.equal((answers.match(/Stops = 2/g) || []).length, 3);
+  for (const name of ['Heraklion International Nikos Kazantzakis Airport', 'Diagoras Airport', 'Palma De Mallorca Airport']) {
+    assert.ok(answers.includes(`Liège Airport -> ${name} -> Václav Havel Airport Prague`));
+  }
+  const proof = runProgram(source, 'proof', '');
+  const report = runProgram(source, 'check', proof);
+  assert.match(report, /^checked: [0-9]+ steps, 3 claims/);
+  assert.match(report, /C5 re-decision: [1-9][0-9]* checked, 0 failed/);
+});

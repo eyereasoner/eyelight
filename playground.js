@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 const modes = new Set(['answers', 'explain', 'proof', 'checked', 'check']);
-const examples = new Set(['socrates', 'paths', 'family', 'values', 'rdf', 'arithmetic', 'negation', 'aggregation', 'witnesses', 'orders', 'deep-taxonomy-10', 'deep-taxonomy-100', 'deep-taxonomy-1000', 'deep-taxonomy-10000', 'deep-taxonomy-100000']);
+const examples = new Set(['socrates', 'paths', 'path-discovery', 'family', 'values', 'rdf', 'arithmetic', 'negation', 'aggregation', 'witnesses', 'orders', 'deep-taxonomy-10', 'deep-taxonomy-100', 'deep-taxonomy-1000', 'deep-taxonomy-10000', 'deep-taxonomy-100000']);
 const storageKey = 'eyelight.playground.v1';
 let worker = null;
 let ready = null;

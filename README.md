@@ -6,7 +6,7 @@ A small relational reasoner with explanations and independently checked proof ce
 
 <br clear="left">
 
-**Version 0.1.5** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
+**Version 0.1.6** · [Guide](https://eyereasoner.github.io/eyelight/) · [Language](https://eyereasoner.github.io/eyelight/SPEC/) · [Playground](https://eyereasoner.github.io/eyelight/playground/) · [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
 
 Give eyelight facts and rules, then ask what follows:
 
@@ -64,6 +64,7 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 | --- | --- |
 | [Socrates](https://github.com/eyereasoner/eyelight/blob/main/examples/socrates.pl) | A first conclusion and query |
 | [Paths](https://github.com/eyereasoner/eyelight/blob/main/examples/paths.pl) | Recursive reachability with cycles |
+| [Airport path discovery](https://github.com/eyereasoner/eyelight/blob/main/examples/path-discovery.pl) | Full airport graph, routes with up to two stopovers, and checked route text |
 | [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.pl) | Joins and shared variables |
 | [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.pl) | Distinct atoms, strings, and integers |
 | [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.pl) | IRIs represented in an ordinary triple relation |
@@ -72,6 +73,23 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 | [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
 | [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
 | [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
+
+The airport path discovery example keeps all 7,698 airports and 37,274 directed
+links. Its request searches from Ostend-Bruges to Prague with at most two
+stopovers, returning three routes through Liège and then Heraklion, Rhodes
+(Diagoras), or Palma de Mallorca. Each answer includes its actual stop count
+and the airport names in travel order. Built-ins exclude repeated airport IDs
+and assemble the route text; proof checking re-decides those tests and strings.
+
+```sh
+./target/release/eyelight examples/path-discovery.pl
+./target/release/eyelight -c examples/path-discovery.pl
+```
+
+Edit `route_request(From, To, Limit)` to use other airport labels and a limit of
+0, 1, or 2 stopovers. The finite rule layers cover up to three flight legs;
+longer routes require another layer. Endpoints must differ. The data describes
+the stored graph, not current flight schedules or availability.
 
 ## Follow a deep taxonomy
 

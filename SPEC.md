@@ -1,6 +1,6 @@
 # Eyelight language and proof contract
 
-Version **0.1.5**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
+Version **0.1.6**. This document specifies the implemented language. The [guide](https://eyereasoner.github.io/eyelight/) provides runnable examples.
 
 ## 1. Program
 

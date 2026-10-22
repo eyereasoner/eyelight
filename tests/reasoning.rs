@@ -13,6 +13,7 @@ fn all_examples_produce_answers_and_check() {
     for source in [
         include_str!("../examples/socrates.pl"),
         include_str!("../examples/paths.pl"),
+        include_str!("../examples/path-discovery.pl"),
         include_str!("../examples/family.pl"),
         include_str!("../examples/values.pl"),
         include_str!("../examples/rdf.pl"),
