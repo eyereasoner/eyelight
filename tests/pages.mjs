@@ -31,7 +31,7 @@ test('website stages rendered documentation and every playground dependency', as
     assert.match(guide, /^title: "Eyelight guide"$/m);
     assert.match(guide, /^## Run your first program$/m);
     assert.match(guide, /\]\(\/eyelight\/SPEC\/#8-verification\)/);
-    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Eyelight language and proof contract"$/m);
+    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Eyelight specification"$/m);
     const playground = await readFile(join(directory, 'playground/index.html'), 'utf8');
     assert.match(playground, /<base href="\.\.\/">/);
     assert.match(playground, /href="\/eyelight\/SPEC\/"/);
