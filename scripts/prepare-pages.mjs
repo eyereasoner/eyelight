@@ -24,9 +24,9 @@ export async function preparePages(destination, basePath = '/eyelight') {
   await write('playground.html', playground);
   // Preserve the same module, worker, and example URLs under the directory route.
   await write('playground/index.html', playground.replace('<head>', '<head>\n  <base href="../">'));
-  const readme = localLinks(await readFile(resolve(root, 'README.md'), 'utf8'));
+  const guide = localLinks(await readFile(resolve(root, 'GUIDE.md'), 'utf8'));
   const spec = localLinks(await readFile(resolve(root, 'SPEC.md'), 'utf8'));
-  await write('index.md', `---\nlayout: default\ntitle: eyelight guide\n---\n\n${readme}`);
+  await write('index.md', `---\nlayout: default\ntitle: eyelight guide\n---\n\n${guide}`);
   await write('SPEC/index.md', `---\nlayout: default\ntitle: eyelight specification\n---\n\n${spec}`);
   await cp(resolve(root, 'scripts/pages-layout.html'), resolve(destination, '_layouts/default.html'));
   await write('_config.yml', JSON.stringify({

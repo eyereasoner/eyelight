@@ -42,7 +42,7 @@ git commit -m "$release_message"
 git tag -a "$release_tag" -m "$release_message"
 git push --atomic origin main "$release_tag"
 if ! gh release create "$release_tag" --title="$release_tag" --notes="$release_message"; then
-  printf 'The branch and tag %s were pushed, but GitHub Release creation failed. Retry that step; do not bump again. See README.md.\n' "$release_tag" >&2
+  printf 'The branch and tag %s were pushed, but GitHub Release creation failed. Retry that step; do not bump again. See GUIDE.md.\n' "$release_tag" >&2
   exit 1
 fi
 printf 'Released %s: %s\n' "$release_tag" "$release_message"

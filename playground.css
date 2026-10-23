@@ -75,6 +75,7 @@ main {
 }
 .brand img {
   object-fit:contain;
+  flex:none;
   border-radius:50%
 }
 .version {
@@ -99,15 +100,24 @@ main {
 .site-nav [aria-current="page"] {
   text-decoration-thickness: 2px;
 }
-.intro {
-  padding:48px 0 34px
+.brand .brand-copy {
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  min-width:0
+}
+.brand-name {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  line-height:1.15
 }
 .eyebrow {
-  letter-spacing:2px;
-  font-size:11px!important;
+  letter-spacing:1.5px;
+  font-size:10px;
+  line-height:1.4;
   font-weight:800;
-  color:#34713c!important;
-  margin:0 0 15px!important
+  color:#34713c
 }
 h1 {
   font-size:clamp(32px,4.4vw,60px);
@@ -118,13 +128,8 @@ h1 {
 h1 span {
   color:#63746c
 }
-.intro>p {
-  font-size:17px;
-  line-height:1.65;
-  color:var(--muted);
-  margin:0
-}
 .workspace {
+  margin-top:24px;
   border:1px solid var(--line);
   border-radius:17px;
   overflow:hidden;
@@ -364,20 +369,21 @@ footer {
     width:46px;
     height:46px
   }
-  .brand>span {
+  .brand-name {
     gap:8px
+  }
+  .brand .brand-copy {
+    gap:3px
+  }
+  .eyebrow {
+    font-size:9px;
+    letter-spacing:.5px
   }
   .guide-link {
     font-size:12px
   }
-  .intro {
-    padding:35px 0 28px
-  }
   h1 {
     letter-spacing:-1.4px
-  }
-  .intro>p {
-    font-size:15px
   }
   .toolbar {
     padding:15px;
@@ -447,9 +453,6 @@ footer {
   footer {
     flex-direction:column;
     gap:8px
-  }
-  .wide-only {
-    display:none
   }
   .saved-proof .panel-heading {
     align-items:start;

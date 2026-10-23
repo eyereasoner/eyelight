@@ -11,6 +11,7 @@ export async function syncVersion(directory = root) {
   const documents = [];
   for (const [file, patterns] of [
     ['README.md', [/(\*\*Version )[^*\n]+(\*\*)/g]],
+    ['GUIDE.md', [/(Version \*\*)[^*\n]+(\*\*)/g]],
     ['SPEC.md', [/(Version \*\*)[^*\n]+(\*\*)/g]],
     ['playground.html', [/(id="version">v)[^<\n]+(<\/span>)/g, /(eyelight · version )[^<\n]+(<\/span>)/g]],
   ]) {

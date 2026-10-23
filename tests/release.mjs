@@ -10,6 +10,7 @@ const root = new URL('../', import.meta.url);
 const documents = {
   'Cargo.toml': '[package]\nname = "eyelight"\nversion = "0.1.0"\n',
   'README.md': '**Version 0.1.0**\n',
+  'GUIDE.md': 'Version **0.1.0**.\n',
   'SPEC.md': 'Version **0.1.0**.\n',
   'playground.html': '<span id="version">v0.1.0</span>\n<span>eyelight · version 0.1.0</span>\n',
 };
@@ -56,7 +57,7 @@ if (kind === 'cargo' && args[0] === 'set-version' && args[1] === '--bump') {
 }
 if (kind === 'build') {
   const version = /version = "([^"]+)"/.exec(readFileSync('Cargo.toml', 'utf8'))[1];
-  for (const file of ['README.md', 'SPEC.md', 'playground.html']) {
+  for (const file of ['README.md', 'GUIDE.md', 'SPEC.md', 'playground.html']) {
     if (!readFileSync(file, 'utf8').includes(version)) throw Error('Unsynchronized ' + file);
   }
   mkdirSync('pkg', { recursive: true });
@@ -98,7 +99,7 @@ for (const [args, version] of [[[], '0.1.1'], [['patch'], '0.1.1'], [['minor'], 
     assert.equal(f.git('--git-dir', f.remote, 'rev-parse', 'main'), f.git('rev-parse', 'HEAD'));
     assert.equal(f.git('--git-dir', f.remote, 'rev-parse', tag), f.git('rev-parse', tag));
     assert.equal(f.git('show', `${tag}:feature.pl`), 'fact(added).');
-    for (const file of ['README.md', 'SPEC.md', 'playground.html', 'pkg/build-version.txt']) {
+    for (const file of ['README.md', 'GUIDE.md', 'SPEC.md', 'playground.html', 'pkg/build-version.txt']) {
       assert.ok((await readFile(join(f.work, file), 'utf8')).includes(version), file);
     }
     const calls = await f.calls();
@@ -164,13 +165,17 @@ test('version syncing validates every marker before changing any document', asyn
   t.after(() => rm(directory, { recursive: true, force: true }));
   for (const [file, text] of Object.entries(documents)) await writeFile(join(directory, file), text);
   await writeFile(join(directory, 'Cargo.toml'), documents['Cargo.toml'].replace('0.1.0', '2.3.4'));
-  for (const marker of ['', documents['playground.html'] + documents['playground.html']]) {
-    await writeFile(join(directory, 'playground.html'), marker);
-    await assert.rejects(syncVersion(directory), /Expected one version marker in playground.html/);
-    assert.equal(await readFile(join(directory, 'README.md'), 'utf8'), documents['README.md']);
-    assert.equal(await readFile(join(directory, 'SPEC.md'), 'utf8'), documents['SPEC.md']);
+  const versioned = ['README.md', 'GUIDE.md', 'SPEC.md', 'playground.html'];
+  for (const file of versioned) {
+    for (const marker of ['', documents[file] + documents[file]]) {
+      await writeFile(join(directory, file), marker);
+      await assert.rejects(syncVersion(directory), error => error.message.startsWith(`Expected one version marker in ${file};`));
+      for (const other of versioned.filter(other => other !== file)) {
+        assert.equal(await readFile(join(directory, other), 'utf8'), documents[other]);
+      }
+      await writeFile(join(directory, file), documents[file]);
+    }
   }
-  await writeFile(join(directory, 'playground.html'), documents['playground.html']);
   assert.equal(await syncVersion(directory), '2.3.4');
   assert.equal(await syncVersion(directory), '2.3.4');
   for (const file of Object.keys(documents)) assert.ok((await readFile(join(directory, file), 'utf8')).includes('2.3.4'));

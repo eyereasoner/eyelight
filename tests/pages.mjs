@@ -26,7 +26,10 @@ test('website stages rendered documentation and every playground dependency', as
       assert.match(document, /^---\nlayout: default\n/);
       assert.doesNotMatch(document, /\]\([^)]*\.md(?:#|\))/);
     }
-    assert.match(await readFile(join(directory, 'index.md'), 'utf8'), /\]\(\/eyelight\/SPEC\/#8-verification\)/);
+    const guide = await readFile(join(directory, 'index.md'), 'utf8');
+    assert.match(guide, /^# Eyelight guide$/m);
+    assert.match(guide, /^## Run your first program$/m);
+    assert.match(guide, /\]\(\/eyelight\/SPEC\/#8-verification\)/);
     const playground = await readFile(join(directory, 'playground/index.html'), 'utf8');
     assert.match(playground, /<base href="\.\.\/">/);
     assert.match(playground, /href="\/eyelight\/SPEC\/"/);
@@ -61,9 +64,11 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   const expectedVersion = /^version\s*=\s*"([^"]+)"/m.exec(cargo)[1];
   assert.equal(version(), expectedVersion);
   const readme = await readFile(new URL('README.md', root), 'utf8');
+  const guide = await readFile(new URL('GUIDE.md', root), 'utf8');
   const spec = await readFile(new URL('SPEC.md', root), 'utf8');
   const playground = await readFile(new URL('playground.html', root), 'utf8');
   assert.ok(readme.includes(`**Version ${expectedVersion}**`));
+  assert.ok(guide.includes(`Version **${expectedVersion}**`));
   assert.ok(spec.includes(`Version **${expectedVersion}**`));
   assert.ok(playground.includes(`id="version">v${expectedVersion}</span>`));
   assert.ok(playground.includes(`eyelight · version ${expectedVersion}</span>`));

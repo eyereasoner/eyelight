@@ -17,7 +17,8 @@ Keep diagnostics specific and user-facing text direct.
 - `benches/taxonomy.rs`: standalone taxonomy timing benchmark.
 - `playground.html`, `playground.css`, `playground.js`, `playground-worker.js`:
   browser UI and cancellable worker. `pkg/` is the committed WebAssembly build.
-- `README.md`: guide. `SPEC.md`: language and proof contract.
+- `README.md`: brief project entry point. `GUIDE.md`: the full guide at the Pages
+  site root. `SPEC.md`: language and proof contract.
 - `scripts/`: checks, browser build, Pages staging, version label syncing, and
   reproducible taxonomy generation and scaling measurements.
   `release`: release entry point. `.github/workflows/`: CI and Pages deployment.
@@ -91,7 +92,8 @@ Keep documentation links pointed at rendered Pages URLs; code and example links
 can point at GitHub. Preserve the configured base path (normally `/eyelight/`),
 `/playground/`, and `playground.html`. Run `node tests/pages.mjs` and verify the
 rendered site in a browser after website changes. Version tests require the
-committed Wasm, guide, specification, and playground to match `Cargo.toml`.
+committed Wasm, README, guide, specification, and playground to match
+`Cargo.toml`.
 
 ## Versions and releases
 
