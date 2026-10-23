@@ -1,6 +1,6 @@
 # Eyelight specification
 
-Version **0.1.10**. Project specification for the implemented language and proof
+Version **0.1.11**. Project specification for the implemented language and proof
 certificate contract.
 
 ## Abstract

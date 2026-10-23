@@ -1,6 +1,6 @@
 # Eyelight guide
 
-Version **0.1.10**. Run programs, explore examples, and check their proofs. The
+Version **0.1.11**. Run programs, explore examples, and check their proofs. The
 [specification](https://eyereasoner.github.io/eyelight/SPEC/) defines the language
 and proof contract.
 
