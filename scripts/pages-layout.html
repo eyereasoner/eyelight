@@ -11,7 +11,7 @@
 <body>
   <main class="documentation">
     <header class="masthead">
-      <a class="brand" href="{{ '/' | relative_url }}"><img src="{{ '/assets/eye.png' | relative_url }}" width="64" height="64" alt=""><span>eyelight</span></a>
+      <a class="brand" href="{{ '/' | relative_url }}"><img src="{{ '/assets/eye.png' | relative_url }}" width="64" height="64" alt=""><h1>{{ page.title | escape }}</h1></a>
       <nav class="site-nav" aria-label="Project">
         <a href="{{ '/' | relative_url }}">Guide</a>
         <a href="{{ '/playground/' | relative_url }}">Playground</a>
@@ -20,7 +20,7 @@
       </nav>
     </header>
     <article>{{ content }}</article>
-    <footer><span>eyelight · small programs, visible reasoning</span><a href="https://github.com/eyereasoner/eyelight/blob/main/LICENSE">MIT licensed</a></footer>
+    <footer><span>eyelight · small programs, visible reasoning</span><span>MIT licensed</span></footer>
   </main>
 </body>
 </html>

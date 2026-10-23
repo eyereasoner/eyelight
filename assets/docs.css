@@ -6,11 +6,19 @@
   max-width: 900px;
   line-height: 1.8;
 }
-.documentation article h1 {
-  font-size: clamp(32px, 5vw, 46px);
+.documentation .masthead {
+  flex-wrap: wrap;
+}
+.documentation .brand {
+  max-width: 100%;
+  min-width: 0;
+}
+.documentation .brand h1 {
+  font: inherit;
   line-height: 1.2;
-  letter-spacing: -1.5px;
-  margin: 28px 0 18px;
+  letter-spacing: inherit;
+  min-width: 0;
+  margin: 0;
 }
 .documentation h2 {
   font-size: 25px;

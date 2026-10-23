@@ -12,8 +12,14 @@ export async function preparePages(destination, basePath = '/eyelight') {
   basePath = basePath.replace(/\/+$/, '');
   const localLinks = text => text.replaceAll(publicSite, `${basePath}/`);
   const write = (file, text) => writeFile(resolve(destination, file), text);
+  const document = text => {
+    const heading = /^# (.+)\n+/.exec(text);
+    if (!heading) throw new Error('Documentation must start with one page title.');
+    // Render the source title once, beside the logo in the shared layout.
+    return `---\nlayout: default\ntitle: ${JSON.stringify(heading[1])}\n---\n\n${text.slice(heading[0].length)}`;
+  };
   await mkdir(destination, { recursive: true });
-  for (const file of ['assets', 'examples', 'pkg', 'LICENSE', 'playground.css', 'playground.js', 'playground-worker.js']) {
+  for (const file of ['assets', 'examples', 'pkg', 'LICENSE.md', 'playground.css', 'playground.js', 'playground-worker.js']) {
     await cp(resolve(root, file), resolve(destination, file), { recursive: true });
   }
   for (const directory of ['SPEC', 'playground', '_layouts']) {
@@ -26,8 +32,8 @@ export async function preparePages(destination, basePath = '/eyelight') {
   await write('playground/index.html', playground.replace('<head>', '<head>\n  <base href="../">'));
   const guide = localLinks(await readFile(resolve(root, 'GUIDE.md'), 'utf8'));
   const spec = localLinks(await readFile(resolve(root, 'SPEC.md'), 'utf8'));
-  await write('index.md', `---\nlayout: default\ntitle: eyelight guide\n---\n\n${guide}`);
-  await write('SPEC/index.md', `---\nlayout: default\ntitle: eyelight specification\n---\n\n${spec}`);
+  await write('index.md', document(guide));
+  await write('SPEC/index.md', document(spec));
   await cp(resolve(root, 'scripts/pages-layout.html'), resolve(destination, '_layouts/default.html'));
   await write('_config.yml', JSON.stringify({
     title: 'eyelight', baseurl: basePath, markdown: 'kramdown',

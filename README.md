@@ -2,11 +2,9 @@
 
 A small Rust relational reasoner with explanations and independently checked proofs.
 
-**Version 0.1.8**
+**Version 0.1.9**
 
-[Playground](https://eyereasoner.github.io/eyelight/playground/) ·
-[Guide](https://eyereasoner.github.io/eyelight/) ·
-[Language and proofs](https://eyereasoner.github.io/eyelight/SPEC/) ·
-[Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/)
-
-[MIT license](https://github.com/eyereasoner/eyelight/blob/main/LICENSE).
+- Try programs in your browser: [Playground](https://eyereasoner.github.io/eyelight/playground/).
+- Learn how to use eyelight: [Guide](https://eyereasoner.github.io/eyelight/).
+- Read the language and proof contract: [Specification](https://eyereasoner.github.io/eyelight/SPEC/).
+- Explore runnable programs: [Examples](https://github.com/eyereasoner/eyelight/tree/main/examples/).

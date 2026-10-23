@@ -15,7 +15,7 @@ test('website stages rendered documentation and every playground dependency', as
       'playground.css', 'playground.js', 'playground-worker.js', 'assets/eye.png', 'assets/docs.css',
       'pkg/eyelight.js', 'pkg/eyelight_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
       'examples/values.pl', 'examples/rdf.pl', 'examples/arithmetic.pl', 'examples/negation.pl',
-      'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE', '_layouts/default.html']) {
+      'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE.md', '_layouts/default.html']) {
       assert.ok((await stat(join(directory, file))).isFile(), file);
     }
     for (const file of await readdir(new URL('examples/', root))) {
@@ -24,12 +24,14 @@ test('website stages rendered documentation and every playground dependency', as
     for (const file of ['index.md', 'SPEC/index.md']) {
       const document = await readFile(join(directory, file), 'utf8');
       assert.match(document, /^---\nlayout: default\n/);
+      assert.doesNotMatch(document, /^# /m, 'The title belongs in the shared header, once.');
       assert.doesNotMatch(document, /\]\([^)]*\.md(?:#|\))/);
     }
     const guide = await readFile(join(directory, 'index.md'), 'utf8');
-    assert.match(guide, /^# Eyelight guide$/m);
+    assert.match(guide, /^title: "Eyelight guide"$/m);
     assert.match(guide, /^## Run your first program$/m);
     assert.match(guide, /\]\(\/eyelight\/SPEC\/#8-verification\)/);
+    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Eyelight language and proof contract"$/m);
     const playground = await readFile(join(directory, 'playground/index.html'), 'utf8');
     assert.match(playground, /<base href="\.\.\/">/);
     assert.match(playground, /href="\/eyelight\/SPEC\/"/);

@@ -1,6 +1,6 @@
 # Eyelight guide
 
-Version **0.1.8**. Run programs, explore examples, and check their proofs. The
+Version **0.1.9**. Run programs, explore examples, and check their proofs. The
 [specification](https://eyereasoner.github.io/eyelight/SPEC/) defines the language
 and proof contract.
 
@@ -374,4 +374,4 @@ Open the published [guide](https://eyereasoner.github.io/eyelight/), [specificat
 | `.github/workflows/pages.yml` | Website build and deployment |
 | `release`, `scripts/sync-version.mjs` | Version bump, browser rebuild, checks, and publication |
 
-MIT licensed. See [LICENSE](https://github.com/eyereasoner/eyelight/blob/main/LICENSE).
+MIT licensed.

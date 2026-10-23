@@ -220,7 +220,8 @@ try {
       for (const route of ['', 'SPEC/']) {
         const url = new URL(route, pagesRoot).href;
         await command('Page.navigate', { url });
-        await wait(`location.href === ${JSON.stringify(url)} && document.readyState === "complete" && !!document.querySelector(".documentation article h1")`, 'rendered documentation');
+        await wait(`location.href === ${JSON.stringify(url)} && document.readyState === "complete" && !!document.querySelector(".documentation h1")`, 'rendered documentation');
+        assert.equal(await evaluate('document.querySelectorAll(".documentation h1").length'), 1, 'Documentation needs one page title');
         assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `${name} documentation overflows`);
         assert.ok(await evaluate('[...document.images].every(image => image.complete && image.naturalWidth > 0)'));
         const links = await evaluate('[...document.querySelectorAll("a[href]")].map(a => a.href)');
