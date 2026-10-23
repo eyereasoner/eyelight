@@ -74,7 +74,8 @@ main {
   gap:12px
 }
 .brand img {
-  object-fit:contain
+  object-fit:contain;
+  border-radius:50%
 }
 .version {
   font-size:11px;

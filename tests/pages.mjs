@@ -12,7 +12,7 @@ test('website stages rendered documentation and every playground dependency', as
   try {
     await preparePages(directory);
     for (const file of ['index.md', 'SPEC/index.md', 'playground.html', 'playground/index.html',
-      'playground.css', 'playground.js', 'playground-worker.js', 'assets/eyelight.svg', 'assets/docs.css',
+      'playground.css', 'playground.js', 'playground-worker.js', 'assets/eye.png', 'assets/docs.css',
       'pkg/eyelight.js', 'pkg/eyelight_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
       'examples/values.pl', 'examples/rdf.pl', 'examples/arithmetic.pl', 'examples/negation.pl',
       'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE', '_layouts/default.html']) {
