@@ -1,0 +1,95 @@
+% Answer
+?- allowed(User, Action).
+User = alice, Action = read.
+User = alice, Action = write.
+User = bob, Action = read.
+
+?- candidate(carol, Action).
+Action = read.
+Action = write.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [allowed(alice, read)]).
+claim(query(1), [allowed(alice, write)]).
+claim(query(1), [allowed(bob, read)]).
+claim(query(3), [candidate(carol, read)]).
+claim(query(3), [candidate(carol, write)]).
+
+clause(1, role(alice, editor), []).
+clause(2, role(bob, viewer), []).
+clause(3, role(carol, editor), []).
+clause(4, permits(editor, read), []).
+clause(5, permits(editor, write), []).
+clause(6, permits(viewer, read), []).
+clause(8, candidate(var('User'), var('Action')), [role(var('User'), var('Role')), permits(var('Role'), var('Action'))]).
+clause(9, allowed(var('User'), var('Action')), [candidate(var('User'), var('Action')), '\\+'(suspended(var('User')))]).
+
+% step 1
+step(role(alice, editor), fact(1), [], []).
+% step 2
+step(permits(editor, read), fact(4), [], []).
+% step 3
+step(candidate(alice, read), rule(8), ['='('User', alice), '='('Role', editor), '='('Action', read)], [role(alice, editor), permits(editor, read)]).
+% step 4
+step('\\+'(suspended(alice)), absent, [], []).
+% step 5
+step(allowed(alice, read), rule(9), ['='('User', alice), '='('Action', read)], [candidate(alice, read), '\\+'(suspended(alice))]).
+% step 6
+step(permits(editor, write), fact(5), [], []).
+% step 7
+step(candidate(alice, write), rule(8), ['='('User', alice), '='('Role', editor), '='('Action', write)], [role(alice, editor), permits(editor, write)]).
+% step 8
+step(allowed(alice, write), rule(9), ['='('User', alice), '='('Action', write)], [candidate(alice, write), '\\+'(suspended(alice))]).
+% step 9
+step(role(bob, viewer), fact(2), [], []).
+% step 10
+step(permits(viewer, read), fact(6), [], []).
+% step 11
+step(candidate(bob, read), rule(8), ['='('User', bob), '='('Role', viewer), '='('Action', read)], [role(bob, viewer), permits(viewer, read)]).
+% step 12
+step('\\+'(suspended(bob)), absent, [], []).
+% step 13
+step(allowed(bob, read), rule(9), ['='('User', bob), '='('Action', read)], [candidate(bob, read), '\\+'(suspended(bob))]).
+% step 14
+step(role(carol, editor), fact(3), [], []).
+% step 15
+step(candidate(carol, read), rule(8), ['='('User', carol), '='('Role', editor), '='('Action', read)], [role(carol, editor), permits(editor, read)]).
+% step 16
+step(candidate(carol, write), rule(8), ['='('User', carol), '='('Role', editor), '='('Action', write)], [role(carol, editor), permits(editor, write)]).
+
+% Check
+check passed: allowed(alice, read).
+
+check passed: allowed(alice, write).
+
+check passed: allowed(bob, read).
+
+check passed: \+ (allowed(bob, write)).
+
+check passed: candidate(carol, read).
+
+check passed: candidate(carol, write).
+
+check passed: \+ (allowed(carol, read)).
+
+check passed: \+ (allowed(carol, write)).
+
+check passed: aggregate_all(count, (allowed(User, Action)), 3).
+
+condition('C1', resolution, ok, 14).
+condition('C2', well_founded, ok, 16).
+condition('C3', justification, ok, 16).
+condition('C4', coverage, ok, 21).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 2).
+condition('C7', relevance, ok, 21).
+obligation(absent, theory_scoped, '\\+'(suspended(alice))).
+obligation(absent, theory_scoped, '\\+'(suspended(bob))).
+steps(16).
+verified(14).
+recomputed(0).
+trusted(2).
+claims(5).
+verdict(checked_with_obligations).

@@ -1,302 +1,420 @@
-# Whye specification
+# Wheye specification
 
-Version **0.1.12**. Project specification for the implemented language and proof
-certificate contract.
+Version **0.1.13**. Implemented Prolog subset and independently checked proof
+certificate contract. This specification does not claim full ISO Prolog conformance.
 
-## Abstract
-
-Whye evaluates finite relational programs written in Prolog-style syntax. This
-document specifies facts, rules, queries, interpreted built-ins, stratified negation,
-set aggregation, and scoped fresh witnesses. It also defines the proof certificate
-format and validity conditions C1–C9 used by the checker. The native and WebAssembly
-interfaces use the same language and checking contract.
-
-## Status of This Memo
-
-This specification describes the Whye version identified above. Syntax, semantics,
-and certificate-checking requirements are normative. Examples, implementation notes, and
-performance observations are informative. The
-[guide](https://eyereasoner.github.io/whye/) provides usage instructions.
-
-## Conventions and Terminology
-
-Uppercase **MUST**, **MUST NOT**, and **MAY** express requirement levels under BCP 14,
-as defined by [RFC2119] and [RFC8174]. These meanings apply only to uppercase
-occurrences; lowercase wording retains its ordinary meaning.
-
-A *processor* parses and evaluates a source program. A *checker* validates a supplied
-certificate against that program. A *claim* selects a query answer or, when there are no
-queries, a newly derived relational conclusion. Acceptance is relative to the supplied
-source assertions.
-
-## Table of Contents
-
-- [Abstract](#abstract)
-- [Status of This Memo](#status-of-this-memo)
-- [Conventions and Terminology](#conventions-and-terminology)
-- [1. Program](#1-program)
-- [2. Names and Values](#2-names-and-values)
-- [3. Variables and Relations](#3-variables-and-relations)
-- [4. Rules and Body Goals](#4-rules-and-body-goals)
-  - [4.1 Built-ins as Interpreted Relations](#41-built-ins-as-interpreted-relations)
-  - [4.2 Stratified Negation](#42-stratified-negation)
-  - [4.3 Aggregation](#43-aggregation)
-  - [4.4 Fresh Witnesses](#44-fresh-witnesses)
-- [5. Meaning and Execution](#5-meaning-and-execution)
-- [6. Queries and Output](#6-queries-and-output)
-- [7. Proof Certificates](#7-proof-certificates)
-  - [7.1 Envelope and Ordering](#71-envelope-and-ordering)
-  - [7.2 Evidence Records](#72-evidence-records)
-  - [7.3 Closed Boundaries](#73-closed-boundaries)
-  - [7.4 Claims and Selection](#74-claims-and-selection)
-- [8. Verification](#8-verification)
-  - [8.1 Proof Conditions](#81-proof-conditions)
-  - [8.2 Reports and Applicability](#82-reports-and-applicability)
-  - [8.3 Checker API and Limits](#83-checker-api-and-limits)
-  - [8.4 Trust Model](#84-trust-model)
-- [9. Explicit Boundaries](#9-explicit-boundaries)
-- [10. Security Considerations](#10-security-considerations)
-- [11. References](#11-references)
-  - [11.1 Normative References](#111-normative-references)
-  - [11.2 Informative References](#112-informative-references)
+Uppercase MUST, MUST NOT, SHOULD, and MAY express requirement levels under
+[RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and
+[RFC 8174](https://www.rfc-editor.org/rfc/rfc8174).
+The [guide](https://eyereasoner.github.io/wheye/) gives CLI and browser usage.
 
 ## 1. Program
 
-Programs use the `.pl` extension and Prolog-style clause syntax. A program consists of
-ground facts, rules, and queries. Statements MUST end in a period. Whitespace separates
-tokens but is otherwise insignificant. `%` and `#` introduce comments through the end of
-the line outside quotes.
+Programs are UTF-8 `.pl` documents with facts, clauses, queries, and directives:
 
 ```prolog
 human(socrates).
 mortal(Person) :- human(Person).
 ?- mortal(Who).
+?- why.
+:- assertion(mortal(socrates)).
+:- table fibonacci/2.
 ```
 
-The parser reads the whole program before evaluation. Facts and rules appearing after a
-query are available to it. Local files supplied together form one program; each file
-must contain complete statements. The merged program MUST be validated again before
-reasoning or checking.
+The entire source MUST be parsed before evaluation. Queries MAY use later facts
+and clauses. Multiple input files are parsed separately and merged in order;
+variable scopes remain local to clauses and requests. Queries and assertions
+MUST select answers and MUST NOT become inference evidence. Only `table` and
+`assertion` directives are supported. `why/0`, `why/1`, and `assertion/1` have
+the top-level meanings given below.
 
 ## 2. Names and Values
 
-Bare names match `[a-z][A-Za-z0-9_]*`. A single-quoted name is an atom with exactly the
-enclosed text; `socrates` and `'socrates'` denote the same atom. Predicates use these
-name forms and are identified by name and arity.
+Names are case-sensitive. Unquoted atoms match `[a-z][A-Za-z0-9_]*`.
+Variables match `[A-Z_][A-Za-z0-9_]*`. A variable's scope is one clause, query,
+or assertion. Repeating a variable name MUST require the same term. Every `_`
+MUST be a fresh variable. Names beginning with `_` MUST remain shared when
+repeated, but MUST be omitted from displayed query bindings.
 
-Source argument values are atoms, double-quoted strings, or signed decimal 64-bit
-integers. Strings and atoms are distinct. `42`, `'42'`, and `"42"` are three distinct
-values. Leading zeros and negative zero normalize as integers. A processor MUST reject
-integer overflow in a literal as a parse error. Floating-point literals are unsupported.
+Single quotes delimit atoms, including Unicode names and punctuation:
+`'red-fox'`, `'Élodie'`, `'7'`. Quoted and unquoted spellings of the same atom
+MUST unify. Double quotes delimit strings, which MUST remain distinct from
+atoms and numbers. Quotes MAY be doubled inside the corresponding quoted
+value. Supported backslash escapes are `\n`, `\r`, `\t`, `\b`, `\f`, `\\`,
+`\'`, `\"`, and Unicode `\uXXXX` / `\UXXXXXXXX`.
+Comments start with `%` and run to the end of the line, or use `/* ... */`.
+Block comments are not nested. Quoted comment markers are literal content.
+Comments and multiline terms MUST preserve diagnostic source lines.
 
-Quoted values support literal Unicode and the escapes `\n`, `\r`, `\t`, `\\`, `\'`, and
-`\"`. Quotes are escaped with a backslash; doubling a quote is not an escape. A
-processor MUST NOT apply Unicode normalization to quoted values. An IRI written as a
-quoted atom has no implicit dereferencing or interpretation.
+Integers are decimal digits with an optional unary sign and MUST be exact,
+using arbitrary-precision arithmetic limited by available resources. Reals
+have a decimal fraction or exponent and MUST use finite binary64 values.
+Integers and reals are distinct terms: `1 = 1.0` fails, while `1 =:= 1.0`
+succeeds. Real overflow and non-finite arithmetic MUST raise an error.
 
-Evaluation can also produce **opaque witness values**. Their printed form is
-`~"identity"`; the reader accepts this form in certificates, but source programs MUST
-NOT supply witness constants. A witness is distinct from an atom or string with the same
-text.
+A term MAY be an atom, integer, real, string, variable, compound term such as
+`point(2, 3)`, or list. Compounds have a fixed atom functor and one or more
+arguments. Arity-zero predicates use a bare atom. Lists use `[]`, `[a, b]`,
+and `[Head | Tail]`; tails MUST be lists or variables. Improper lists are
+outside this subset. Nested compounds and lists MUST match structurally.
+The quoted constructor `'.'(Head, Tail)` is equivalent to `[Head | Tail]`
+and has the same tail restrictions. The empty list `[]` is distinct from
+the quoted atom `'[]'`.
+Unification MUST perform an occurs check and MUST NOT create cyclic terms.
+Ground facts are loaded directly. Unit clauses containing variables, such as
+`append([], List, List).`, MUST act as demand-driven clauses with an empty
+body; their calls MUST supply enough bindings to produce ground answers.
+Compound arithmetic syntax in a fact is an ordinary compound term and MUST NOT
+be implicitly evaluated.
 
 ## 3. Variables and Relations
 
-Variables match `[A-Z_][A-Za-z0-9_]*`. Their scope is one rule or query, except for
-aggregate-local variables described below. Repeated named variables must match the same
-value. Every occurrence of `_` MUST denote a fresh variable and MUST be omitted from
-query output. Other names, including `_Named`, remain shared and are displayed.
-
-```prolog
-parent(ada, bea).
-ready.
-?- parent(Who, _).
-```
-
-A relation has zero to 64 arguments. Write zero-arity relations without parentheses:
-`ready`, not `ready()`. There are no compound terms, predicate variables, or implicit
-interpretations of ordinary predicate names. `add`, `sum`, and `not` remain ordinary
-names when used as relations. Interpreted relations have an explicit `@` prefix.
+Predicates are identified by name and arity. An ordinary predicate has no implicit
+implementation outside the builtin indicators below. A functor constructs data;
+it does not call or evaluate that data. A relation or compound supports at most
+64 arguments. Each clause or query supports at most 64 body goals. The parser
+bounds term nesting to 256 as a resource limit.
 
 ## 4. Rules and Body Goals
 
-A rule MUST have one relational head and 1 to 64 body goals, separated by commas. Facts
-MUST NOT contain variables. Every head variable MUST be bound by the body. Body goals
-are processed left to right, using structural value identity, without implicit
-conversions. Matching binds only the goal's variables against closed values. Alternative
-rules express alternative derivations.
+A clause has one ordinary predicate head and one or more body goals, separated
+by commas. Goals MAY be grouped in parentheses. Multiple clauses for one
+predicate provide alternative derivations. There is no separate forward-rule
+syntax. Arithmetic expressions in ordinary arguments remain terms; use an
+explicit `is/2` step to compute an argument or a result:
 
 ```prolog
-grandparent(Older, Younger) :-
-    parent(Older, Middle),
-    parent(Middle, Younger).
+:- table fibonacci/2.
+fibonacci(0, 0).
+fibonacci(1, 1).
+fibonacci(N, Value) :-
+    N > 1,
+    PreviousIndex is N - 1,
+    EarlierIndex is N - 2,
+    fibonacci(PreviousIndex, Previous),
+    fibonacci(EarlierIndex, Earlier),
+    Value is Previous + Earlier.
 ```
 
-An ordinary positive relation can bind its variables. The other goal forms have the
-safety requirements below. Invalid modes are rejected before evaluation, even if the
-unsafe rule would never fire.
+Ordinary positive goals bind variables by structural matching. `Left = Right`
+unifies terms. `Left is Expression` evaluates the right side and unifies its
+numeric result with the left. Arithmetic inputs MUST be bound at that point;
+computations MUST NOT solve backward. A successful materialized head MUST be
+ground; calls that leave output variables unresolved MUST raise an error.
 
-### 4.1 Built-ins as Interpreted Relations
+### 4.1 Built-ins and Arithmetic
 
-Built-ins describe potentially infinite sets of true tuples. Whye decides individual
-tuples or computes a deterministic output from bound inputs; it never enumerates an
-unbounded domain.
+The following builtin predicates MAY appear in clause bodies, queries, and
+assertions. Inputs described as bound MUST have their required values when the
+goal is reached. These predicates MUST NOT be redefined by facts or clauses.
 
-```prolog
-line(book, 12, 2).
-total(Item, Total) :- line(Item, Price, Quantity), @mul(Price, Quantity, Total).
-?- total(Item, Total), @ge(Total, 20).
-?- @add(2, 3, Result).
-```
+| Predicate | Syntax and behavior |
+| --- | --- |
+| `true/0` | `true` always succeeds, without binding variables. |
+| `false/0` | `false` always fails. |
+| `=/2` | `Left = Right` unifies terms structurally, with an occurs check. Either operand may contain variables. |
+| `\=/2` | `Left \= Right` succeeds if the terms cannot unify at this point. Trial bindings MUST be discarded. It does not constrain later bindings: `X \= a` fails while `X` is free. |
+| `is/2` | `Value is Expression` evaluates the bound expression and unifies the numeric result with `Value`. A bound result must have the same numeric term type and value. |
+| `</2`, `=</2`, `>/2`, `>=/2` | Numeric less than, less than or equal, greater than, and greater than or equal. Both expressions are evaluated. |
+| `=:=/2`, `=\=/2` | Numeric equality and inequality. Both expressions are evaluated; `1 =:= 1.0` succeeds. |
+| `@</2`, `@=</2`, `@>/2`, `@>=/2` | Lexicographic less than, less than or equal, greater than, and greater than or equal. Both operands MUST be bound atoms, or both MUST be bound strings. Ordering compares UTF-16 code units; it does not perform locale collation or general term ordering. |
+| `contains_text/2` | `contains_text(Text, Part)` requires two bound strings. It lowercases both using Unicode default case conversion, then tests literal substring containment. No Unicode normalization is performed. An empty `Part` succeeds. |
+| `atom_codes/2` | `atom_codes(Atom, Codes)` relates an atom to its list of Unicode scalar values as integers. A bound atom produces codes; otherwise a bound proper list of codes produces an atom. |
+| `string_codes/2` | `string_codes(String, Codes)` provides the same conversion for strings, preserving their distinction from atoms. |
+| `=../2` | `Term =.. Parts` decomposes a nonvariable term into a list of its functor and arguments, or constructs a term from such a list. It does not evaluate or call the constructed term. |
+| `aggregate_all/3` | `aggregate_all(Template, Goal, Result)` computes `count`, `sum(Value)`, `min(Value)`, `max(Value)`, or `list(Term)` over completed, distinct producer tuples. See Section 4.3 for binding, scope, and empty-result rules. |
 
-| Built-in | Required inputs | Meaning |
+For the two text conversions, a bound first argument MUST have the specified
+text type. Its codes are unified with the second argument, which MAY contain
+variables. If the first argument is a variable, the second MUST be a ground
+proper list of integers from 0 through 1114111, excluding surrogate values
+55296 through 57343. Text containing an unpaired surrogate MUST raise an
+error. Supplementary characters occupy one code; empty text corresponds to
+`[]`. Conversion MUST preserve code points without Unicode normalization.
+Invalid decoding inputs and calls with neither required input supplied MUST
+raise an error; a valid conversion with an incompatible output simply fails.
+
+For `=../2`, a compound decomposes to `[Functor | Arguments]`, for example
+`point(2, 3) =.. [point, 2, 3]`. An atom, number, or string decomposes to a
+singleton list containing itself. The empty list decomposes to `[[]]`;
+a nonempty list decomposes to `['.', Head, Tail]`. In the construction
+direction, `Parts` MUST have a known, nonempty, proper list spine. A
+singleton MUST contain a bound atom, number, string, or `[]`; a longer list
+MUST begin with a bound atom functor. Arguments MAY contain variables that
+are bound by subsequent goals. Constructing `'.'/2` MUST obey the list-tail
+restrictions in Section 2. Neither direction introduces cyclic terms, and
+displayed answers MUST still be ground. Missing inputs or invalid parts
+MUST raise an error; incompatible terms and parts fail by unification.
+
+The following special forms complete the language's built-in facilities;
+they are not additional ordinary predicates:
+
+| Form | Context and meaning |
+| --- | --- |
+| `\+ Goal` | Negation of one goal, with the completion and binding requirements in Section 4.2. |
+| `?- why.` | Explain the preceding ordinary query's answers (Section 6). |
+| `?- why(Goal).` | Query and explain `Goal`, which may be a conjunction (Section 6). |
+| `:- assertion(Goal).` | Require a successful solution of `Goal` (Section 6). |
+| `:- table Name/Arity, ... .` | Declare ordinary predicates demand-driven and tabled (Section 4.2). |
+
+Conjunction with `,` and parenthesized goal groups are supported syntax.
+The predicates above introduce no mutation or I/O effects. A failed test
+produces no solution; an invalid arithmetic input or an unmet input requirement
+MUST raise an error rather than silently failing.
+
+The following table is exhaustive. Rows run from lower to higher precedence;
+operators on the same row share precedence. Parentheses override precedence.
+All operands MUST evaluate to numbers; the integer-only operations reject reals,
+even those with an integral value such as `3.0`.
+
+| Binary operators | Associativity | Meaning |
 | --- | --- | --- |
-| `@add(A, B, C)` | A, B | Integer C = A + B |
-| `@sub(A, B, C)` | A, B | Integer C = A − B |
-| `@mul(A, B, C)` | A, B | Integer C = A × B |
-| `@div(A, B, C)` | A, B | Integer division, truncated toward zero |
-| `@mod(A, B, C)` | A, B | Remainder with the dividend's sign |
-| `@abs(A, B)` | A | Integer absolute value |
-| `@eq(A, B)`, `@neq(A, B)` | A, B | Structural equality or inequality |
-| `@lt(A, B)`, `@le(A, B)`, `@gt(A, B)`, `@ge(A, B)` | A, B | Integer comparisons |
-| `@concat(A, B, C)` | A, B | Concatenation of two strings |
-| `@strlen(A, N)` | A | String length in Unicode scalar values |
+| `\/`, `xor`, `/\`, `<<`, `>>` | Left | Integer bitwise OR, XOR, AND, left shift, right shift. |
+| `+`, `-` | Left | Addition and subtraction. |
+| `*`, `/`, `//`, `div`, `rem`, `mod` | Left | Multiplication, real division, truncating integer quotient, flooring integer quotient, truncating remainder, flooring remainder. |
+| `**`, `^` | `**` non-associative; `^` right | Real power; power preserving exact integers for integer operands and a nonnegative exponent. |
 
-Each required input MUST be a constant or a variable bound by earlier goals. An output
-can bind a new variable or test an existing value. A wrong type, false comparison,
-division by zero, or overflowing arithmetic tuple has no solution. Undefined built-in
-tuples do not wrap or produce partial numeric results. A processor MUST reject unknown
-built-ins and wrong arities.
+Unary `+` preserves its operand; unary `-` negates it. Unary `\` is integer
+bitwise complement. Unary operators bind more tightly than multiplication and
+less tightly than powers: `-2^2` evaluates to `-4`.
 
-For example, `@add(2,3,5)` succeeds and `@add(2,3,6)` fails. `@add(X,3,5)` is rejected
-for an unbound input; inverse arithmetic solving is not implemented.
+Addition, subtraction, and multiplication of two integers MUST be exact.
+Unary signs MUST preserve the operand's numeric type. `/` and `**` MUST produce
+reals. `^` MUST produce an exact integer for integer operands and a nonnegative
+exponent, and a real otherwise. Other mixed integer/real arithmetic MUST convert
+its operands to binary64; conversion and results MUST remain finite.
+
+`//`, `div`, `rem`, `mod`, and bit operations MUST require integers.
+`//` truncates toward zero; `div` floors. `rem` has the dividend's sign;
+`mod` has the divisor's sign. With `-7` and `3`, the four results are `-2`,
+`-3`, `-1`, and `2`. Division or remainder by zero MUST raise an error.
+Bit operations MUST use unbounded signed two's-complement semantics.
+Shift counts MUST be nonnegative; right shift preserves the sign.
+
+Functions use ordinary argument syntax inside arithmetic expressions:
+`sqrt(9)`, `min(A, B)`. The following table lists every supported function.
+Arguments MUST evaluate to numbers, subject to the additional requirements
+shown. Integer and real result types remain distinct terms.
+
+| Function | Meaning and result |
+| --- | --- |
+| `abs/1` | Absolute value, preserving the integer or real type. |
+| `sign/1` | Integer `-1`, `0`, or `1` according to the argument's sign. |
+| `sqrt/1` | Real square root of a nonnegative argument. |
+| `log/1`, `exp/1` | Real natural logarithm of a positive argument; real exponential. |
+| `sin/1`, `cos/1`, `tan/1` | Real trigonometric functions, with input angles in radians. |
+| `asin/1`, `acos/1`, `atan/1` | Real principal inverse trigonometric functions in radians. `asin` and `acos` require inputs in `[-1, 1]`; their result ranges are `[-pi/2, pi/2]` and `[0, pi]`. `atan` returns a value in `[-pi/2, pi/2]`. |
+| `atan2/2` | `atan2(Y, X)` returns the real signed angle of `(X, Y)` in `[-pi, pi]`; `atan2(0, 0)` returns `0.0`. |
+| `floor/1`, `ceiling/1` | Integer rounding toward negative and positive infinity respectively. |
+| `round/1`, `truncate/1` | Integer rounding to nearest with halfway cases away from zero; integer rounding toward zero. |
+| `float_integer_part/1` | Real integral part, truncated toward zero. |
+| `float_fractional_part/1` | Real argument minus its truncated integral part. |
+| `min/2`, `max/2` | Smaller or larger operand, preserving its type and exact value; select the first on numeric equality. |
+| `gcd/2` | Nonnegative integer greatest common divisor of two integers, including `gcd(0, 0) = 0`. |
+| `xor/2` | Integer bitwise XOR, equivalent to the infix `xor` operator. |
+
+`pi` and `e` evaluate to the binary64 approximations
+`3.141592653589793` and `2.718281828459045`. Outside arithmetic evaluation they
+remain ordinary atoms. Transcendental functions return binary64 approximations;
+their last result bit MAY differ between implementations.
+
+`floor`, `ceiling`, `round`, and `truncate` MUST retain every digit of an
+integer input. `float_integer_part` and `float_fractional_part` convert integer
+inputs to binary64 and MUST return reals. Numeric comparisons and `min`/`max`
+MUST preserve an integer operand's exact value rather than first rounding both
+operands to binary64. Atoms, strings, and lists MUST NOT be coerced to numbers.
+Non-finite conversions, overflow, and real function domain errors MUST raise
+an error. Unsupported arithmetic functions MUST report their name and arity.
+
+The string predicates `string_concat/3` and `string_length/2` additionally
+compute a string concatenation from two bound strings and count Unicode scalar
+values in a bound string, respectively. They do not coerce atoms to strings.
 
 ### 4.2 Stratified Negation
 
-`not Relation(...)` tests absence from a completed lower stratum. Every variable in a
-negated goal MUST already be bound; negation MUST NOT bind a variable.
+Facts and answers have set semantics. Every distinct ground tuple MUST be
+stored at most once, regardless of the number of derivations. Positive
+recursion MUST reach a least fixed point when its domain is finite.
 
-```prolog
-eligible(Person) :- registered(Person), not blocked(Person).
-```
+The implementation evaluates range-restricted clauses forward: each head
+variable and each builtin input can be bound from preceding positive goals.
+It MUST evaluate other clauses using demand-driven tables. A `table` declaration
+MUST make every clause of the declared predicate demand-driven, regardless of
+where the declaration appears. Declarations are optional for clauses already
+requiring inputs, and useful to prevent eager enumeration of recursive list
+constructors. All demand-driven calls MUST be tabled. Calls differing only in
+variable spelling MUST share evaluation, preserving repeated-variable
+constraints. Recursive consumers MUST suspend and resume as answers arrive,
+without requiring an unbounded chain of nested calls.
+Tables MUST be local to each run.
 
-This is closed-world negation relative to the supplied program. It is distinct from a
-claim about an external world. A relation MUST NOT depend negatively, directly or
-indirectly, on itself. Positive recursion remains supported.
+This execution model differs from conventional Prolog depth-first search:
+clause order MUST NOT change the answer set for terminating positive programs
+whose calls supply required inputs. Answer order, duplicate derivations, cut,
+and procedural side effects are not provided.
+
+`\+ Goal` holds when no matching ground positive answer exists after its
+producers complete. Negative ordinary goals MUST be ground when reached.
+Negation of a conjunction and nested negation are outside this subset; define
+a helper predicate. Negated tests MUST NOT introduce bindings. Negated `is/2`
+and unification require bound operands, as do negated `atom_codes/2`,
+`string_codes/2`, and `=../2`; negated aggregate goals require a
+helper predicate.
+
+The implementation MUST reject dependency cycles through negation or
+aggregation.
+A negative consumer MUST run after its producer strata finish. Dependency
+analysis distinguishes predicates by name/arity and excludes producer heads
+with incompatible atomic argument constants; other argument constraints MAY
+be treated conservatively. Arithmetic tests have no fact producers.
+Absence means no evidence in this completed program, not a claim about the
+world.
+
+No semantic depth limit is defined. Arithmetic, compound construction, or
+expanding call patterns can create infinite computation. Tabling MUST NOT be
+described as guaranteeing termination for arbitrary programs. The playground
+MUST allow cancellation by terminating its computation worker.
 
 ### 4.3 Aggregation
 
+A query MUST return all distinct tuples of its displayed variables, once each.
+Variables beginning with `_` are existentially projected out. Successful queries
+with no displayed variables yield `true.`; unsuccessful queries yield `false.`.
+`false.` describes query failure, not an explicitly asserted negative fact.
+Conjunctions share bindings and process goals from left to right.
+
 ```prolog
-budget(Department, Count, Total) :-
-    department(Department),
-    count { Item : purchase(Department, Item, Price) } = Count,
-    sum { Price, Item : purchase(Department, Item, Price) } = Total.
+?- aggregate_all(count, mortal(Person), Count).
+?- aggregate_all(sum(Value), score(Person, Value), Total).
+?- aggregate_all(min(Value), score(Person, Value), Minimum).
+?- aggregate_all(max(Value), score(Person, Value), Maximum).
+?- aggregate_all(list(result(Person, Value)), score(Person, Value), Results).
 ```
 
-The goal form is `Operation { Template : Goals } = Result`, with `count`, `sum`, `min`,
-or `max`. The template contains 1 to 64 terms; the inner conjunction contains 1 to 64
-goals. Each template variable MUST be bound by that conjunction or by earlier outer
-goals.
+`aggregate_all/3` MAY appear in a body, query, or assertion. Its goal MAY be a
+parenthesized conjunction. It MUST complete all matching producer work before
+aggregating, including demand-driven definitions. A bound result constrains the
+computed answer. Existing outer bindings MAY constrain the producer call;
+local producer variables MUST NOT escape into the caller.
 
-Names already bound outside are grouping parameters. Other names inside braces are local
-to that aggregate and are neither exported nor projected by the enclosing query. Only
-`Result` can introduce an outer binding. A result already bound outside is tested for
-equality. Later outer goals MUST NOT capture an aggregate's local variables.
+Aggregation operates on distinct tuples of all producer variables under the
+set semantics of this interpreter. It does not count repeated proof paths.
+Equal values from distinct subjects contribute separately. Empty counts and
+sums yield integer zero; empty minima and maxima fail. Counts and integer sums
+MUST be exact; sums and extrema also support finite real arithmetic. A producer
+that requires unavailable input bindings MUST report an error.
 
-Aggregation operates on a **set of distinct complete template tuples**. `count` counts
-these tuples. `sum`, `min`, and `max` use their first element, which must be an integer.
-Additional elements are keys: `sum { Price, Item : ... }` counts two equal prices on
-different items, whereas `sum { Price : ... }` counts each distinct price once. Repeated
-source facts never create bag duplicates.
-
-The count and sum of an empty set are zero. Empty minimum and maximum have no solution.
-A noninteger numeric aggregate or an overflowing sum is an evaluation error; it cannot
-produce a successful partial answer. Count must also fit a signed 64-bit integer.
-
-Inner goals can be positive relations, built-ins, or safe negation. Nested aggregates
-and fresh witnesses inside aggregates are rejected; use an intermediate relation
-instead. All relational dependencies inside an aggregate MUST belong to strictly lower
-strata than its rule's head.
+`list(Term)` MUST collect one instance of `Term` per distinct producer tuple,
+without evaluating arithmetic expressions inside that term. Elements MAY be
+atoms, strings, numbers, compounds, or lists, but MUST be ground. Empty
+collections MUST yield `[]`. Equal projected terms from different producer
+tuples MUST remain repeated list elements; repeated facts or proof paths MUST
+NOT add elements. List order is unspecified. A supplied result or list pattern
+MUST unify with the computed list; it MUST NOT bind producer variables or
+filter the producer before collection. Unlike Prolog's `findall/3`, this
+operation does not collect nonground answers or repeated derivations.
 
 ### 4.4 Fresh Witnesses
 
 ```prolog
-ticket(Person, Ticket) :- registered(Person), @fresh(Ticket).
+ticket(Person, Witness) :- registered(Person), fresh(Witness).
 ```
 
-`@fresh(W)` MUST occur only as the final goal of a rule. W MUST be a new variable. It
-creates a typed opaque witness for that rule firing: the rule ID, goal position, and
-complete preceding variable substitution determine its identity. Different firings or
-source rules receive distinct identities. Repeating the same firing reuses the same
-identity, preserving set semantics.
-
-The identity is deterministic within the supplied program, not a globally unique random
-identifier across programs or runs. Source facts cannot preassign witness identities.
-Other rules can carry a witness as an ordinary opaque value. Query goals and aggregate
-bodies MUST NOT create witnesses. General implicit existential heads are unsupported;
-generation must be explicit.
+`fresh/1` is an explicit additional predicate for typed witnesses. Its call
+syntax is ordinary Prolog syntax. It MUST occur only as the final goal of a
+forward rule, with a new output variable; queries and aggregate bodies MUST NOT
+create witnesses. The source rule ID, goal position, and complete preceding
+substitution determine the opaque identity. Repeating a firing reuses its
+identity; different firings cannot share it. Other rules MAY carry witnesses as
+values. Source facts MUST NOT supply witness constants. The certificate-only
+notation `~"identity"` distinguishes a witness from an atom or string.
+C8 checks both its type and binding to one source-rule firing.
 
 ## 5. Meaning and Execution
 
-Facts have set semantics. Ordinary positive rules denote their least closure. A repeated
-fact or additional derivation does not add another tuple. Source facts are inserted
-before rule execution; the first successful justification for each new fact is retained.
+wheye MUST use
+[Herbrand semantics](https://logical.stanford.edu/intrologic/chapters/chapter_07.html)
+for ordinary predicates, with the interpreted builtins specified in Section 4.1.
+Ground terms denote themselves:
+`socrates` denotes the atom `socrates`, and `point(2, 3)` denotes that compound
+term. A functor constructs data; it does not implicitly call a function.
+Distinct ground terms MUST remain distinct after the lexical normalization
+and structural matching described in Section 2. For example, `socrates` and
+`plato` are different values, while `socrates` and `'socrates'` are the same
+atom. Asserting a relation between two terms does not make them identical.
 
-A relation's stratum is at least that of every positive dependency and strictly greater
-than every negative or aggregate dependency. An aggregate rule has stratum at least one
-even when its inner goals use only built-ins. The implementation rejects dependency
-cycles containing a strict edge, and finishes each stratum's positive fixed point before
-evaluating the next. Queries MUST run after all strata finish.
+The **Herbrand universe** is the set of finite ground terms constructible from
+the language's constants and constructors, including its supported numeric
+values, strings, and proper lists. Variables range over these terms. The
+**Herbrand base** is the set of all ordinary predicate applications to ground
+terms, such as `human(socrates)`. These applications are called ground atoms;
+here, "atom" means a proposition, distinct from an atom used as a term.
+A Herbrand interpretation specifies which ground atoms are true.
 
-Within a stratum, an agenda and indexes by relation and argument value drive joins.
-Built-in decisions, negative tests, aggregates, and fresh-witness records are separate
-proof evidence; they never enter ordinary relation indexes. Fully ground positive body
-goals are dispatched by their complete tuple; other goals with constants use one fixed
-argument, and all-variable goals use their relation. Matching still checks every
-argument and shared binding. The packaged deep taxonomies through 100,000 levels have
-expected linear dispatch and matching work in their depth. This does not bound arbitrary
-joins by their input size.
+For positive clauses, the program's meaning MUST be the **least Herbrand
+model**, relative to the specified builtins: the smallest set of ground atoms
+containing the facts and closed under rule application. Clause variables are
+universally quantified: whenever a ground instance of a rule's body holds,
+its head holds. Thus the facts and clause in Section 2 make
+`human(socrates)` and `mortal(socrates)` true. A query returns ground bindings
+that make its goals true, subject to the input requirements of this subset.
 
-Value-producing built-ins, aggregates, and `@fresh` MUST NOT occur in rules defining a
-recursive relation, including indirect recursion. This deliberately conservative
-restriction prevents recursive value generation. Comparisons and other tests on already
-bound values remain usable in positive recursion. Together with finite source data, this
-gives finite strata and a finite closure. General recursive arithmetic and unrestricted
-existential generation are unsupported.
+Arithmetic builtins have their specified numeric interpretation. For example,
+`1 + 2` remains a compound term in an ordinary argument, while `Value is 1 + 2`
+binds `Value` to the integer `3`. `1 = 1.0` fails because the terms differ;
+`1 =:= 1.0` succeeds by numeric comparison. Stratified negation extends the
+positive semantics by testing absence only after the relevant producers
+complete, as specified below. The universe can be infinite; these semantics
+do not require enumerating it or guarantee that evaluation terminates.
 
-Completion remains subject to available time and memory. Default limits permit 1,000,000
-stored fact/evidence steps and 10,000,000 matching/work operations. Snapshot preparation
-and aggregate matching count toward the work limit. Reaching a limit MUST produce an
-error, without presenting partial answers as successful complete output. Output order
-and the choice among successful justifications are unspecified.
+Evaluation uses indexed forward inference and demand-driven tables. Consumers
+suspend and resume as answers arrive; recursive calls do not consume one Rust
+stack frame per call. Source facts are loaded first. Negative and aggregate
+dependencies are strict; compatible producer rules MUST finish first. Atomic
+argument constants that cannot match a producer head do not create a dependency.
+Source facts have level zero; each rule's level is at least its positive
+producers' levels and strictly above negative or aggregate producers' levels.
+Rules with a negative or aggregate body have a minimum level of one.
+
+Facts and answers have set semantics; the first successful justification is
+retained. Decisions for builtins, absence, aggregation, and witnesses MUST stay
+out of ordinary relation indexes. Default limits bound stored evidence to
+1,000,000 steps and counted work to 10,000,000 operations. Finite model indexes,
+matching, and demanded-call checks count toward the work limit. Limit exhaustion
+MUST report an error rather than successful partial output.
 
 ## 6. Queries and Output
 
-A query is a conjunction of 1 to 64 body goals, with the same safety requirements as
-rules, except that it cannot create fresh witnesses. Queries run over the completed
-strata and never add relational facts. Results project named outer variables in
-first-occurrence order and remove duplicate projected tuples. Aggregate-local variables
-are omitted.
+Queries process conjunctions left to right, project their named outer variables,
+and remove duplicate bindings. Names beginning with `_` remain shared but are
+omitted from display. Aggregate producer variables are local and do not escape.
+Successful requests without displayed variables print `true.`; unsuccessful
+queries print `false.`, which is not a certificate of absence.
 
-A successful query with no displayed variables prints `true.` once. A query with no
-solutions prints `false.`. The latter is an output convention, not a separately
-certified assertion of absence. An explicit safe `not` goal can instead supply checked
-closed-world evidence in a successful answer.
+`?- why.` explains the preceding ordinary query, even when assertions or other
+follow-ups intervene. With no preceding query it asks for one. After a failed
+query it reports no successful answer. `?- why(Goal).` queries and explains Goal,
+which MAY be a parenthesized conjunction, and becomes the new context.
+Explanations list numbered source rules and evidence steps with supporting IDs.
 
-With queries, ordinary output contains headings and answers in query order. Without
-queries, it contains newly derived relational facts and omits source facts and auxiliary
-proof evidence. A failed or limited run MUST NOT print partial answers as complete
-output.
+`:- assertion(Goal).` requires at least one successful solution. Assertions run
+in source order and MAY request demand-driven computation. A failing assertion
+MUST return an error. Successful assertions print `check passed: Goal.`. They
+never add facts. Without queries, ordinary output lists newly derived ordinary
+facts, excluding source facts and auxiliary evidence. The guide defines CLI
+flags for answers, explanations, proof generation, and checking saved proofs.
 
 ## 7. Proof Certificates
 
+
 ### 7.1 Envelope and Ordering
 
-A certificate MUST begin with the exact line `whye-proof 1`. Subsequent blank lines
+A certificate MUST begin with the exact line `wheye-proof 1`. Subsequent blank lines
 MAY appear. Step IDs MUST be contiguous positive integers starting at 1, followed by
 claims. Steps and boundary records MUST NOT appear after claims.
 
 ```text
-whye-proof 1
+wheye-proof 1
 step 1 source 1 : human(socrates).
 step 2 rule 1 [1] : mortal(socrates).
 answer 1 [2]
@@ -317,31 +435,51 @@ Supported step justifications are:
 | `source FACT : ATOM.` | The cited ground input fact |
 | `rule RULE [PREMISES] : ATOM.` | A complete source-rule application |
 | `builtin : ATOM.` | A closed interpreted relation tuple, recomputed by the checker |
+| `not-builtin : ATOM.` | A closed pure test which the checker requires to fail |
 | `absent BOUNDARY : ATOM.` | Absence of the closed relational atom from a certified boundary |
 | `aggregate OWNER POSITION BOUNDARY : ATOM.` | Recomputed source aggregate, with outer bindings and result |
 | `fresh RULE POSITION : ATOM.` | A witness and its source firing context |
 
 An aggregate owner is `r<RULE>` or `q<QUERY>`, and positions are 1-based body-goal
 positions. Aggregate evidence uses synthetic predicates `$aggregate:OWNER:POSITION`;
-witness evidence uses `$fresh:rRULE:POSITION`. Their arguments are preceding variables
-in sorted name order, followed by the result. These records are auxiliary evidence, not
-ordinary program facts.
+witness evidence uses `$fresh:rRULE:POSITION`. Aggregate records have two
+arguments: a proper list of `binding(Name, Value)`
+entries sorted by variable name, followed by the result. The list records exactly
+the outer variables already ground before the producer runs; it excludes local
+producer variables and outputs bound only after collection. C1 verifies the
+recorded scope against the preceding source goals. Fresh records instead carry
+preceding variables in sorted name order followed by the typed witness. These
+records are auxiliary evidence, not ordinary program facts.
 
 ### 7.3 Closed Boundaries
 
-`boundary ID level LEVEL [STEPS]` lists a finite model containing every relational fact
-in the completed stratum prefix through LEVEL. Negative decisions cite exactly their
-relation's stratum. Aggregate decisions cite the maximum stratum of their inner
-relations (zero when there are none). Boundary IDs MUST be contiguous from one; levels
-MUST be nonnegative and unique. Every member MUST precede a decision using that
-boundary.
+`boundary ID level LEVEL [STEPS]` lists a finite model of the completed prefix
+through LEVEL. IDs MUST be contiguous from one; levels MUST be nonnegative and
+unique. Source facts belong to level zero. A derived fact belongs to its source
+rule's level. Negative decisions cite the maximum compatible producer level of
+their ground call. Aggregate decisions cite the maximum producer level of their
+source body's dependencies. Every boundary member MUST precede decisions using it.
 
-The checker verifies each boundary includes the prefix's source facts and is closed
-under every source rule whose head belongs to the prefix. It matches each such rule
-against the supplied model and requires its head to be present; it does not add or
-derive missing facts. Recorded well-founded justifications establish support for model
-members. Support plus closure establishes the completed prefix, so omitting a derived
-counterexample or aggregate member cannot validate a false result.
+A boundary MAY additionally contain `demand ID : GOAL.` records, immediately
+following its boundary record. GOAL is an ordinary Prolog call pattern; repeated
+variables retain their constraints. Calls differing only in variable spelling
+share a table. Each call MUST name a demand-driven predicate in the prefix.
+
+The checker MUST require every source fact in the prefix and closure under
+every forward rule in the prefix. For every recorded demand, it MUST unify each
+compatible source head with that call and require all resulting ground rule
+conclusions to be present. For every rule-body prefix and every negative or
+aggregate consumer, it MUST also require each needed demand-driven producer
+call. Omitting a recursive call, omitting an applicable producer clause, or
+omitting a derivable fact MUST fail C6. Closed calls with no applicable clause
+are permitted and certify an empty answer set for that call.
+
+These are finite checks against the supplied model and call graph. The checker
+MUST NOT invoke the evaluator, activate a table, derive missing facts, or fill a
+gap. Source/rule evidence establishes support; model and demand closure establish
+completeness of the finite prefix required by the consumer. Infinite programs
+need not have a finite complete boundary, and resource exhaustion is an error.
+There are no unchecked completeness obligations.
 
 ### 7.4 Claims and Selection
 
@@ -364,12 +502,12 @@ The checker implements the following C1–C9 contract:
 
 | Condition | Requirement |
 | --- | --- |
-| **C1 · Resolution** | Each source step MUST equal its cited input fact. Each rule step MUST match every body goal with the correct evidence kind under one consistent substitution and MUST state exactly its instantiated head. Matching MUST bind only rule variables. |
+| **C1 · Resolution** | Each source step MUST equal its cited input fact. Each rule step MUST match its claimed ground head and every body goal with the correct evidence kind under one consistent substitution and MUST state exactly its instantiated head. Matching MUST bind only rule variables. |
 | **C2 · Well-foundedness** | Rule premises and boundary members MUST precede the decisions that use them. A checker MUST reject cycles, self-support, and forward references. Stratum validation also forbids negative or aggregate dependency cycles. |
 | **C3 · Justification** | Every record MUST have one supported justification and a ground conclusion. Relational conclusions, identical decisions, boundary levels, derived claims, and projected query answers MUST be unique. Unsupported metadata and malformed records are rejected by the reader with a C3-labelled error. |
 | **C4 · Coverage** | Every referenced source fact, rule, query, owner, goal position, boundary, and cited step MUST resolve in the supplied program or certificate. Complete body and query coverage is checked by C1 and C9. |
 | **C5 · Re-decision** | A checker MUST re-decide every recorded built-in tuple with closed arguments. It MUST recompute every aggregate from its source definition, grouping bindings, and certified boundary, including distinct tuple keys, types, and empty-set behavior. |
-| **C6 · Boundary consistency** | Boundaries MUST contain only relational facts at or below their level, MUST include all corresponding source facts, and MUST be closed under all corresponding rules. Negative decisions MUST NOT be contradicted by the completed boundary. Negative and aggregate decisions MUST cite the exact dependency level. |
+| **C6 · Boundary consistency** | Boundaries MUST contain only relational facts at or below their level, MUST include all corresponding source facts, and MUST be closed under forward rules and every demanded instance of demand-driven rules. Required producer calls MUST be closed transitively. Negative decisions MUST NOT be contradicted by the completed boundary. Negative and aggregate decisions MUST cite the exact dependency level. |
 | **C7 · Relevance** | Every step and boundary MUST contribute to a claim through ordinary or required boundary dependencies. A `derived` claim MUST cite a rule conclusion absent from source facts. A query may select a supported input fact. |
 | **C8 · Witness integrity** | Every fresh decision MUST name a fresh source goal and MUST carry exactly the typed witness determined by that source-rule firing. A witness from another firing MUST NOT be substituted, reused, or supplied as a source assertion. C1 checks the context when the decision is consumed. |
 | **C9 · Query isolation** | Query answers MUST be selections, never inference steps. Each answer MUST match every source-query goal with the correct evidence kind and consistent bindings. Derived claims MUST NOT appear when queries are present. Query aggregate evidence MUST NOT become rule evidence. |
@@ -377,16 +515,17 @@ The checker implements the following C1–C9 contract:
 ### 8.2 Reports and Applicability
 
 Reports MUST list all nine conditions in order. C5 is applicable when a program uses
-built-ins or aggregates; C6 when it uses negation or aggregates; C8 when it uses
-`@fresh`. A program without the corresponding feature reports **not applicable** with
+built-ins or aggregates; C6 when it uses negation or aggregates; C8 when the program creates witnesses or the supplied evidence contains a
+witness value. Every witness occurrence must have a checked fresh source-rule
+firing, including occurrences inside compounds or universal unit instances. A program without the corresponding feature reports **not applicable** with
 zero checks and failures. The [voucher
-example](https://github.com/eyereasoner/whye/blob/main/examples/orders.pl) performs
+example](https://github.com/eyereasoner/wheye/blob/main/examples/orders.pl) performs
 nonzero successful checks under every condition.
 
 Counts describe attempted local checks, not a count of established conclusions. C1
 counts source/rule steps; C2 rule and boundary dependency lists; C3 steps, claims, and
 boundaries; C4 individual references; C5 decisions; C6 boundary models and decisions; C7
-steps, boundaries, and resolved derived claims; C8 fresh decisions; C9 query
+steps, boundaries, and resolved derived claims; C8 fresh decisions and witness occurrences; C9 query
 applications or derived-claim mode checks. Checks requiring unresolved references are
 skipped, with the missing evidence reported under C4.
 
@@ -415,46 +554,25 @@ including explicit closed-world tests within certified strata. It does not estab
 answer completeness, source authenticity, or external-world truth. An empty certificate
 passes with zero claims and establishes nothing further.
 
+
 ## 9. Explicit Boundaries
 
-The implementation has no floating-point arithmetic, lists, general compound terms,
-inverse built-in solving, nested aggregates, unrestricted recursive value generation,
-implicit existential heads, quoted graphs, dynamic rules, procedural side effects, or
-general Prolog control. It has no N3, Turtle, or other RDF syntax parser. RDF-shaped
-data can be represented in an ordinary relation without changing this contract.
+This subset has no cut, disjunction, procedural side effects, dynamic predicates,
+meta-calls, predicate variables, improper lists, cyclic terms, N3, or Turtle
+parser. Unary and binary arithmetic functions are interpreted only in numeric
+contexts. Calls requiring unavailable inputs are errors. Tabling does not
+promise termination for arbitrary arithmetic or term generation.
 
 ## 10. Security Considerations
 
-Certificate acceptance establishes support relative to the supplied source program. It
-does not authenticate input facts or establish external-world truth. A valid certificate
-can omit answers; an empty valid certificate establishes no claims. Applications MUST
-NOT treat certificate validity as a guarantee of answer completeness or source
-authenticity.
+Source assertions are assumptions. Certificate acceptance establishes recorded
+claims relative to those assumptions; it does not authenticate inputs, establish
+external-world truth, or guarantee answer completeness. An empty certificate
+establishes no claims. Applications MUST inspect `Report::valid()` or use
+`require_valid()` before accepting `Ok(report)`. Semantic failures can be
+returned inside an otherwise successful checker result.
 
-Fact and matching limits bound stored evidence and matching work. They do not bound
-whole-process memory, parsing time, or elapsed time. Hosting applications MAY impose
-additional process, memory, time, or cancellation limits. Exceeding an engine limit is
-an error, not a successfully checked partial result.
-
-Quoted IRIs are ordinary atom values. The language has no implicit network lookup or
-procedural side effects. Share links containing program text or a saved proof make that
-content readable to their recipients. Loading shared state does not automatically
-execute the program.
-
-## 11. References
-
-### 11.1 Normative References
-
-- [RFC2119] Bradner, S., *Key words for use in RFCs to Indicate Requirement
-  Levels*, BCP 14, RFC 2119, March 1997.
-- [RFC8174] Leiba, B., *Ambiguity of Uppercase vs Lowercase in RFC 2119 Key
-  Words*, BCP 14, RFC 8174, May 2017.
-
-### 11.2 Informative References
-
-- [Whye guide](https://eyereasoner.github.io/whye/): command-line use,
-  examples, library and browser integration, development, and releases.
-- [Runnable examples](https://github.com/eyereasoner/whye/tree/main/examples/).
-
-[RFC2119]: https://www.rfc-editor.org/rfc/rfc2119
-[RFC8174]: https://www.rfc-editor.org/rfc/rfc8174
+`check_with_limits` bounds evidence and finite-model work. Limits do not bound
+whole-process memory or elapsed time. Host applications MAY impose process,
+time, and memory limits or terminate the playground worker. Share links contain
+readable program and proof text; opening them does not automatically run it.

@@ -1,348 +1,728 @@
 use crate::{
     Aggregate, AggregateKind, Atom, Error, Goal, Literal, Program, Query, Rule, Term, Value,
 };
+use num_bigint::BigInt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Token {
     Name(String),
     Variable(String),
     Text(String),
-    Integer(i64),
-    Left,
-    Brace,
-    CloseBrace,
-    Colon,
-    Equal,
-    At,
-    Witness,
-    Right,
-    Comma,
-    Dot,
-    Rule,
-    Query,
+    Number(String),
+    Symbol(String),
     End,
 }
-
 struct Parser {
     tokens: Vec<(Token, usize)>,
     position: usize,
     anonymous: usize,
+    depth: usize,
 }
-
 fn tokenize(source: &str) -> Result<Vec<(Token, usize)>, Error> {
-    let mut chars = source.chars().peekable();
-    let mut line = 1;
-    let mut tokens = Vec::new();
-    while let Some(character) = chars.next() {
-        if character.is_whitespace() {
-            if character == '\n' {
-                line += 1;
+    let chars: Vec<_> = source.chars().collect();
+    let (mut at, mut line, mut tokens) = (0, 1, Vec::new());
+    while at < chars.len() {
+        let c = chars[at];
+        if c.is_whitespace() {
+            line += usize::from(c == '\n');
+            at += 1;
+            continue;
+        }
+        if c == '%' {
+            while at < chars.len() && chars[at] != '\n' {
+                at += 1;
             }
             continue;
         }
-        if character == '%' || character == '#' {
-            for c in chars.by_ref() {
-                if c == '\n' {
-                    line += 1;
-                    break;
-                }
+        if chars.get(at..at + 2) == Some(&['/', '*']) {
+            at += 2;
+            while at + 1 < chars.len() && chars[at..at + 2] != ['*', '/'] {
+                line += usize::from(chars[at] == '\n');
+                at += 1;
             }
+            if at + 1 >= chars.len() {
+                return Err(Error::new(format!("Line {line}: Close the block comment.")));
+            }
+            at += 2;
             continue;
         }
         let start_line = line;
-        let fail = |message: &str| Error::new(format!("Line {start_line}: {message}"));
-        let token = match character {
-            '(' => Token::Left,
-            '{' => Token::Brace,
-            '}' => Token::CloseBrace,
-            '=' => Token::Equal,
-            '@' => Token::At,
-            '~' => Token::Witness,
-            ')' => Token::Right,
-            ',' => Token::Comma,
-            '.' => Token::Dot,
-            ':' | '?' if chars.peek() == Some(&'-') => {
-                chars.next();
-                if character == ':' {
-                    Token::Rule
-                } else {
-                    Token::Query
-                }
-            }
-            ':' => Token::Colon,
-            '\'' | '"' => {
-                let mut text = String::new();
-                loop {
-                    let c = chars
-                        .next()
-                        .ok_or_else(|| fail("Close the quoted value."))?;
-                    if c == character {
-                        break;
-                    }
-                    if c == '\\' {
-                        let escaped = chars
-                            .next()
-                            .ok_or_else(|| fail("Complete the escape sequence."))?;
-                        text.push(match escaped {
-                            'n' => '\n', 'r' => '\r', 't' => '\t', '\\' => '\\', '\'' => '\'', '"' => '"',
-                            _ => return Err(fail("Unsupported escape; escape a quote, backslash, newline, carriage return, or tab.")),
-                        });
-                    } else {
-                        if c == '\n' {
-                            line += 1;
-                        }
+        let token = if c == '\'' || c == '"' {
+            at += 1;
+            let mut text = String::new();
+            loop {
+                let Some(&next) = chars.get(at) else {
+                    return Err(Error::new(format!(
+                        "Line {start_line}: Close the quoted value."
+                    )));
+                };
+                at += 1;
+                if next == c {
+                    if chars.get(at) == Some(&c) {
                         text.push(c);
+                        at += 1;
+                        continue;
                     }
+                    break;
                 }
-                if character == '\'' {
-                    Token::Name(text)
+                if next == '\\' {
+                    let Some(&escape) = chars.get(at) else {
+                        return Err(Error::new("Complete the escape sequence."));
+                    };
+                    at += 1;
+                    text.push(match escape {
+                        'n' => '\n',
+                        'r' => '\r',
+                        't' => '\t',
+                        'b' => '\u{8}',
+                        'f' => '\u{c}',
+                        '\\' => '\\',
+                        '\'' => '\'',
+                        '"' => '"',
+                        'u' | 'U' => {
+                            let length = if escape == 'u' { 4 } else { 8 };
+                            let digits: String = chars
+                                .get(at..at + length)
+                                .ok_or_else(|| Error::new("Complete the Unicode escape."))?
+                                .iter()
+                                .collect();
+                            at += length;
+                            let mut code = u32::from_str_radix(&digits, 16)
+                                .map_err(|_| Error::new("Use a valid Unicode escape."))?;
+                            if (0xd800..=0xdbff).contains(&code) && escape == 'u' {
+                                if chars.get(at..at + 2) != Some(&['\\', 'u']) {
+                                    return Err(Error::new(
+                                        "Pair a high surrogate with a low Unicode surrogate.",
+                                    ));
+                                }
+                                let low: String = chars
+                                    .get(at + 2..at + 6)
+                                    .ok_or_else(|| {
+                                        Error::new("Complete the Unicode surrogate pair.")
+                                    })?
+                                    .iter()
+                                    .collect();
+                                let low = u32::from_str_radix(&low, 16)
+                                    .map_err(|_| Error::new("Invalid Unicode surrogate pair."))?;
+                                if !(0xdc00..=0xdfff).contains(&low) {
+                                    return Err(Error::new("Invalid Unicode surrogate pair."));
+                                }
+                                at += 6;
+                                code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
+                            }
+                            char::from_u32(code)
+                                .ok_or_else(|| Error::new("Use a valid Unicode scalar value."))?
+                        }
+                        _ => {
+                            return Err(Error::new(format!(
+                                "Line {line}: Unsupported escape \\{escape}."
+                            )))
+                        }
+                    });
                 } else {
-                    Token::Text(text)
+                    line += usize::from(next == '\n');
+                    text.push(next);
                 }
             }
-            c if c.is_ascii_digit() || c == '-' => {
-                let mut text = String::from(c);
-                while chars.peek().is_some_and(|c| c.is_ascii_digit()) {
-                    text.push(chars.next().unwrap());
-                }
-                Token::Integer(text.parse().map_err(|_| {
-                    fail("Use an integer between -9223372036854775808 and 9223372036854775807.")
-                })?)
+            if c == '\'' {
+                Token::Name(text)
+            } else {
+                Token::Text(text)
             }
-            c if c.is_ascii_alphabetic() || c == '_' => {
-                let mut text = String::from(c);
-                while chars
-                    .peek()
-                    .is_some_and(|c| c.is_ascii_alphanumeric() || *c == '_')
+        } else if c.is_ascii_digit() {
+            let start = at;
+            while chars.get(at).is_some_and(char::is_ascii_digit) {
+                at += 1;
+            }
+            if chars.get(at) == Some(&'.') && chars.get(at + 1).is_some_and(char::is_ascii_digit) {
+                at += 1;
+                while chars.get(at).is_some_and(char::is_ascii_digit) {
+                    at += 1;
+                }
+            }
+            if chars.get(at).is_some_and(|c| *c == 'e' || *c == 'E') {
+                at += 1;
+                if chars.get(at).is_some_and(|c| *c == '+' || *c == '-') {
+                    at += 1;
+                }
+                let first = at;
+                while chars.get(at).is_some_and(char::is_ascii_digit) {
+                    at += 1;
+                }
+                if at == first {
+                    return Err(Error::new(format!(
+                        "Line {line}: Complete the numeric exponent."
+                    )));
+                }
+            }
+            Token::Number(chars[start..at].iter().collect())
+        } else if c.is_ascii_alphabetic() || c == '_' {
+            let start = at;
+            at += 1;
+            while chars
+                .get(at)
+                .is_some_and(|c| c.is_ascii_alphanumeric() || *c == '_')
+            {
+                at += 1;
+            }
+            let name = chars[start..at].iter().collect();
+            if c.is_ascii_uppercase() || c == '_' {
+                Token::Variable(name)
+            } else {
+                Token::Name(name)
+            }
+        } else {
+            let mut found = None;
+            for op in [
+                "=\\=", "=:=", "@=<", "@>=", "=..", ":-", "?-", "\\+", "\\=", "=<", ">=", "@<",
+                "@>", "//", "**", "<<", ">>", "\\/", "/\\",
+            ] {
+                let width = op.chars().count();
+                if chars
+                    .get(at..at + width)
+                    .is_some_and(|part| part.iter().copied().eq(op.chars()))
                 {
-                    text.push(chars.next().unwrap());
-                }
-                if c.is_ascii_uppercase() || c == '_' {
-                    Token::Variable(text)
-                } else {
-                    Token::Name(text)
+                    found = Some(op.to_string());
+                    break;
                 }
             }
-            _ => {
-                return Err(fail(&format!(
-                    "Unexpected character {character:?}; use facts, Head :- Body, and ?- queries."
-                )))
+            let op = found.unwrap_or_else(|| c.to_string());
+            at += op.chars().count();
+            if !matches!(
+                op.as_str(),
+                "(" | ")"
+                    | "["
+                    | "]"
+                    | "|"
+                    | ","
+                    | "."
+                    | "~"
+                    | "+"
+                    | "-"
+                    | "*"
+                    | "/"
+                    | "^"
+                    | "\\"
+                    | "="
+                    | "<"
+                    | ">"
+                    | "=\\="
+                    | "=:="
+                    | "@=<"
+                    | "@>="
+                    | "=.."
+                    | ":-"
+                    | "?-"
+                    | "\\+"
+                    | "\\="
+                    | "=<"
+                    | ">="
+                    | "@<"
+                    | "@>"
+                    | "//"
+                    | "**"
+                    | "<<"
+                    | ">>"
+                    | "\\/"
+                    | "/\\"
+            ) {
+                return Err(Error::new(format!(
+                    "Line {line}: Unexpected character {c:?}; use Prolog syntax."
+                )));
             }
+            if op == "."
+                && chars.get(at).is_some_and(|c| {
+                    !c.is_whitespace()
+                        && *c != '%'
+                        && !(*c == '/' && chars.get(at + 1) == Some(&'*'))
+                })
+            {
+                return Err(Error::new(format!("Line {line}: Follow a statement period with whitespace, a comment, or end of input.")));
+            }
+            Token::Symbol(op)
         };
         tokens.push((token, start_line));
     }
     tokens.push((Token::End, line));
     Ok(tokens)
 }
-
+fn binary(op: &str) -> Option<(u8, bool)> {
+    Some(match op {
+        "\\/" | "xor" | "/\\" | "<<" | ">>" => (1, false),
+        "+" | "-" => (2, false),
+        "*" | "/" | "//" | "div" | "rem" | "mod" => (3, false),
+        "**" => (5, false),
+        "^" => (5, true),
+        _ => return None,
+    })
+}
+fn test(op: &str) -> bool {
+    matches!(
+        op,
+        "is" | "="
+            | "\\="
+            | "<"
+            | "=<"
+            | ">"
+            | ">="
+            | "=:="
+            | "=\\="
+            | "@<"
+            | "@=<"
+            | "@>"
+            | "@>="
+            | "=.."
+    )
+}
+pub(crate) fn builtin_name(name: &str, arity: usize) -> bool {
+    (arity == 2 && test(name))
+        || matches!(
+            (name, arity),
+            ("true" | "false", 0)
+                | (
+                    "contains_text" | "atom_codes" | "string_codes" | "string_length",
+                    2
+                )
+                | ("string_concat", 3)
+        )
+}
+fn term(value: Value) -> Term {
+    match value {
+        Value::Variable(name) => Term::Variable(name),
+        value => Term::Constant(value),
+    }
+}
 impl Parser {
     fn new(source: &str) -> Result<Self, Error> {
         Ok(Self {
             tokens: tokenize(source)?,
             position: 0,
             anonymous: 0,
+            depth: 0,
         })
     }
     fn peek(&self) -> &Token {
         &self.tokens[self.position].0
     }
-    fn error(&self, message: impl AsRef<str>) -> Error {
-        Error::new(format!(
-            "Line {}: {}",
-            self.tokens[self.position].1,
-            message.as_ref()
-        ))
+    fn spelling(&self) -> &str {
+        match self.peek() {
+            Token::Name(s) | Token::Symbol(s) => s,
+            _ => "",
+        }
     }
-    fn take(&mut self, token: Token) -> bool {
-        if self.peek() == &token {
+    fn is(&self, s: &str) -> bool {
+        self.spelling() == s
+    }
+    fn take(&mut self, s: &str) -> bool {
+        if self.is(s) {
             self.position += 1;
             true
         } else {
             false
         }
     }
-    fn expect(&mut self, token: Token, message: &str) -> Result<(), Error> {
-        if self.take(token) {
+    fn error(&self, s: impl AsRef<str>) -> Error {
+        Error::new(format!(
+            "Line {}: {}",
+            self.tokens[self.position].1,
+            s.as_ref()
+        ))
+    }
+    fn expect(&mut self, s: &str) -> Result<(), Error> {
+        if self.take(s) {
             Ok(())
         } else {
-            Err(self.error(message))
+            Err(self.error(format!("Expected {s}.")))
         }
     }
-    fn term(&mut self) -> Result<Term, Error> {
-        if self.take(Token::Witness) {
-            let Token::Text(value) = self.peek().clone() else {
-                return Err(self.error("A witness needs a quoted identity after ~."));
-            };
-            self.position += 1;
-            return Ok(Term::Constant(Value::Witness(value)));
+    fn primary(&mut self) -> Result<Value, Error> {
+        self.depth += 1;
+        if self.depth > 256 {
+            return Err(self.error("Term nesting exceeds the parser limit (256)."));
         }
-        let term = match self.peek().clone() {
-            Token::Name(value) => Term::Constant(Value::Symbol(value)),
-            Token::Text(value) => Term::Constant(Value::Text(value)),
-            Token::Integer(value) => Term::Constant(Value::Integer(value)),
+        let token = self.peek().clone();
+        self.position += 1;
+        let value = match token {
             Token::Variable(name) if name == "_" => {
-                let name = format!("_${}", self.anonymous);
                 self.anonymous += 1;
-                Term::Variable(name)
+                Value::Variable(format!("_${}", self.anonymous))
             }
-            Token::Variable(name) => Term::Variable(name),
-            _ => return Err(self.error(
-                "Expected an atom, string, integer, or variable; compound terms are not supported.",
-            )),
+            Token::Variable(name) => Value::Variable(name),
+            Token::Text(s) => Value::Text(s),
+            Token::Number(s) => {
+                if s.contains(['.', 'e', 'E']) {
+                    crate::arithmetic::real(
+                        s.parse().map_err(|_| self.error("Invalid real number."))?,
+                    )?
+                } else {
+                    crate::arithmetic::integer(
+                        s.parse::<BigInt>()
+                            .map_err(|_| self.error("Invalid integer."))?,
+                    )
+                }
+            }
+            Token::Name(name) => {
+                if self.take("(") {
+                    let mut args = vec![self.expression(0)?];
+                    while self.take(",") {
+                        args.push(self.expression(0)?);
+                        if args.len() > 64 {
+                            return Err(self.error("A term supports at most 64 arguments."));
+                        }
+                    }
+                    self.expect(")")?;
+                    if name == "."
+                        && args.len() == 2
+                        && !matches!(
+                            args[1],
+                            Value::Nil | Value::Variable(_) | Value::Compound(_, _)
+                        )
+                    {
+                        return Err(self.error("A list tail must be a list or variable."));
+                    }
+                    Value::Compound(name, args)
+                } else {
+                    Value::Symbol(name)
+                }
+            }
+            Token::Symbol(s) if s == "(" => {
+                let v = self.expression(0)?;
+                self.expect(")")?;
+                v
+            }
+            Token::Symbol(s) if s == "[" => {
+                let mut args = Vec::new();
+                if !self.is("]") {
+                    args.push(self.expression(0)?);
+                    while self.take(",") {
+                        args.push(self.expression(0)?);
+                    }
+                }
+                let mut tail = if self.take("|") {
+                    self.expression(0)?
+                } else {
+                    Value::Nil
+                };
+                self.expect("]")?;
+                if !matches!(&tail, Value::Nil | Value::Variable(_))
+                    && !matches!(&tail,Value::Compound(n,a) if n=="." && a.len()==2)
+                {
+                    return Err(self.error("A list tail must be a list or variable."));
+                }
+                for arg in args.into_iter().rev() {
+                    tail = Value::Compound(".".into(), vec![arg, tail]);
+                }
+                tail
+            }
+            Token::Symbol(s) if matches!(s.as_str(), "-" | "+" | "\\") => {
+                let v = self.expression(4)?;
+                if s == "-" {
+                    match v {
+                        Value::Integer(n) => crate::arithmetic::integer(-BigInt::from(n)),
+                        Value::BigInteger(n) => crate::arithmetic::integer(-n),
+                        Value::Real(b) => crate::arithmetic::real(-f64::from_bits(b))?,
+                        v => Value::Compound(s, vec![v]),
+                    }
+                } else if s == "+"
+                    && matches!(v, Value::Integer(_) | Value::BigInteger(_) | Value::Real(_))
+                {
+                    v
+                } else {
+                    Value::Compound(s, vec![v])
+                }
+            }
+            Token::Symbol(s) if s == "~" => {
+                let Token::Text(s) = self.peek().clone() else {
+                    return Err(self.error("A witness needs a quoted identity."));
+                };
+                self.position += 1;
+                Value::Witness(s)
+            }
+            _ => {
+                return Err(
+                    self.error("Expected an atom, number, string, variable, compound, or list.")
+                )
+            }
         };
-        self.position += 1;
-        Ok(term)
+        self.depth -= 1;
+        Ok(value)
     }
-    fn goal(&mut self) -> Result<Goal, Error> {
-        let Token::Name(predicate) = self.peek().clone() else {
-            return Err(self.error("Expected a predicate name."));
-        };
-        self.position += 1;
-        let mut terms = Vec::new();
-        if self.take(Token::Left) {
-            loop {
-                let term = self.term()?;
-                terms.push(term);
-                if terms.len() > 64 {
-                    return Err(self.error("A relation supports at most 64 arguments."));
-                }
-                if !self.take(Token::Comma) {
-                    break;
-                }
+    fn expression(&mut self, min: u8) -> Result<Value, Error> {
+        let mut left = self.primary()?;
+        while let Some((precedence, right)) = binary(self.spelling()) {
+            if precedence < min {
+                break;
             }
-            self.expect(
-                Token::Right,
-                "Close the argument list with ); nested terms are not supported.",
-            )?;
+            let op = self.spelling().to_string();
+            self.position += 1;
+            let rhs = self.expression(precedence + u8::from(!right))?;
+            left = Value::Compound(op.clone(), vec![left, rhs]);
+            if op == "**" && self.is("**") {
+                return Err(self.error("Parenthesize chained ** expressions."));
+            }
         }
-        Ok(Goal { predicate, terms })
+        Ok(left)
+    }
+    fn as_goal(&self, v: Value) -> Result<Goal, Error> {
+        if !v.valid() {
+            return Err(self.error("Use proper lists and valid finite numeric terms."));
+        }
+        match v {
+            Value::Symbol(predicate) => Ok(Goal {
+                predicate,
+                terms: vec![],
+            }),
+            Value::Compound(predicate, args) => Ok(Goal {
+                predicate,
+                terms: args.into_iter().map(term).collect(),
+            }),
+            _ => Err(self.error("A goal needs a predicate name.")),
+        }
     }
     fn literal(&mut self) -> Result<Literal, Error> {
-        if self.take(Token::At) {
-            let goal = self.goal()?;
-            if goal.predicate == "fresh" {
-                if goal.terms.len() != 1 {
-                    return Err(self.error("@fresh needs one output variable."));
-                }
-                return Ok(Literal::Fresh(goal.terms[0].clone()));
+        if self.take("\\+") {
+            let wrapped = self.take("(");
+            let g = self.literal()?;
+            if wrapped {
+                self.expect(")")?;
             }
-            return Ok(Literal::Builtin(goal));
+            return match g{Literal::Relation(g)=>Ok(Literal::Not(g)),Literal::Builtin(g)=>Ok(Literal::NotBuiltin(g)),_=>Err(self.error("Negate one ordinary goal or test; define a helper predicate for a conjunction."))};
         }
-        if self.peek() == &Token::Name("not".into())
-            && !matches!(
-                self.tokens[self.position + 1].0,
-                Token::Left | Token::Comma | Token::Dot
-            )
+        if self.is("aggregate_all") && self.tokens[self.position + 1].0 == Token::Symbol("(".into())
         {
-            self.position += 1;
-            return Ok(Literal::Not(self.goal()?));
-        }
-        if let Token::Name(name) = self.peek().clone() {
-            if self.tokens[self.position + 1].0 == Token::Brace {
-                let kind = match name.as_str() {
-                    "count" => AggregateKind::Count,
-                    "sum" => AggregateKind::Sum,
-                    "min" => AggregateKind::Min,
-                    "max" => AggregateKind::Max,
-                    _ => return Err(self.error("Use count, sum, min, or max before an aggregate.")),
-                };
-                self.position += 2;
-                let mut template = vec![self.term()?];
-                while self.take(Token::Comma) {
-                    if template.len() == 64 {
-                        return Err(self.error("Use at most 64 aggregate template terms."));
-                    }
-                    template.push(self.term()?);
-                }
-                self.expect(
-                    Token::Colon,
-                    "Separate the aggregate template and goals with :.",
-                )?;
+            self.position += 2;
+            let template = self.expression(0)?;
+            self.expect(",")?;
+            let body = if self.take("(") {
                 let body = self.goals()?;
-                self.expect(Token::CloseBrace, "Close the aggregate with }.")?;
-                self.expect(Token::Equal, "Follow the aggregate with = Result.")?;
-                let result = self.term()?;
-                return Ok(Literal::Aggregate(Aggregate {
-                    kind,
-                    template,
-                    body,
-                    result,
-                }));
-            }
+                self.expect(")")?;
+                body
+            } else {
+                vec![self.literal()?]
+            };
+            self.expect(",")?;
+            let result = term(self.expression(0)?);
+            self.expect(")")?;
+            let (kind, template) = match template {
+                Value::Symbol(s) if s == "count" => (AggregateKind::Count, vec![]),
+                Value::Compound(s, mut a) if a.len() == 1 => {
+                    let kind = match s.as_str() {
+                        "sum" => AggregateKind::Sum,
+                        "min" => AggregateKind::Min,
+                        "max" => AggregateKind::Max,
+                        "list" => AggregateKind::List,
+                        _ => {
+                            return Err(self.error(
+                                "Use count, sum(Value), min(Value), max(Value), or list(Term).",
+                            ))
+                        }
+                    };
+                    (kind, vec![term(a.remove(0))])
+                }
+                _ => {
+                    return Err(
+                        self.error("Use count, sum(Value), min(Value), max(Value), or list(Term).")
+                    )
+                }
+            };
+            return Ok(Literal::Aggregate(Aggregate {
+                kind,
+                template,
+                body,
+                result,
+            }));
         }
-        Ok(Literal::Relation(self.goal()?))
+        let left = self.expression(0)?;
+        if test(self.spelling()) {
+            let predicate = self.spelling().to_string();
+            self.position += 1;
+            return Ok(Literal::Builtin(Goal {
+                predicate,
+                terms: vec![term(left), term(self.expression(0)?)],
+            }));
+        }
+        let goal = self.as_goal(left)?;
+        if goal.predicate == "fresh" && goal.terms.len() == 1 {
+            return Ok(Literal::Fresh(goal.terms[0].clone()));
+        }
+        if builtin_name(&goal.predicate, goal.terms.len()) {
+            Ok(Literal::Builtin(goal))
+        } else {
+            Ok(Literal::Relation(goal))
+        }
     }
     fn goals(&mut self) -> Result<Vec<Literal>, Error> {
-        let mut goals = vec![self.literal()?];
-        while self.take(Token::Comma) {
-            if goals.len() == 64 {
+        let mut goals = Vec::new();
+        loop {
+            let grouped = if self.is("(") {
+                let mut nesting = 0;
+                let mut end = self.position;
+                loop {
+                    match &self.tokens[end].0 {
+                        Token::Symbol(s) if s == "(" => nesting += 1,
+                        Token::Symbol(s) if s == ")" => {
+                            nesting -= 1;
+                            if nesting == 0 {
+                                break;
+                            }
+                        }
+                        Token::End => return Err(self.error("Close the goal group.")),
+                        _ => {}
+                    }
+                    end += 1;
+                }
+                let next = match &self.tokens[end + 1].0 {
+                    Token::Symbol(s) | Token::Name(s) => s.as_str(),
+                    _ => "",
+                };
+                !test(next) && binary(next).is_none()
+            } else {
+                false
+            };
+            if grouped {
+                self.position += 1;
+                goals.extend(self.goals()?);
+                self.expect(")")?;
+            } else {
+                goals.push(self.literal()?);
+            }
+            if goals.len() > 64 {
                 return Err(self.error("Use at most 64 goals in a rule or query."));
             }
-            goals.push(self.literal()?);
+            if !self.take(",") {
+                break;
+            }
         }
         Ok(goals)
+    }
+    fn request(
+        &mut self,
+        program: &mut Program,
+        assertion: bool,
+        explain: bool,
+    ) -> Result<(), Error> {
+        let goals = self.goals()?;
+        let mut variables = Vec::new();
+        for goal in &goals {
+            let terms = match goal {
+                Literal::Relation(g)
+                | Literal::Builtin(g)
+                | Literal::Not(g)
+                | Literal::NotBuiltin(g) => g.terms.as_slice(),
+                Literal::Aggregate(a) => std::slice::from_ref(&a.result),
+                Literal::Fresh(t) => std::slice::from_ref(t),
+            };
+            for v in terms
+                .iter()
+                .flat_map(|t| crate::model::value_variables(&crate::model::term_value(t)))
+            {
+                if !v.starts_with('_') && !variables.contains(&v) {
+                    variables.push(v);
+                }
+            }
+        }
+        program.queries.push(Query {
+            goals,
+            variables,
+            assertion,
+            explain,
+        });
+        Ok(())
     }
     fn program(&mut self) -> Result<Program, Error> {
         let mut program = Program::default();
         while self.peek() != &Token::End {
-            if self.take(Token::Query) {
-                let goals = self.goals()?;
-                let mut variables = Vec::new();
-                for goal in &goals {
-                    for name in literal_variable_order(goal) {
-                        if !name.starts_with("_$") && !variables.contains(&name) {
-                            variables.push(name);
+            if self.take("?-") {
+                if self.take("why") {
+                    if self.take("(") {
+                        self.request(&mut program, false, true)?;
+                        self.expect(")")?;
+                    } else {
+                        program.followups.push(program.queries.len());
+                    }
+                } else {
+                    self.request(&mut program, false, false)?;
+                }
+            } else if self.take(":-") {
+                if self.take("table") {
+                    loop {
+                        let Token::Name(name) = self.peek().clone() else {
+                            return Err(self.error("A table declaration needs a predicate name."));
+                        };
+                        self.position += 1;
+                        self.expect("/")?;
+                        let Token::Number(n) = self.peek() else {
+                            return Err(self.error("A table arity must be an integer."));
+                        };
+                        let arity = n
+                            .parse::<usize>()
+                            .map_err(|_| self.error("Invalid table arity."))?;
+                        self.position += 1;
+                        if arity > 64 {
+                            return Err(self.error("A relation supports at most 64 arguments."));
+                        }
+                        program.tables.insert((name, arity));
+                        if !self.take(",") {
+                            break;
                         }
                     }
-                }
-                program.queries.push(Query { goals, variables });
-            } else {
-                let head = self.goal()?;
-                if self.take(Token::Rule) {
-                    let body = self.goals()?;
-                    program.rules.push(Rule { head, body });
+                } else if self.take("assertion") {
+                    self.expect("(")?;
+                    self.request(&mut program, true, false)?;
+                    self.expect(")")?;
                 } else {
-                    program.facts.push(head.ground().ok_or_else(|| {
-                        self.error("A fact must be ground; put variables in a rule or query.")
-                    })?);
+                    return Err(self.error("Supported directives are table and assertion."));
+                }
+            } else {
+                let value = self.expression(0)?;
+                let head = self.as_goal(value)?;
+                if builtin_name(&head.predicate, head.terms.len())
+                    || matches!(
+                        head.predicate.as_str(),
+                        "aggregate_all" | "fresh" | "why" | "assertion"
+                    )
+                {
+                    return Err(self.error("A fact or rule must name an ordinary predicate."));
+                }
+                if self.take(":-") {
+                    program.rules.push(Rule {
+                        head,
+                        body: self.goals()?,
+                    });
+                } else if let Some(atom) = head.ground() {
+                    program.facts.push(atom);
+                } else {
+                    program.rules.push(Rule { head, body: vec![] });
                 }
             }
-            self.expect(Token::Dot, "End each fact, rule, or query with a period.")?;
+            self.expect(".")?;
         }
         program.validate()?;
         Ok(program)
     }
 }
-
-fn literal_variable_order(literal: &Literal) -> Vec<String> {
-    let terms = match literal {
-        Literal::Relation(g) | Literal::Builtin(g) | Literal::Not(g) => g.terms.as_slice(),
-        Literal::Aggregate(a) => std::slice::from_ref(&a.result),
-        Literal::Fresh(t) => std::slice::from_ref(t),
-    };
-    terms
-        .iter()
-        .filter_map(|t| {
-            if let Term::Variable(n) = t {
-                Some(n.clone())
-            } else {
-                None
-            }
-        })
-        .collect()
-}
-
 pub fn parse(source: &str) -> Result<Program, Error> {
     Parser::new(source)?.program()
 }
-
 pub fn parse_atom(source: &str) -> Result<Atom, Error> {
-    let mut parser = Parser::new(source)?;
-    let goal = parser.goal()?;
-    parser.expect(Token::Dot, "End the recorded fact with a period.")?;
-    if parser.peek() != &Token::End {
-        return Err(parser.error("Expected exactly one recorded fact."));
+    let mut p = Parser::new(source)?;
+    let value = p.expression(0)?;
+    let goal = p.as_goal(value)?;
+    p.expect(".")?;
+    if p.peek() != &Token::End {
+        return Err(p.error("Expected exactly one recorded fact."));
     }
     goal.ground()
-        .ok_or_else(|| parser.error("Recorded facts must be ground."))
+        .ok_or_else(|| p.error("Recorded facts must be ground."))
+}
+
+pub(crate) fn parse_goal(source: &str) -> Result<Goal, Error> {
+    let mut p = Parser::new(source)?;
+    let value = p.expression(0)?;
+    let goal = p.as_goal(value)?;
+    p.expect(".")?;
+    if p.peek() != &Token::End {
+        return Err(p.error("Expected one goal."));
+    }
+    Ok(goal)
 }

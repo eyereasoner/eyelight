@@ -27,6 +27,7 @@ pub enum Justification {
         premises: Vec<usize>,
     },
     Builtin,
+    NotBuiltin,
     Absent {
         boundary: usize,
     },
@@ -60,6 +61,7 @@ pub struct Step {
 pub struct Boundary {
     pub level: usize,
     pub steps: Vec<usize>,
+    pub calls: Vec<Goal>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Claim {
@@ -88,11 +90,10 @@ pub(crate) fn body(program: &Program, owner: Owner) -> Option<&[Literal]> {
 pub(crate) fn context_goal(program: &Program, owner: Owner, position: usize) -> Option<Goal> {
     let goals = body(program, owner)?;
     let at = position.checked_sub(1)?;
-    let result = match goals.get(at)? {
-        Literal::Aggregate(a) => a.result.clone(),
-        Literal::Fresh(t) => t.clone(),
-        _ => return None,
+    let Literal::Fresh(result) = goals.get(at)? else {
+        return None;
     };
+    let result = result.clone();
     let bound = if at == 0 {
         BTreeSet::new()
     } else {
@@ -100,17 +101,88 @@ pub(crate) fn context_goal(program: &Program, owner: Owner, position: usize) -> 
             .ok()?
             .0
     };
-    let kind = if matches!(goals[at], Literal::Fresh(_)) {
-        "fresh"
-    } else {
-        "aggregate"
-    };
+    let kind = "fresh";
     let mut terms: Vec<_> = bound.into_iter().map(Term::Variable).collect();
     terms.push(result);
     Some(Goal {
         predicate: format!("${kind}:{owner}:{position}"),
         terms,
     })
+}
+fn aggregate_names(program: &Program, owner: Owner, position: usize) -> BTreeSet<String> {
+    let mut names: BTreeSet<_> = body(program, owner).unwrap()[..position - 1]
+        .iter()
+        .flat_map(Literal::variables)
+        .collect();
+    if let Owner::Rule(n) = owner {
+        names.extend(program.rules[n - 1].head.variables());
+    }
+    names
+}
+pub(crate) fn aggregate_atom(
+    program: &Program,
+    owner: Owner,
+    position: usize,
+    outer: &Bindings,
+    result: Value,
+) -> Atom {
+    let mut groups = Vec::new();
+    for name in aggregate_names(program, owner, position) {
+        if let Some(value) = crate::semantics::value(&Term::Variable(name.clone()), outer) {
+            groups.push(Value::Compound(
+                "binding".into(),
+                vec![Value::Symbol(name), value],
+            ));
+        }
+    }
+    let groups = groups.into_iter().rev().fold(Value::Nil, |tail, item| {
+        Value::Compound(".".into(), vec![item, tail])
+    });
+    Atom {
+        predicate: format!("$aggregate:{owner}:{position}"),
+        values: vec![groups, result],
+    }
+}
+fn aggregate_bindings(
+    program: &Program,
+    owner: Owner,
+    position: usize,
+    atom: &Atom,
+) -> Option<Bindings> {
+    if atom.predicate != format!("$aggregate:{owner}:{position}") || atom.values.len() != 2 {
+        return None;
+    }
+    let names = aggregate_names(program, owner, position);
+    let mut bindings = Bindings::new();
+    let mut cursor = &atom.values[0];
+    let mut previous: Option<&str> = None;
+    while let Value::Compound(cons, items) = cursor {
+        if cons != "." || items.len() != 2 {
+            return None;
+        }
+        let Value::Compound(binding, pair) = &items[0] else {
+            return None;
+        };
+        if binding != "binding" || pair.len() != 2 {
+            return None;
+        }
+        let Value::Symbol(name) = &pair[0] else {
+            return None;
+        };
+        if previous.is_some_and(|p| p >= name.as_str()) {
+            return None;
+        }
+        previous = Some(name);
+        if !names.contains(name)
+            || !pair[1].ground()
+            || !pair[1].valid()
+            || bindings.insert(name.clone(), pair[1].clone()).is_some()
+        {
+            return None;
+        }
+        cursor = &items[1];
+    }
+    (cursor == &Value::Nil).then_some(bindings)
 }
 fn context_bindings(goal: &Goal, atom: &Atom) -> Option<Bindings> {
     if goal.predicate != atom.predicate || goal.terms.len() != atom.values.len() {
@@ -191,6 +263,7 @@ impl Certificate {
                 boundary_names[index + 1] = new + 1;
                 Boundary {
                     level: run.boundaries[index].level,
+                    calls: run.boundaries[index].calls.clone(),
                     steps: run.boundaries[index]
                         .steps
                         .iter()
@@ -241,8 +314,8 @@ impl Certificate {
     }
     fn read(source: &str) -> Result<Self, Error> {
         let mut lines = source.lines();
-        if lines.next() != Some("whye-proof 1") {
-            return Err(Error::new("Expected certificate header: whye-proof 1."));
+        if lines.next() != Some("wheye-proof 1") {
+            return Err(Error::new("Expected certificate header: wheye-proof 1."));
         }
         let mut result = Self::default();
         let mut claims = false;
@@ -273,6 +346,7 @@ impl Certificate {
                         premises: references(ps)?,
                     },
                     ["builtin"] => Justification::Builtin,
+                    ["not-builtin"] => Justification::NotBuiltin,
                     ["absent", b] => Justification::Absent {
                         boundary: number(b)?,
                     },
@@ -291,6 +365,16 @@ impl Certificate {
                     atom: parse_atom(atom)?,
                     justification,
                 });
+            } else if let Some(demand) = line.strip_prefix("demand ") {
+                if claims {
+                    return Err(invalid());
+                }
+                let (id, goal) = demand.split_once(" : ").ok_or_else(invalid)?;
+                let boundary = result
+                    .boundaries
+                    .get_mut(number(id)? - 1)
+                    .ok_or_else(invalid)?;
+                boundary.calls.push(crate::parser::parse_goal(goal)?);
             } else {
                 let fields: Vec<_> = line.split_whitespace().collect();
                 match fields.as_slice() {
@@ -301,6 +385,7 @@ impl Certificate {
                         result.boundaries.push(Boundary {
                             level,
                             steps: references(ps)?,
+                            calls: Vec::new(),
                         });
                     }
                     ["answer", q, ps] => {
@@ -361,7 +446,7 @@ fn list(f: &mut fmt::Formatter<'_>, ids: &[usize]) -> fmt::Result {
 }
 impl fmt::Display for Certificate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "whye-proof 1")?;
+        writeln!(f, "wheye-proof 1")?;
         for (i, s) in self.steps.iter().enumerate() {
             write!(f, "step {} ", i + 1)?;
             match &s.justification {
@@ -371,6 +456,7 @@ impl fmt::Display for Certificate {
                     list(f, premises)?;
                 }
                 Justification::Builtin => f.write_str("builtin")?,
+                Justification::NotBuiltin => f.write_str("not-builtin")?,
                 Justification::Absent { boundary } => write!(f, "absent {boundary}")?,
                 Justification::Aggregate {
                     owner,
@@ -385,6 +471,9 @@ impl fmt::Display for Certificate {
             write!(f, "boundary {} level {} ", i + 1, b.level)?;
             list(f, &b.steps)?;
             writeln!(f)?;
+            for call in &b.calls {
+                writeln!(f, "demand {} : {}.", i + 1, call)?;
+            }
         }
         for claim in &self.claims {
             match claim {
@@ -399,7 +488,7 @@ impl fmt::Display for Certificate {
         Ok(())
     }
 }
-/// The nine proof conditions, specialized to whye's language.
+/// The nine proof conditions, specialized to wheye's language.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Condition {
     C1,
@@ -515,7 +604,14 @@ impl Report {
                             .iter()
                             .flat_map(|r| &r.body)
                             .chain(program.queries.iter().flat_map(|q| &q.goals))
-                            .any(|g| matches!(g, Literal::Builtin(_) | Literal::Aggregate(_))) =>
+                            .any(|g| {
+                                matches!(
+                                    g,
+                                    Literal::Builtin(_)
+                                        | Literal::NotBuiltin(_)
+                                        | Literal::Aggregate(_)
+                                )
+                            }) =>
                     {
                         Some("program uses no built-ins or aggregates")
                     }
@@ -653,12 +749,21 @@ fn match_premises(
     owner: Owner,
     premises: &[usize],
     steps: &[Step],
+    head: Option<&Atom>,
 ) -> Option<Bindings> {
     let goals = body(program, owner)?;
     if goals.len() != premises.len() {
         return None;
     }
     let mut bindings = Bindings::new();
+    if let (Owner::Rule(n), Some(atom)) = (owner, head) {
+        if !match_goal(&program.rules[n - 1].head, atom, &mut bindings) {
+            return None;
+        }
+    }
+    let head_bindings = bindings.clone();
+    let mut timing = Bindings::new();
+    let mut producer_names = BTreeSet::new();
     for (position, (literal, id)) in goals.iter().zip(premises).enumerate() {
         let step = steps.get(id.checked_sub(1)?)?;
         let matches = match (literal, &step.justification) {
@@ -666,22 +771,43 @@ fn match_premises(
             (Literal::Builtin(g), Justification::Builtin) => {
                 match_goal(g, &step.atom, &mut bindings)
             }
+            (Literal::NotBuiltin(g), Justification::NotBuiltin) => {
+                match_goal(g, &step.atom, &mut bindings)
+            }
             (Literal::Not(g), Justification::Absent { .. }) => {
                 // Negation must only test a closed tuple; it cannot bind names.
                 instantiate(g, &bindings).as_ref() == Some(&step.atom)
             }
             (
-                Literal::Aggregate(_),
+                Literal::Aggregate(a),
                 Justification::Aggregate {
                     owner: o,
                     position: p,
                     ..
                 },
-            ) if *o == owner && *p == position + 1 => match_goal(
-                &context_goal(program, owner, position + 1)?,
-                &step.atom,
-                &mut bindings,
-            ),
+            ) if *o == owner && *p == position + 1 => {
+                let groups = aggregate_bindings(program, owner, position + 1, &step.atom)?;
+                let names = aggregate_names(program, owner, position + 1);
+                for name in names {
+                    if let Some(value) =
+                        crate::semantics::value(&Term::Variable(name.clone()), &timing)
+                    {
+                        if groups.get(&name) != Some(&value) {
+                            return None;
+                        }
+                    }
+                }
+                for (name, value) in groups {
+                    if !bind(&Term::Variable(name.clone()), value.clone(), &mut bindings)
+                        || !bind(&Term::Variable(name), value, &mut timing)
+                    {
+                        return None;
+                    }
+                }
+                producer_names.extend(a.body.iter().flat_map(Literal::variables));
+                bind(&a.result, step.atom.values[1].clone(), &mut timing)
+                    && bind(&a.result, step.atom.values[1].clone(), &mut bindings)
+            }
             (Literal::Fresh(_), Justification::Fresh { rule, position: p })
                 if owner == Owner::Rule(*rule) && *p == position + 1 =>
             {
@@ -694,6 +820,46 @@ fn match_premises(
             _ => false,
         };
         if !matches {
+            return None;
+        }
+        match literal {
+            Literal::Relation(g) => {
+                if !match_goal(g, &step.atom, &mut timing) {
+                    return None;
+                }
+            }
+            Literal::Builtin(g) => {
+                let attempt = builtin(g, &timing);
+                if attempt.is_err() {
+                    for name in g.variables() {
+                        if let Some(value) = head_bindings.get(&name) {
+                            bind(&Term::Variable(name), value.clone(), &mut timing);
+                        }
+                    }
+                }
+                if let Some((_, next)) = builtin(g, &timing).ok().flatten() {
+                    timing = next;
+                }
+            }
+            Literal::Not(g) | Literal::NotBuiltin(g) => {
+                for name in g.variables() {
+                    if crate::semantics::value(&Term::Variable(name.clone()), &timing).is_none() {
+                        if let Some(value) = head_bindings.get(&name) {
+                            bind(&Term::Variable(name), value.clone(), &mut timing);
+                        }
+                    }
+                }
+            }
+            Literal::Fresh(term) => {
+                bind(term, step.atom.values.last()?.clone(), &mut timing);
+            }
+            Literal::Aggregate(_) => {}
+        }
+    }
+    for name in producer_names {
+        if head_bindings.contains_key(&name)
+            && crate::semantics::value(&Term::Variable(name), &timing).is_none()
+        {
             return None;
         }
     }
@@ -713,7 +879,13 @@ pub fn check_with_limits(
     limits: crate::Limits,
 ) -> Result<Report, Error> {
     use Condition::*;
-    if certificate.steps.len() > limits.max_facts {
+    let evidence = certificate
+        .boundaries
+        .iter()
+        .fold(certificate.steps.len(), |n, b| {
+            n.saturating_add(b.calls.len())
+        });
+    if evidence > limits.max_facts {
         return Err(Error::new(format!(
             "Incomplete: proof evidence limit ({}) exceeded.",
             limits.max_facts
@@ -732,6 +904,9 @@ pub fn check_with_limits(
         budget.tick()?;
         let location = ProofLocation::Step(index + 1);
         report.attempt(C3);
+        if !step.atom.values.iter().all(|v| v.ground() && v.valid()) {
+            report.fail(C3, location, "Evidence must be ground.");
+        }
         if (step.justification.ordinary() && !known.insert(&step.atom))
             || (!step.justification.ordinary() && !decisions.insert(step))
         {
@@ -767,9 +942,13 @@ pub fn check_with_limits(
                 }
                 if covered {
                     report.attempt(C1);
-                    if let Some(bindings) =
-                        match_premises(program, Owner::Rule(*rule), premises, &certificate.steps)
-                    {
+                    if let Some(bindings) = match_premises(
+                        program,
+                        Owner::Rule(*rule),
+                        premises,
+                        &certificate.steps,
+                        Some(&step.atom),
+                    ) {
                         if instantiate(&program.rules[rule - 1].head, &bindings).as_ref()
                             != Some(&step.atom)
                         {
@@ -788,7 +967,7 @@ pub fn check_with_limits(
                     }
                 }
             }
-            Justification::Builtin => {
+            Justification::Builtin | Justification::NotBuiltin => {
                 report.attempt(C5);
                 let goal = Goal {
                     predicate: step.atom.predicate.clone(),
@@ -800,7 +979,13 @@ pub fn check_with_limits(
                         .map(Term::Constant)
                         .collect(),
                 };
-                if builtin(&goal, &Bindings::new()).map(|(a, _)| a).as_ref() != Some(&step.atom) {
+                let result = builtin(&goal, &Bindings::new());
+                let valid = if step.justification == Justification::NotBuiltin {
+                    matches!(result, Ok(None))
+                } else {
+                    result.ok().flatten().map(|(a, _)| a).as_ref() == Some(&step.atom)
+                };
+                if !valid {
                     report.fail(C5, location, "Built-in tuple is false or unsupported.");
                 }
             }
@@ -813,7 +998,16 @@ pub fn check_with_limits(
                 ) {
                     report.attempt(C6);
                     let b = &certificate.boundaries[boundary - 1];
-                    let level = plan.level(&(step.atom.predicate.clone(), step.atom.values.len()));
+                    let level = plan.goal_level(&Goal {
+                        predicate: step.atom.predicate.clone(),
+                        terms: step
+                            .atom
+                            .values
+                            .iter()
+                            .cloned()
+                            .map(Term::Constant)
+                            .collect(),
+                    });
                     if b.level != level {
                         report.fail(
                             C6,
@@ -866,15 +1060,19 @@ pub fn check_with_limits(
                                 "Aggregate cites the wrong dependency level.",
                             );
                         }
-                        let goal = context_goal(program, *owner, *position).unwrap();
                         let mut valid = false;
                         if let (Some(mut bindings), Some(facts)) = (
-                            context_bindings(&goal, &step.atom),
+                            aggregate_bindings(program, *owner, *position, &step.atom),
                             boundary_facts(certificate, *boundary),
                         ) {
-                            if let Some(result) = aggregate(a, &bindings, &facts, &mut budget)? {
-                                valid = bind(&a.result, result, &mut bindings)
-                                    && instantiate(&goal, &bindings).as_ref() == Some(&step.atom);
+                            if let Some(result) = aggregate(
+                                a,
+                                &bindings,
+                                &crate::semantics::Model::new(&facts, &mut budget)?,
+                                &mut budget,
+                            )? {
+                                valid = result == step.atom.values[1]
+                                    && bind(&a.result, result, &mut bindings);
                             }
                         }
                         if !valid {
@@ -955,6 +1153,27 @@ pub fn check_with_limits(
         }
     }
 
+    for (index, step) in certificate.steps.iter().enumerate() {
+        let mut pending: Vec<_> = step.atom.values.iter().collect();
+        while let Some(value) = pending.pop() {
+            budget.tick()?;
+            match value {
+                Value::Compound(_, args) => pending.extend(args),
+                Value::Witness(_) => {
+                    report.conditions[C8 as usize].not_applicable = None;
+                    report.attempt(C8);
+                    if !witnesses.contains_key(value) {
+                        report.fail(
+                            C8,
+                            ProofLocation::Step(index + 1),
+                            "Witness has no checked fresh source-rule firing.",
+                        );
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
     let source_atoms: HashSet<_> = program.facts.iter().collect();
     let mut answers = HashSet::new();
     let mut derived = HashSet::new();
@@ -997,13 +1216,19 @@ pub fn check_with_limits(
                 }
                 if covered {
                     report.attempt(C9);
-                    if let Some(bindings) =
-                        match_premises(program, Owner::Query(*query), premises, &certificate.steps)
-                    {
+                    if let Some(bindings) = match_premises(
+                        program,
+                        Owner::Query(*query),
+                        premises,
+                        &certificate.steps,
+                        None,
+                    ) {
                         let values: Vec<_> = program.queries[query - 1]
                             .variables
                             .iter()
-                            .map(|n| bindings[n].clone())
+                            .map(|n| {
+                                crate::semantics::resolve(&Value::Variable(n.clone()), &bindings)
+                            })
                             .collect();
                         if !answers.insert((*query, values)) {
                             report.fail(C3, location, "Duplicate projected answer.");
@@ -1038,11 +1263,10 @@ pub fn check_with_limits(
         }
         let facts = boundary_facts(certificate, index + 1).unwrap();
         let model: HashSet<_> = facts.iter().collect();
+        let indexed = crate::semantics::Model::new(&facts, &mut budget)?;
         for id in &boundary.steps {
             let s = &certificate.steps[id - 1];
-            if !s.justification.ordinary()
-                || plan.level(&(s.atom.predicate.clone(), s.atom.values.len())) > boundary.level
-            {
+            if !s.justification.ordinary() || plan.step_level(s) > boundary.level {
                 report.fail(
                     C6,
                     location,
@@ -1051,9 +1275,7 @@ pub fn check_with_limits(
             }
         }
         for atom in &program.facts {
-            if plan.level(&(atom.predicate.clone(), atom.values.len())) <= boundary.level
-                && !model.contains(atom)
-            {
+            if !model.contains(atom) {
                 report.fail(
                     C6,
                     location,
@@ -1061,33 +1283,153 @@ pub fn check_with_limits(
                 );
             }
         }
+        let calls: HashSet<_> = boundary
+            .calls
+            .iter()
+            .map(crate::engine::canonical_goal)
+            .collect();
+        if calls.len() != boundary.calls.len() {
+            report.fail(C6, location, "Duplicate demanded call.");
+        }
+        for call in &boundary.calls {
+            let mut values: Vec<_> = call
+                .terms
+                .iter()
+                .filter_map(|t| {
+                    if let Term::Constant(v) = t {
+                        Some(v)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            while let Some(value) = values.pop() {
+                budget.tick()?;
+                match value {
+                    Value::Compound(_, args) => values.extend(args),
+                    Value::Witness(_) => {
+                        report.conditions[C8 as usize].not_applicable = None;
+                        report.attempt(C8);
+                        if !witnesses.contains_key(value) {
+                            report.fail(
+                                C8,
+                                location,
+                                "Demanded witness has no checked fresh source-rule firing.",
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            budget.tick()?;
+            if plan.goal_level(call) > boundary.level
+                || !plan
+                    .demands
+                    .contains_key(&(call.predicate.clone(), call.terms.len()))
+            {
+                report.fail(
+                    C6,
+                    location,
+                    "Demand does not name a tabled producer in this prefix.",
+                );
+            }
+        }
+        // A negative/aggregate consumer must request every producer call needed
+        // by its supplied prefix. This is finite model checking, not evaluation.
+        for step in &certificate.steps {
+            match &step.justification {
+                Justification::Absent { boundary: b } if *b == index + 1 => {
+                    let goal = Goal {
+                        predicate: step.atom.predicate.clone(),
+                        terms: step
+                            .atom
+                            .values
+                            .iter()
+                            .cloned()
+                            .map(Term::Constant)
+                            .collect(),
+                    };
+                    require_demand(program, &plan, &goal, &calls, &mut report, location)?;
+                }
+                Justification::Aggregate {
+                    owner,
+                    position,
+                    boundary: b,
+                } if *b == index + 1 => {
+                    if let Some(goals) = body(program, *owner) {
+                        if let Some(Literal::Aggregate(a)) = goals.get(position.saturating_sub(1)) {
+                            {
+                                if let Some(initial) =
+                                    aggregate_bindings(program, *owner, *position, &step.atom)
+                                {
+                                    check_demands(
+                                        program,
+                                        &plan,
+                                        &a.body,
+                                        &initial,
+                                        &indexed,
+                                        &calls,
+                                        &mut budget,
+                                        &mut report,
+                                        location,
+                                    )?;
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
         for (i, rule) in program.rules.iter().enumerate() {
             if plan.rules[i] > boundary.level {
                 continue;
             }
+            let initial = if plan.backward[i] {
+                boundary
+                    .calls
+                    .iter()
+                    .filter_map(|call| crate::engine::match_call(&rule.head, call))
+                    .collect::<Vec<_>>()
+            } else {
+                vec![Bindings::new()]
+            };
             let (prefix, fresh) = if let Some(Literal::Fresh(t)) = rule.body.last() {
                 (&rule.body[..rule.body.len() - 1], Some(t))
             } else {
                 (rule.body.as_slice(), None)
             };
-            let solutions = if prefix.is_empty() {
-                vec![Bindings::new()]
-            } else {
-                model_solutions(prefix, Bindings::new(), &facts, &mut budget)?
-            };
-            for mut bindings in solutions {
-                if let Some(term) = fresh {
-                    let identity = witness(i + 1, rule.body.len(), &bindings);
-                    bind(term, identity, &mut bindings);
-                }
-                let head = instantiate(&rule.head, &bindings)
-                    .ok_or_else(|| Error::new("Unbound closure-check head."))?;
-                if !model.contains(&head) {
-                    report.fail(
-                        C6,
-                        location,
-                        format!("Closed boundary omits rule {} conclusion {head}.", i + 1),
-                    );
+            for initial in initial {
+                check_demands(
+                    program,
+                    &plan,
+                    prefix,
+                    &initial,
+                    &indexed,
+                    &calls,
+                    &mut budget,
+                    &mut report,
+                    location,
+                )?;
+                let solutions = if prefix.is_empty() {
+                    vec![initial]
+                } else {
+                    model_solutions(prefix, initial, &indexed, &mut budget)?
+                };
+                for mut bindings in solutions {
+                    if let Some(term) = fresh {
+                        let identity = witness(i + 1, rule.body.len(), &bindings);
+                        bind(term, identity, &mut bindings);
+                    }
+                    let head = instantiate(&rule.head, &bindings)
+                        .ok_or_else(|| Error::new("Unbound closure-check head."))?;
+                    if !model.contains(&head) {
+                        report.fail(
+                            C6,
+                            location,
+                            format!("Closed boundary omits rule {} conclusion {head}.", i + 1),
+                        );
+                    }
                 }
             }
         }
@@ -1133,4 +1475,69 @@ pub fn check_with_limits(
         }
     }
     Ok(report)
+}
+
+fn require_demand(
+    _program: &Program,
+    plan: &crate::language::Plan,
+    goal: &Goal,
+    calls: &HashSet<Goal>,
+    report: &mut Report,
+    location: ProofLocation,
+) -> Result<(), Error> {
+    if plan
+        .demands
+        .contains_key(&(goal.predicate.clone(), goal.terms.len()))
+        && !calls.contains(&crate::engine::canonical_goal(goal))
+    {
+        report.fail(
+            Condition::C6,
+            location,
+            format!("Closed boundary omits demanded call {goal}."),
+        );
+    }
+    Ok(())
+}
+#[allow(clippy::too_many_arguments)]
+fn check_demands(
+    program: &Program,
+    plan: &crate::language::Plan,
+    body: &[Literal],
+    initial: &Bindings,
+    facts: &crate::semantics::Model<'_>,
+    calls: &HashSet<Goal>,
+    budget: &mut Budget,
+    report: &mut Report,
+    location: ProofLocation,
+) -> Result<(), Error> {
+    for (at, literal) in body.iter().enumerate() {
+        if matches!(
+            literal,
+            Literal::Relation(_) | Literal::Not(_) | Literal::Aggregate(_)
+        ) {
+            let prefixes = if at == 0 {
+                vec![initial.clone()]
+            } else {
+                model_solutions(&body[..at], initial.clone(), facts, budget)?
+            };
+            for bindings in prefixes {
+                budget.tick()?;
+                match literal {
+                    Literal::Relation(goal) | Literal::Not(goal) => require_demand(
+                        program,
+                        plan,
+                        &crate::engine::specialize(goal, &bindings),
+                        calls,
+                        report,
+                        location,
+                    )?,
+                    Literal::Aggregate(a) => check_demands(
+                        program, plan, &a.body, &bindings, facts, calls, budget, report, location,
+                    )?,
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+    Ok(())
 }

@@ -1,24 +1,9 @@
-# Whye guide
+# Wheye guide
 
-Version **0.1.12**. Run programs, explore examples, and check their proofs. The
-[specification](https://eyereasoner.github.io/whye/SPEC/) defines the language
-and proof contract.
-
-Give whye facts and rules, then ask what follows:
-
-```prolog
-human(socrates).
-mortal(Person) :- human(Person).
-
-?- mortal(Who).
-```
-
-```text
-?- mortal(Who).
-Who = socrates.
-```
-
-Whye programs use Prolog-style clause syntax and the `.pl` extension. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/whye/SPEC/) describes the complete language.
+Version **0.1.13**. Run a Prolog subset in the native CLI or browser, inspect
+explanations, and check independent proof certificates. The
+[specification](https://eyereasoner.github.io/wheye/SPEC/) defines the language
+and the [C1–C9 contract](https://eyereasoner.github.io/wheye/SPEC/#8-verification).
 
 ## Run your first program
 
@@ -26,304 +11,246 @@ With Rust and Cargo installed:
 
 ```sh
 cargo build --release --locked
-./target/release/whye examples/socrates.pl
-./target/release/whye --explain examples/socrates.pl
-./target/release/whye --prove-and-check examples/socrates.pl
-```
-
-Install from this checkout if you want `whye` on your path:
-
-```sh
+./target/release/wheye examples/socrates.pl
+./target/release/wheye --explain examples/socrates.pl
+./target/release/wheye --prove-and-check examples/socrates.pl
 cargo install --path . --locked
 ```
 
-The native engine has no third-party runtime dependencies. The browser build uses `wasm-bindgen` to expose the same Rust implementation.
-
-## Try a connection
-
-This program finds indirect connections as well as direct ones:
+A minimal program selects Socrates as an answer:
 
 ```prolog
-link(library, park).
-link(park, station).
-link(station, park).
-
-path(From, To) :- link(From, To).
-path(From, To) :- path(From, Via), link(Via, To).
-
-?- path(library, Where).
+human(socrates).
+mortal(Person) :- human(Person).
+?- mortal(Who).
+?- why.
+:- assertion(mortal(socrates)).
 ```
 
-The answers are `park` and `station`. The cycle does not create duplicate answers or infinite recursion: the evaluator stops when it has no new facts to add.
+`why` explains the preceding query. Assertions check an expected result and
+fail the run if no solution exists. They never assert facts. Opening a shared
+playground program does not run it automatically; press **Run**.
+
+## Explore the examples
+
+All programs are directly in [examples/](https://github.com/eyereasoner/wheye/tree/main/examples/)
+and selectable in the [playground](https://eyereasoner.github.io/wheye/playground/).
+The collection includes lists, structural unification, recursive arithmetic,
+Fibonacci at 10,000, graph algorithms, finite optimization, text processing,
+scientific calculations, and classification chains. Source header comments
+explain each example's assumptions and expected results. Saved transcripts in
+`examples/output/` are reference outputs; the CLI's certificate and report
+format is described below.
 
 | Example | What it shows |
 | --- | --- |
-| [Socrates](https://github.com/eyereasoner/whye/blob/main/examples/socrates.pl) | A first conclusion and query |
-| [Paths](https://github.com/eyereasoner/whye/blob/main/examples/paths.pl) | Recursive reachability with cycles |
-| [Airport path discovery](https://github.com/eyereasoner/whye/blob/main/examples/path-discovery.pl) | Full airport graph, routes with up to two stopovers, and checked route text |
-| [Family](https://github.com/eyereasoner/whye/blob/main/examples/family.pl) | Joins and shared variables |
-| [Values](https://github.com/eyereasoner/whye/blob/main/examples/values.pl) | Distinct atoms, strings, and integers |
-| [RDF-shaped data](https://github.com/eyereasoner/whye/blob/main/examples/rdf.pl) | IRIs represented in an ordinary triple relation |
-| [Price calculations](https://github.com/eyereasoner/whye/blob/main/examples/arithmetic.pl) | Arithmetic, comparisons, and string built-ins |
-| [Outside the network](https://github.com/eyereasoner/whye/blob/main/examples/negation.pl) | Stratified negation after recursive reachability |
-| [Department budgets](https://github.com/eyereasoner/whye/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
-| [Fresh tickets](https://github.com/eyereasoner/whye/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
-| [Customer vouchers](https://github.com/eyereasoner/whye/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
+| [Socrates](https://github.com/eyereasoner/wheye/blob/main/examples/socrates.pl) | Queries, explanations, assertions |
+| [Lists](https://github.com/eyereasoner/wheye/blob/main/examples/lists.pl) | Tabled list processing |
+| [Aggregation](https://github.com/eyereasoner/wheye/blob/main/examples/aggregation.pl) | Counts, sums, minima, maxima |
+| [List collection](https://github.com/eyereasoner/wheye/blob/main/examples/list-collection.pl) | Lists with repeated projected items |
+| [Inventory](https://github.com/eyereasoner/wheye/blob/main/examples/inventory.pl) | Arithmetic followed by aggregation |
+| [Airport paths](https://github.com/eyereasoner/wheye/blob/main/examples/path-discovery.pl) | Three routes across the full supplied airport graph |
+| [Customer vouchers](https://github.com/eyereasoner/wheye/blob/main/examples/orders.pl) | All nine proof conditions, including witnesses |
 
-The airport path discovery example keeps all 7,698 airports and 37,274 directed
-links. Its request searches from Ostend-Bruges to Prague with at most two
-stopovers, returning three routes through Liège and then Heraklion, Rhodes
-(Diagoras), or Palma de Mallorca. Each answer includes its actual stop count
-and the airport names in travel order. Built-ins exclude repeated airport IDs
-and assemble the route text; proof checking re-decides those tests and strings.
+The airport example has 7,698 airports and 37,274 directed flight links. It
+finds three routes from Ostend to Prague with at most two intermediate stops.
+Change `route_request/3` to ask for other endpoints or limits. The third answer
+field is the requested limit; route text lists the actual airports. Repeated
+airports are excluded, and an airport can have a zero-leg route to itself.
+The example includes assertions for its supplied answers.
 
-```sh
-./target/release/whye examples/path-discovery.pl
-./target/release/whye -c examples/path-discovery.pl
-```
-
-Edit `route_request(From, To, Limit)` to use other airport labels and a limit of
-0, 1, or 2 stopovers. The finite rule layers cover up to three flight legs;
-longer routes require another layer. Endpoints must differ. The data describes
-the stored graph, not current flight schedules or availability.
-
-## Follow a deep taxonomy
-
-The taxonomy examples classify one individual through a chain of **10, 100,
-1,000, 10,000, or 100,000 levels**. Each level also derives two side labels.
-The final query returns `Result = true`; its certificate retains the classification
-chain and leaves out the side branches.
-
-| Depth | Program |
-| --- | --- |
-| 10 | [deep-taxonomy-10.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-10.pl) |
-| 100 | [deep-taxonomy-100.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-100.pl) |
-| 1,000 | [deep-taxonomy-1000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-1000.pl) |
-| 10,000 | [deep-taxonomy-10000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-10000.pl) |
-| 100,000 | [deep-taxonomy-100000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-100000.pl) |
-
-All five are available in the playground. Run the largest natively with the
-default resource limits:
+The packaged classification examples cover depths 10, 100, 1,000, 10,000, and
+100,000. The first four include `why` and assertions; the largest selects
+`test(true)` and is kept small enough to inspect or check without printing its
+entire closure. Use files for large certificates and explanations:
 
 ```sh
-./target/release/whye -c examples/deep-taxonomy-100000.pl
+./target/release/wheye -c examples/deep-taxonomy-100000.pl
+./target/release/wheye -p examples/deep-taxonomy-100000.pl > /tmp/taxonomy.proof
 ```
 
-It checks a certificate with 100,003 steps and one claim. At depth `d`, the
-program has `3d + 2` rules, stores `3d + 3` facts, and performs `6d + 5` counted
-matching/work operations. Rule dispatch uses ground tuples or fixed arguments
-rather than trying every classification rule against every fact. Proof selection
-and explanation rule selection use iterative marking in source order. These
-chains have expected linear work and storage with hash indexes; this is not a
-linear-time guarantee for arbitrary joins or closed-boundary proofs.
+Tests bound counted dispatch/matching work and proof size, including a
+100,000-level chain. `node scripts/generate-taxonomy.mjs --check` verifies the
+generated examples. `./scripts/bench-taxonomy` measures pipeline phases; run
+it on a quiet machine without concurrent builds. Time and memory depend on
+the program, machine, and allocator.
 
-Native `-c` measurements on 23 October 2026 (AMD Ryzen 5 7520U, Linux under
-WSL2, Rust 1.99.1, release build; median of three runs on a quiet machine):
+## Terms and arithmetic
 
-| Depth | Parse, reason, generate, and check | Peak resident memory |
-| --- | ---: | ---: |
-| 1,000 | 0.029 s | 7.7 MiB |
-| 10,000 | 0.309 s | 64.8 MiB |
-| 100,000 | 3.991 s | 570.5 MiB |
-
-Elapsed time and memory depend on the machine and allocator. The
-[phase measurements](https://github.com/eyereasoner/whye/blob/main/reports/taxonomy-scaling.csv)
-include certificate text round trips and explanations as well; their total also
-includes freeing the run. Each column is an independent three-run median.
-
-Regenerate the programs with `node scripts/generate-taxonomy.mjs`, or verify them
-without writing with `node scripts/generate-taxonomy.mjs --check`. Run
-`./scripts/bench-taxonomy` on a quiet machine for three-run median timings of
-parsing, reasoning, certificate generation, writing, reading, checking, and
-explanation. This runs a standalone Cargo benchmark outside the test harness.
-Ordinary tests enforce work and evidence-size bounds rather than
-machine-dependent elapsed times, and reject a forged deep-chain conclusion.
-
-## Keep the evidence
-
-```sh
-./target/release/whye -p examples/socrates.pl > /tmp/socrates.proof
-./target/release/whye --check-proof /tmp/socrates.proof examples/socrates.pl
-```
-
-The certificate is small enough to read:
-
-```text
-whye-proof 1
-step 1 source 1 : human(socrates).
-step 2 rule 1 [1] : mortal(socrates).
-answer 1 [2]
-```
-
-Step 1 cites the first source fact. Step 2 applies the first source rule using step 1. The answer selects step 2 through the first query. The checker takes facts, rules, and queries from the supplied program, then validates each application with consistent bindings. It does not run the forward evaluator.
-
-Checking reports:
-
-```text
-checked: 2 steps, 1 claim
-1 source fact; 1 rule application
-Conditions:
-  C1 resolution: 2 checked, 0 failed
-  C2 well-foundedness: 1 checked, 0 failed
-  C3 justification: 3 checked, 0 failed
-  C4 coverage: 5 checked, 0 failed
-  C5 re-decision: not applicable (program uses no built-ins or aggregates)
-  C6 boundary consistency: not applicable (program uses no negation or aggregation)
-  C7 relevance: 2 checked, 0 failed
-  C8 witness integrity: not applicable (program uses no fresh witnesses)
-  C9 query isolation: 1 checked, 0 failed
-Source assertions are assumed. Answer completeness is not checked.
-```
-
-A valid certificate establishes **support for its recorded claims relative to the source program**. Input facts are assumptions. The checker does not authenticate their authors or establish that every answer was found. A failed query prints `false.` but produces no claim proving that failure. An empty certificate establishes no answers.
-
-The [C1–C9 contract](https://eyereasoner.github.io/whye/SPEC/#8-verification) defines the requirements and counting units. All nine conditions have implementations. Applicability depends on the program: Socrates needs no built-in decisions, closed-world boundaries, or witnesses, so C5, C6, and C8 report not applicable there. The voucher example exercises all nine with nonzero check counts.
-
-## Calculate, exclude, and collect
-
-Built-ins are explicit interpreted relations, like potentially infinite fact boxes. Bound inputs select a tuple or determine an output:
+Terms include distinct atoms, strings, exact integers, finite binary64 reals,
+compound terms, and proper lists. `1` and `1.0` are different terms, while
+`1 =:= 1.0` compares them numerically. Arithmetic expressions remain data until
+`is/2`, a numeric comparison, or a numeric aggregate evaluates them.
 
 ```prolog
-?- @add(2, 3, Total), @ge(Total, 5).
+line(book, 12, 2).
+total(Item, Amount) :- line(Item, Price, Quantity), Amount is Price * Quantity.
+?- total(Item, Amount), Amount >= 20.
+?- Result is 2^100.
+?- point(X, [a|Rest]) = point(2, [a,b]).
 ```
 
-Supported operations include checked integer arithmetic, comparisons, structural equality, string concatenation, and Unicode string length. Inputs must already be bound; undefined arithmetic tuples fail rather than wrapping. Ordinary names such as `add` remain ordinary relations.
+Unification uses an occurs check. Each `_` is fresh; other names beginning
+with `_` remain shared but are omitted from displayed bindings. Arithmetic
+inputs must already be bound by preceding goals or a call. Invalid inputs,
+division by zero, and non-finite results are errors. Integer arithmetic does
+not wrap. See the [complete builtin tables](https://eyereasoner.github.io/wheye/SPEC/#41-built-ins-and-arithmetic).
 
-Negation and aggregation inspect completed lower strata:
+## Collect completed answers
 
 ```prolog
-customer(ada).
-customer(bea).
-line(ada, book, 12).
-line(ada, pen, 3).
-line(bea, map, 7).
-blocked(bea).
-
-subtotal(Customer, Total) :-
-    customer(Customer),
-    sum { Price, Item : line(Customer, Item, Price) } = Total.
-
-eligible(Customer, Total) :-
-    subtotal(Customer, Total), not blocked(Customer), @ge(Total, 10).
-
-voucher(Customer, Voucher, Total) :-
-    eligible(Customer, Total), @fresh(Voucher).
-
-?- voucher(Customer, Voucher, Total).
+purchase(tools, hammer, 5).
+purchase(tools, saw, 5).
+purchase(tools, saw, 5).
+budget(Department, Count, Total) :-
+    department(Department),
+    aggregate_all(count, purchase(Department, Item, Price), Count),
+    aggregate_all(sum(Price), purchase(Department, Item, Price), Total).
+department(tools).
+?- budget(Department, Count, Total).
 ```
 
-Ada receives a voucher for a total of 15. Bea is blocked. `Price` and `Item` are local to the aggregate; `Customer` is its outer grouping parameter. Additional template keys keep equal prices for different items distinct. `count`, `sum`, `min`, and `max` operate on distinct template tuples; empty count and sum are zero, while empty minimum and maximum have no result.
+The result is two items and a total of 10. Distinct producer tuples contribute
+once; equal prices from different items contribute separately. Repeating the
+same fact or proof path adds no contribution. `aggregate_all(list(Term), Goal,
+Items)` retains equal projected elements from distinct producer tuples. Its
+producer can be a parenthesized conjunction. Producer variables are local;
+only the result binds outside, and earlier bindings constrain the producer.
+Empty count and sum return zero; empty list collection returns `[]`; empty
+minimum and maximum fail.
 
-`@fresh(Voucher)` creates a typed opaque witness belonging to that rule firing. It must be a rule's final goal and bind a new variable. Witnesses are deterministic within the program; they are not globally unique random identifiers. Source programs cannot supply witness constants.
+## Negation, tabling, and witnesses
+
+```prolog
+eligible(Person) :- registered(Person), \+ blocked(Person).
+:- table fibonacci/2.
+fibonacci(0, 0).
+fibonacci(1, 1).
+fibonacci(N, Value) :-
+    N > 1, A is N-1, B is N-2,
+    fibonacci(A, X), fibonacci(B, Y), Value is X+Y.
+?- fibonacci(100, Value).
+```
+
+Negation requires a ground ordinary call and waits for its compatible
+producers to complete. Negative and aggregate cycles are rejected. Clauses
+that need caller inputs use demand-driven tables; a `table` declaration makes
+all clauses of that predicate demand-driven. Variant calls share work and
+recursive consumers resume as answers arrive. Tabling does not guarantee
+termination for arbitrary programs. Limits and the playground's Stop button
+bound a run.
+
+`fresh(Witness)` is an additional explicit predicate with ordinary Prolog call
+syntax. It can only end a forward rule and must bind a new output variable.
+It creates an opaque typed witness for that source-rule firing. Source facts
+cannot supply witness identities. The certificate checker verifies C8 for
+the voucher example:
 
 ```sh
-./target/release/whye -c examples/orders.pl
+./target/release/wheye -c examples/orders.pl
 ```
 
-This checks all nine conditions: C5 recomputes calculations and aggregates, C6 verifies complete lower-stratum boundaries and absence tests, and C8 verifies witness identity. Other conditions validate the rule applications, references, dependency order, relevance, and query isolation.
+## Keep and independently check evidence
 
-**Omitted facts cannot justify a negative test or a smaller aggregate.** The certificate includes the full relevant stratum prefix. The checker requires its input facts and verifies closure under every applicable source rule, without running the forward evaluator or adding missing conclusions. It shares the value model and pure matching, built-in, and aggregate semantics with the evaluator.
+```sh
+./target/release/wheye -p examples/orders.pl > /tmp/orders.proof
+./target/release/wheye --check-proof /tmp/orders.proof examples/orders.pl
+```
 
-Variables in `not` goals must be bound earlier. Negative and aggregate dependencies must be stratified. Rules that produce values through built-ins, aggregation, or fresh witnesses cannot define recursive relations; this prevents unbounded value generation. Positive recursion with tests on bound values remains supported. The [language reference](https://eyereasoner.github.io/whye/SPEC/#4-rules-and-body-goals) gives the exact modes and restrictions.
+Certificates start with `wheye-proof 1` and list source facts, rule
+applications, pure decisions, closed boundaries, demanded-call patterns, and
+selected query claims. They are separate from the Prolog source language.
+The checker validates the supplied evidence; it does not call the evaluator,
+activate tables, or repair missing facts. C5 recomputes builtins and aggregates.
+C6 requires complete finite models and transitively complete demanded calls;
+omitting a derivable counterexample cannot establish absence or a smaller
+aggregate. C8 checks witnesses, and C9 keeps queries and assertions out of
+inference evidence.
+
+Every report lists C1–C9. Conditions for unused features are not applicable.
+The voucher example performs nonzero successful checks under all nine.
+Source assertions remain assumptions. A valid certificate establishes support
+for recorded claims; it does not authenticate facts, establish external-world
+truth, or prove that every answer was selected. An empty certificate establishes
+no positive claim.
 
 ## Use the command line
 
-| Option | Result |
+```sh
+wheye [OPTIONS] FILE...
+wheye [OPTIONS] -
+wheye rules.pl data.pl
+wheye --check-proof - rules.pl data.pl < /tmp/saved.proof
+```
+
+| Option | Output |
 | --- | --- |
-| No output option | Query answers; without queries, newly derived facts |
-| `-e`, `--explain` | Answers and a numbered explanation |
-| `-p`, `--proof` | A portable text certificate |
-| `-c`, `--prove-and-check` | A report from checking a freshly generated certificate |
-| `--check-proof FILE` | Check a saved certificate against the supplied source files |
-| `--max-facts N` | Maximum stored fact/evidence steps; default 1,000,000 |
-| `--max-matches N` | Maximum matching/work operations; default 10,000,000 |
+| `-e`, `--explain` | Answers and supporting evidence |
+| `-p`, `--proof` | Saved proof certificate |
+| `-c`, `--prove-and-check` | Generate and independently check a certificate |
+| `--check-proof FILE` | Check saved evidence against the source |
+| `--max-facts N` | Bound stored evidence |
+| `--max-matches N` | Bound counted matching and finite-model work |
+| `-v`, `--version` | Version |
 | `-h`, `--help` | Usage |
-| `-v`, `--version` | Installed version |
 
-Choose one output option per invocation. Success returns status 0. Parse errors, resource limits, file errors, and invalid proofs return status 1 and write a specific diagnostic to stderr. Reaching a limit yields an incomplete error, with no partial stdout presented as complete answers. Limits count matching/work operations and stored fact/evidence steps; they are not a whole-process memory or time limit.
-
-Files are parsed separately and merged in the supplied order. Variables belong to individual clauses and queries. Use `-` for stdin, once per invocation:
-
-```sh
-./target/release/whye rules.pl data.pl
-./target/release/whye - < examples/socrates.pl
-./target/release/whye --check-proof - examples/socrates.pl < /tmp/socrates.proof
-```
-
-Use the same source order when checking a saved certificate. Source-fact, rule, and query IDs are numbered separately from 1 in that order.
-
-## Open the playground
-
-The included `pkg/` directory contains the WebAssembly build. From this checkout:
-
-```sh
-python3 -m http.server 8000
-```
-
-Open <http://localhost:8000/playground.html>. Choose an example and press **Run**. The **Show** menu selects answers, an explanation, a certificate, or proof checking. To check a saved certificate, select **Check saved proof**, paste it below the editors, and keep its source program above.
-
-The engine runs in a worker. **Stop** terminates that worker, including while WebAssembly is loading. You can run again immediately. Input and output have equal widths on larger screens and stack on phones. Ctrl+Enter or Command+Enter runs the program from the editor.
-
-**Share link** uses `#example=socrates` for a loaded, unchanged example in Answers mode with no saved proof. Otherwise it puts the program, mode, and saved proof in the URL fragment. A recipient can read them. Creating the link uploads nothing; shared programs are loaded but never run automatically. Links containing large programs can be long. Inputs are autosaved locally when browser storage is available.
-
-To rebuild the browser package, install `wasm-pack` and the Rust WebAssembly target:
-
-```sh
-rustup target add wasm32-unknown-unknown
-./scripts/build-playground
-```
+Choose one output mode per invocation. Success returns status 0. Parse errors,
+failed assertions, incomplete runs, and invalid proofs return status 1 with no
+successful partial stdout. Keep source file order the same when checking;
+source fact, rule, and query IDs are separate ordered lists.
 
 ## Embed the engine
 
 ```rust
-use whye::{check, parse, reason, Limits};
-
-fn main() -> Result<(), whye::Error> {
-    let program = parse("human(socrates). mortal(X) :- human(X). ?- mortal(Who).")?;
+use wheye::{check, parse, reason, Limits};
+fn main() -> Result<(), wheye::Error> {
+    let program = parse("human(socrates). mortal(X):-human(X). ?- mortal(Who).")?;
     let run = reason(&program, Limits::default())?;
     print!("{}", run.output(&program));
-
-    let certificate = run.certificate(&program);
-    let report = check(&program, &certificate)?;
-    assert!(report.valid());
-    assert_eq!(report.claims, 1);
+    let report = check(&program, &run.certificate(&program))?;
+    report.require_valid()?;
     Ok(())
 }
 ```
 
-`Run` exposes stored proof steps, projected query answers, and the number of attempted matches. `Certificate::parse` reads the certificate format. `execute` provides the same string interface used by the browser. Parser and library errors use `whye::Error`; incomplete evaluation returns an error rather than a successful `Run`.
-
-`check_with_limits` accepts explicit evidence-size and matching limits; `check` uses defaults. Both return `Ok(report)` when semantic checking finishes, including when the proof is invalid. Inspect **`report.valid()`** before accepting it, or call `report.require_valid()?` to turn an invalid report into an error. `report.conditions` lists all nine conditions with counts and applicability; `report.failures` supplies their diagnostics. `report.condition(whye::Condition::C9)` selects one condition. Unreadable certificates and malformed source programs return errors before a report can be produced.
-
-## Current scope
-
-Implemented: positive recursion, indexed joins and an agenda, explicit arithmetic and string built-ins, stratified negation, grouped set aggregation, scoped fresh witnesses, query projection, structural value identity, explanations, certificate generation, all C1–C9 checks for their corresponding features, a native CLI, and a browser worker.
-
-Not implemented: floating-point arithmetic, lists or general compound terms, inverse built-in solving, nested aggregates, recursive value generation, implicit existential heads, quoted graphs, generated rules, N3 parsing, general Prolog execution, or demand-driven tabling. Quoted IRIs in `triple(S, P, O)` are ordinary atom values, without additional RDF entailment built in.
-
-The safety and recursion restrictions give finite strata. Actual completion remains subject to resource limits, available memory, and cancellation. Closed-boundary proofs can be substantially larger than proofs using positive rules alone because they carry the completed stratum prefix.
+`Run` exposes stored evidence, query answers, counted work, and closed
+boundaries. `Certificate::parse` reads saved evidence. `execute` offers the
+same string interface as the browser. Both `check` and `check_with_limits`
+return `Ok(report)` when semantic checking finishes, even for an invalid proof.
+Inspect **`report.valid()`** or call **`report.require_valid()?`** before accepting
+it. `report.conditions` lists the nine conditions; `report.failures` gives
+specific diagnostics. `report.condition(wheye::Condition::C9)` selects one.
+Malformed input and resource exhaustion return errors.
 
 ## Develop and verify
 
-The development checks use Rust, Cargo, and Node.js 22 or later. CI uses Node.js 24.
+Rust, Cargo, Node.js 22 or later, `wasm-pack`, and the
+`wasm32-unknown-unknown` Rust target are required for the complete checks.
 
 ```sh
 ./scripts/test-all
-cargo clippy --target wasm32-unknown-unknown --lib -- -D warnings
+cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 ./scripts/build-playground
+git diff --check
 ```
 
-Tests cover language behavior, the CLI, forged certificates for every applicable proof condition, explicit per-program applicability, built-ins, aggregates, witnesses, and the worker bridge. Reachability, stratified exclusions, and aggregate counts are checked against independent graph algorithms on all 512 directed graphs over three nodes. Browser checks exercise actual WebAssembly execution, C1–C9 reports, forged-proof rejection, cancellation, sharing, and narrow-screen layout.
-
-`tests/browser.mjs` automates those browser checks through Chrome's local debugging interface. With Node.js 22 or later, start the server and Chrome in separate terminals, then run the checks:
+Tests run every packaged program and its assertions, check C1–C9, reject forged
+certificates including omitted demanded calls, and preserve independent
+exhaustive small-graph oracles. The browser tests use real WebAssembly and
+check worker cancellation, sharing, desktop layout, and phone layout.
 
 ```sh
 python3 -m http.server 8766 --bind 127.0.0.1
-google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/whye-browser about:blank
+google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/wheye-browser about:blank
 node tests/browser.mjs
 ```
 
+The browser engine runs in a worker. Programs remain local unless shared in a
+URL. The committed `pkg/` must be rebuilt after Rust changes. Use the same
+source version for CLI, documentation, playground, and Wasm.
+
 ## Make a release
+
 
 From a reviewed checkout on `main`:
 
@@ -354,10 +281,10 @@ Skip the push if it already succeeded, and create the GitHub release only if it 
 
 The **Deploy GitHub Pages** workflow builds the site on pushes to `main` and can also be started manually. Set the repository's Pages source to **GitHub Actions**. The workflow checks the website and committed WebAssembly package, renders the guide and specification with Jekyll, and deploys the resulting static artifact.
 
-Open the published [guide](https://eyereasoner.github.io/whye/), [specification](https://eyereasoner.github.io/whye/SPEC/), or [playground](https://eyereasoner.github.io/whye/playground/). Documentation links in this repository point to those rendered pages. The `playground.html` route remains available too.
+Open the published [guide](https://eyereasoner.github.io/wheye/), [specification](https://eyereasoner.github.io/wheye/SPEC/), or [playground](https://eyereasoner.github.io/wheye/playground/). Documentation links in this repository point to those rendered pages. The `playground.html` route remains available too.
 
 `GUIDE.md` supplies the guide at the site root; `SPEC.md` supplies the specification.
-`node scripts/prepare-pages.mjs` prepares `_pages/` for the Jekyll build; `_site/` holds the rendered artifact. Both directories are ignored by Git. The Pages action supplies `PAGES_BASE_PATH`, so local links and assets work beneath `/whye/` or a different configured prefix. The site uses the committed `pkg/`; changing the package version requires rebuilding it before publishing. The deployment check rejects a browser package whose exported version differs from `Cargo.toml`.
+`node scripts/prepare-pages.mjs` prepares `_pages/` for the Jekyll build; `_site/` holds the rendered artifact. Both directories are ignored by Git. The Pages action supplies `PAGES_BASE_PATH`, so local links and assets work beneath `/wheye/` or a different configured prefix. The site uses the committed `pkg/`; changing the package version requires rebuilding it before publishing. The deployment check rejects a browser package whose exported version differs from `Cargo.toml`.
 
 | File | Responsibility |
 | --- | --- |

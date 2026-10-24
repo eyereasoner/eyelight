@@ -1,0 +1,908 @@
+% Answer
+?- dispatch_plan(Plan, Cost).
+Plan = [dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], Cost = 28.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [dispatch_plan([dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28)]).
+
+clause(1, capacity_kwh(4), []).
+clause(2, reserve_kwh(1), []).
+clause(3, power_limit_kw(2), []).
+clause(4, grid_limit_kw(3), []).
+clause(5, initial_charge_kwh(2), []).
+clause(6, final_charge_kwh(2), []).
+clause(7, last_slot(4), []).
+clause(8, actions([-2, -1, 0, 1, 2]), []).
+clause(9, slot(1, 2, 0, 2, 1), []).
+clause(10, slot(2, 4, 1, 8, 1), []).
+clause(11, slot(3, 1, 3, 2, 1), []).
+clause(12, slot(4, 3, 0, 7, 1), []).
+clause(13, member(var('Head'), list([var('Head')], var('$anonymous1'))), []).
+clause(14, member(var('Value'), list([var('$anonymous2')], var('Rest'))), [member(var('Value'), var('Rest'))]).
+clause(15, terminal_slot(var('Time')), [last_slot(var('Last')), is(var('Time'), '+'(var('Last'), 1))]).
+clause(16, step_values(var('Time'), var('Charge'), var('Power'), var('NextCharge'), var('Grid'), var('Cost')), [slot(var('Time'), var('Load'), var('Solar'), var('Tariff'), var('Hours')), is(var('NextCharge'), '+'(var('Charge'), '*'(var('Power'), var('Hours')))), is(var('Grid'), '+'('-'(var('Load'), var('Solar')), var('Power'))), is(var('Cost'), '*'('*'(var('Grid'), var('Hours')), var('Tariff')))]).
+clause(17, step_problem(var('NextCharge'), var('_Grid'), var('_Power'), below_reserve), [reserve_kwh(var('Reserve')), '<'(var('NextCharge'), var('Reserve'))]).
+clause(18, step_problem(var('NextCharge'), var('_Grid'), var('_Power'), above_capacity), [capacity_kwh(var('Capacity')), '>'(var('NextCharge'), var('Capacity'))]).
+clause(19, step_problem(var('_NextCharge'), var('Grid'), var('_Power'), would_export), ['<'(var('Grid'), 0)]).
+clause(20, step_problem(var('_NextCharge'), var('Grid'), var('_Power'), grid_limit), [grid_limit_kw(var('Limit')), '>'(var('Grid'), var('Limit'))]).
+clause(22, transition(var('Time'), var('Charge'), var('Power'), infeasible), [step_values(var('Time'), var('Charge'), var('Power'), var('NextCharge'), var('Grid'), var('$anonymous3')), step_problem(var('NextCharge'), var('Grid'), var('Power'), var('$anonymous4'))]).
+clause(23, transition(var('Time'), var('Charge'), var('Power'), feasible(var('NextCharge'), var('Grid'), var('Cost'))), [step_values(var('Time'), var('Charge'), var('Power'), var('NextCharge'), var('Grid'), var('Cost')), reserve_kwh(var('Reserve')), capacity_kwh(var('Capacity')), grid_limit_kw(var('GridLimit')), power_limit_kw(var('PowerLimit')), '>='(var('NextCharge'), var('Reserve')), '=<'(var('NextCharge'), var('Capacity')), '>='(var('Grid'), 0), '=<'(var('Grid'), var('GridLimit')), '=<'(abs(var('Power')), var('PowerLimit'))]).
+clause(24, best_cost(var('Time'), var('Charge'), value(0)), [terminal_slot(var('Time')), final_charge_kwh(var('Final')), capacity_kwh(var('Capacity')), '>='(var('Charge'), var('Final')), '=<'(var('Charge'), var('Capacity'))]).
+clause(25, best_cost(var('Time'), var('Charge'), infeasible), [terminal_slot(var('Time')), final_charge_kwh(var('Final')), '<'(var('Charge'), var('Final'))]).
+clause(26, best_cost(var('Time'), var('Charge'), var('Best')), [last_slot(var('Last')), '=<'(var('Time'), var('Last')), '>='(var('Time'), 1), actions(var('Actions')), minimum_actions(var('Actions'), var('Time'), var('Charge'), var('Best'))]).
+clause(27, minimum_actions([], var('_Time'), var('_Charge'), infeasible), []).
+clause(28, minimum_actions(list([var('Power')], var('Rest')), var('Time'), var('Charge'), var('Best')), [candidate_cost(var('Time'), var('Charge'), var('Power'), var('Cost')), minimum_actions(var('Rest'), var('Time'), var('Charge'), var('Remaining')), minimum(var('Cost'), var('Remaining'), var('Best'))]).
+clause(29, candidate_cost(var('Time'), var('Charge'), var('Power'), infeasible), [transition(var('Time'), var('Charge'), var('Power'), infeasible)]).
+clause(30, candidate_cost(var('Time'), var('Charge'), var('Power'), var('Cost')), [transition(var('Time'), var('Charge'), var('Power'), feasible(var('NextCharge'), var('_Grid'), var('Own'))), is(var('NextTime'), '+'(var('Time'), 1)), best_cost(var('NextTime'), var('NextCharge'), var('Future')), add_cost(var('Own'), var('Future'), var('Cost'))]).
+clause(31, add_cost(var('_Own'), infeasible, infeasible), []).
+clause(32, add_cost(var('Own'), value(var('Future')), value(var('Cost'))), [is(var('Cost'), '+'(var('Own'), var('Future')))]).
+clause(33, minimum(infeasible, var('Right'), var('Right')), []).
+clause(34, minimum(value(var('Left')), infeasible, value(var('Left'))), []).
+clause(35, minimum(value(var('Left')), value(var('Right')), value(var('Best'))), [is(var('Best'), min(var('Left'), var('Right')))]).
+clause(36, optimal_from(var('Time'), var('Charge'), [], 0), [terminal_slot(var('Time')), best_cost(var('Time'), var('Charge'), value(0))]).
+clause(37, optimal_from(var('Time'), var('Charge'), list([dispatch(var('Time'), var('Power'), var('Grid'), var('NextCharge'))], var('Rest')), var('Cost')), [last_slot(var('Last')), '=<'(var('Time'), var('Last')), actions(var('Actions')), member(var('Power'), var('Actions')), transition(var('Time'), var('Charge'), var('Power'), feasible(var('NextCharge'), var('Grid'), var('Own'))), is(var('NextTime'), '+'(var('Time'), 1)), best_cost(var('NextTime'), var('NextCharge'), value(var('Future'))), best_cost(var('Time'), var('Charge'), value(var('Cost'))), '=:='(var('Cost'), '+'(var('Own'), var('Future'))), optimal_from(var('NextTime'), var('NextCharge'), var('Rest'), var('Future'))]).
+clause(38, dispatch_plan(var('Plan'), var('Cost')), [initial_charge_kwh(var('Charge')), optimal_from(1, var('Charge'), var('Plan'), var('Cost'))]).
+
+% step 1
+step(initial_charge_kwh(2), fact(5), [], []).
+% step 2
+step(last_slot(4), fact(7), [], []).
+% step 3
+step('=<'(1, 4), builtin, [], []).
+% step 4
+step(actions([-2, -1, 0, 1, 2]), fact(8), [], []).
+% step 5
+step(member(1, [1, 2]), fact(13), ['='('Head', 1), '='('$anonymous1', [2])], []).
+% step 6
+step(member(1, [0, 1, 2]), rule(14), ['='('Value', 1), '='('$anonymous2', 0), '='('Rest', [1, 2])], [member(1, [1, 2])]).
+% step 7
+step(member(1, [-1, 0, 1, 2]), rule(14), ['='('Value', 1), '='('$anonymous2', -1), '='('Rest', [0, 1, 2])], [member(1, [0, 1, 2])]).
+% step 8
+step(member(1, [-2, -1, 0, 1, 2]), rule(14), ['='('Value', 1), '='('$anonymous2', -2), '='('Rest', [-1, 0, 1, 2])], [member(1, [-1, 0, 1, 2])]).
+% step 9
+step(slot(1, 2, 0, 2, 1), fact(9), [], []).
+% step 10
+step(is(3, '+'(2, '*'(1, 1))), builtin, [], []).
+% step 11
+step(is(3, '+'('-'(2, 0), 1)), builtin, [], []).
+% step 12
+step(is(6, '*'('*'(3, 1), 2)), builtin, [], []).
+% step 13
+step(step_values(1, 2, 1, 3, 3, 6), rule(16), ['='('Time', 1), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 6), '='('Load', 2), '='('Solar', 0), '='('Tariff', 2), '='('Hours', 1)], [slot(1, 2, 0, 2, 1), is(3, '+'(2, '*'(1, 1))), is(3, '+'('-'(2, 0), 1)), is(6, '*'('*'(3, 1), 2))]).
+% step 14
+step(reserve_kwh(1), fact(2), [], []).
+% step 15
+step(capacity_kwh(4), fact(1), [], []).
+% step 16
+step(grid_limit_kw(3), fact(4), [], []).
+% step 17
+step(power_limit_kw(2), fact(3), [], []).
+% step 18
+step('>='(3, 1), builtin, [], []).
+% step 19
+step('=<'(3, 4), builtin, [], []).
+% step 20
+step('>='(3, 0), builtin, [], []).
+% step 21
+step('=<'(3, 3), builtin, [], []).
+% step 22
+step('=<'(abs(1), 2), builtin, [], []).
+% step 23
+step(transition(1, 2, 1, feasible(3, 3, 6)), rule(23), ['='('Time', 1), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 6), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(1, 2, 1, 3, 3, 6), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(3, 1), '=<'(3, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(1), 2)]).
+% step 24
+step(is(2, '+'(1, 1)), builtin, [], []).
+% step 25
+step('=<'(2, 4), builtin, [], []).
+% step 26
+step('>='(2, 1), builtin, [], []).
+% step 27
+step(slot(2, 4, 1, 8, 1), fact(10), [], []).
+% step 28
+step(is(1, '+'(3, '*'(-2, 1))), builtin, [], []).
+% step 29
+step(is(1, '+'('-'(4, 1), -2)), builtin, [], []).
+% step 30
+step(is(8, '*'('*'(1, 1), 8)), builtin, [], []).
+% step 31
+step(step_values(2, 3, -2, 1, 1, 8), rule(16), ['='('Time', 2), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 8), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(1, '+'(3, '*'(-2, 1))), is(1, '+'('-'(4, 1), -2)), is(8, '*'('*'(1, 1), 8))]).
+% step 32
+step('>='(1, 1), builtin, [], []).
+% step 33
+step('>='(1, 0), builtin, [], []).
+% step 34
+step('=<'(1, 3), builtin, [], []).
+% step 35
+step('=<'(abs(-2), 2), builtin, [], []).
+% step 36
+step(transition(2, 3, -2, feasible(1, 1, 8)), rule(23), ['='('Time', 2), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 8), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 3, -2, 1, 1, 8), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(1, 1), '=<'(1, 4), '>='(1, 0), '=<'(1, 3), '=<'(abs(-2), 2)]).
+% step 37
+step(is(3, '+'(2, 1)), builtin, [], []).
+% step 38
+step(slot(3, 1, 3, 2, 1), fact(11), [], []).
+% step 39
+step(is(-1, '+'(1, '*'(-2, 1))), builtin, [], []).
+% step 40
+step(is(-4, '+'('-'(1, 3), -2)), builtin, [], []).
+% step 41
+step(is(-8, '*'('*'(-4, 1), 2)), builtin, [], []).
+% step 42
+step(step_values(3, 1, -2, -1, -4, -8), rule(16), ['='('Time', 3), '='('Charge', 1), '='('Power', -2), '='('NextCharge', -1), '='('Grid', -4), '='('Cost', -8), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(-1, '+'(1, '*'(-2, 1))), is(-4, '+'('-'(1, 3), -2)), is(-8, '*'('*'(-4, 1), 2))]).
+% step 43
+step('<'(-4, 0), builtin, [], []).
+% step 44
+step(step_problem(-1, -4, -2, would_export), rule(19), ['='('_NextCharge', -1), '='('Grid', -4), '='('_Power', -2)], ['<'(-4, 0)]).
+% step 45
+step(transition(3, 1, -2, infeasible), rule(22), ['='('Time', 3), '='('Charge', 1), '='('Power', -2), '='('NextCharge', -1), '='('Grid', -4), '='('$anonymous3', -8), '='('$anonymous4', would_export)], [step_values(3, 1, -2, -1, -4, -8), step_problem(-1, -4, -2, would_export)]).
+% step 46
+step(candidate_cost(3, 1, -2, infeasible), rule(29), ['='('Time', 3), '='('Charge', 1), '='('Power', -2)], [transition(3, 1, -2, infeasible)]).
+% step 47
+step(is(0, '+'(1, '*'(-1, 1))), builtin, [], []).
+% step 48
+step(is(-3, '+'('-'(1, 3), -1)), builtin, [], []).
+% step 49
+step(is(-6, '*'('*'(-3, 1), 2)), builtin, [], []).
+% step 50
+step(step_values(3, 1, -1, 0, -3, -6), rule(16), ['='('Time', 3), '='('Charge', 1), '='('Power', -1), '='('NextCharge', 0), '='('Grid', -3), '='('Cost', -6), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(0, '+'(1, '*'(-1, 1))), is(-3, '+'('-'(1, 3), -1)), is(-6, '*'('*'(-3, 1), 2))]).
+% step 51
+step('<'(-3, 0), builtin, [], []).
+% step 52
+step(step_problem(0, -3, -1, would_export), rule(19), ['='('_NextCharge', 0), '='('Grid', -3), '='('_Power', -1)], ['<'(-3, 0)]).
+% step 53
+step(transition(3, 1, -1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 1), '='('Power', -1), '='('NextCharge', 0), '='('Grid', -3), '='('$anonymous3', -6), '='('$anonymous4', would_export)], [step_values(3, 1, -1, 0, -3, -6), step_problem(0, -3, -1, would_export)]).
+% step 54
+step(candidate_cost(3, 1, -1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 1), '='('Power', -1)], [transition(3, 1, -1, infeasible)]).
+% step 55
+step(is(1, '+'(1, '*'(0, 1))), builtin, [], []).
+% step 56
+step(is(-2, '+'('-'(1, 3), 0)), builtin, [], []).
+% step 57
+step(is(-4, '*'('*'(-2, 1), 2)), builtin, [], []).
+% step 58
+step(step_values(3, 1, 0, 1, -2, -4), rule(16), ['='('Time', 3), '='('Charge', 1), '='('Power', 0), '='('NextCharge', 1), '='('Grid', -2), '='('Cost', -4), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(1, '+'(1, '*'(0, 1))), is(-2, '+'('-'(1, 3), 0)), is(-4, '*'('*'(-2, 1), 2))]).
+% step 59
+step('<'(-2, 0), builtin, [], []).
+% step 60
+step(step_problem(1, -2, 0, would_export), rule(19), ['='('_NextCharge', 1), '='('Grid', -2), '='('_Power', 0)], ['<'(-2, 0)]).
+% step 61
+step(transition(3, 1, 0, infeasible), rule(22), ['='('Time', 3), '='('Charge', 1), '='('Power', 0), '='('NextCharge', 1), '='('Grid', -2), '='('$anonymous3', -4), '='('$anonymous4', would_export)], [step_values(3, 1, 0, 1, -2, -4), step_problem(1, -2, 0, would_export)]).
+% step 62
+step(candidate_cost(3, 1, 0, infeasible), rule(29), ['='('Time', 3), '='('Charge', 1), '='('Power', 0)], [transition(3, 1, 0, infeasible)]).
+% step 63
+step(is(2, '+'(1, '*'(1, 1))), builtin, [], []).
+% step 64
+step(is(-1, '+'('-'(1, 3), 1)), builtin, [], []).
+% step 65
+step(is(-2, '*'('*'(-1, 1), 2)), builtin, [], []).
+% step 66
+step(step_values(3, 1, 1, 2, -1, -2), rule(16), ['='('Time', 3), '='('Charge', 1), '='('Power', 1), '='('NextCharge', 2), '='('Grid', -1), '='('Cost', -2), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(2, '+'(1, '*'(1, 1))), is(-1, '+'('-'(1, 3), 1)), is(-2, '*'('*'(-1, 1), 2))]).
+% step 67
+step('<'(-1, 0), builtin, [], []).
+% step 68
+step(step_problem(2, -1, 1, would_export), rule(19), ['='('_NextCharge', 2), '='('Grid', -1), '='('_Power', 1)], ['<'(-1, 0)]).
+% step 69
+step(transition(3, 1, 1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 1), '='('Power', 1), '='('NextCharge', 2), '='('Grid', -1), '='('$anonymous3', -2), '='('$anonymous4', would_export)], [step_values(3, 1, 1, 2, -1, -2), step_problem(2, -1, 1, would_export)]).
+% step 70
+step(candidate_cost(3, 1, 1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 1), '='('Power', 1)], [transition(3, 1, 1, infeasible)]).
+% step 71
+step(is(3, '+'(1, '*'(2, 1))), builtin, [], []).
+% step 72
+step(is(0, '+'('-'(1, 3), 2)), builtin, [], []).
+% step 73
+step(is(0, '*'('*'(0, 1), 2)), builtin, [], []).
+% step 74
+step(step_values(3, 1, 2, 3, 0, 0), rule(16), ['='('Time', 3), '='('Charge', 1), '='('Power', 2), '='('NextCharge', 3), '='('Grid', 0), '='('Cost', 0), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(3, '+'(1, '*'(2, 1))), is(0, '+'('-'(1, 3), 2)), is(0, '*'('*'(0, 1), 2))]).
+% step 75
+step('>='(0, 0), builtin, [], []).
+% step 76
+step('=<'(0, 3), builtin, [], []).
+% step 77
+step('=<'(abs(2), 2), builtin, [], []).
+% step 78
+step(transition(3, 1, 2, feasible(3, 0, 0)), rule(23), ['='('Time', 3), '='('Charge', 1), '='('Power', 2), '='('NextCharge', 3), '='('Grid', 0), '='('Cost', 0), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(3, 1, 2, 3, 0, 0), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(3, 1), '=<'(3, 4), '>='(0, 0), '=<'(0, 3), '=<'(abs(2), 2)]).
+% step 79
+step(is(4, '+'(3, 1)), builtin, [], []).
+% step 80
+step('=<'(4, 4), builtin, [], []).
+% step 81
+step('>='(4, 1), builtin, [], []).
+% step 82
+step(slot(4, 3, 0, 7, 1), fact(12), [], []).
+% step 83
+step(is(1, '+'('-'(3, 0), -2)), builtin, [], []).
+% step 84
+step(is(7, '*'('*'(1, 1), 7)), builtin, [], []).
+% step 85
+step(step_values(4, 3, -2, 1, 1, 7), rule(16), ['='('Time', 4), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 7), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(1, '+'(3, '*'(-2, 1))), is(1, '+'('-'(3, 0), -2)), is(7, '*'('*'(1, 1), 7))]).
+% step 86
+step(transition(4, 3, -2, feasible(1, 1, 7)), rule(23), ['='('Time', 4), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 7), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 3, -2, 1, 1, 7), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(1, 1), '=<'(1, 4), '>='(1, 0), '=<'(1, 3), '=<'(abs(-2), 2)]).
+% step 87
+step(is(5, '+'(4, 1)), builtin, [], []).
+% step 88
+step(terminal_slot(5), rule(15), ['='('Last', 4), '='('Time', 5)], [last_slot(4), is(5, '+'(4, 1))]).
+% step 89
+step(final_charge_kwh(2), fact(6), [], []).
+% step 90
+step('<'(1, 2), builtin, [], []).
+% step 91
+step(best_cost(5, 1, infeasible), rule(25), ['='('Time', 5), '='('Charge', 1), '='('Final', 2)], [terminal_slot(5), final_charge_kwh(2), '<'(1, 2)]).
+% step 92
+step(add_cost(7, infeasible, infeasible), fact(31), ['='('_Own', 7)], []).
+% step 93
+step(candidate_cost(4, 3, -2, infeasible), rule(30), ['='('Time', 4), '='('Charge', 3), '='('Power', -2), '='('Cost', infeasible), '='('NextCharge', 1), '='('_Grid', 1), '='('Own', 7), '='('NextTime', 5), '='('Future', infeasible)], [transition(4, 3, -2, feasible(1, 1, 7)), is(5, '+'(4, 1)), best_cost(5, 1, infeasible), add_cost(7, infeasible, infeasible)]).
+% step 94
+step(is(2, '+'(3, '*'(-1, 1))), builtin, [], []).
+% step 95
+step(is(2, '+'('-'(3, 0), -1)), builtin, [], []).
+% step 96
+step(is(14, '*'('*'(2, 1), 7)), builtin, [], []).
+% step 97
+step(step_values(4, 3, -1, 2, 2, 14), rule(16), ['='('Time', 4), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 14), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(2, '+'(3, '*'(-1, 1))), is(2, '+'('-'(3, 0), -1)), is(14, '*'('*'(2, 1), 7))]).
+% step 98
+step('>='(2, 0), builtin, [], []).
+% step 99
+step('=<'(2, 3), builtin, [], []).
+% step 100
+step('=<'(abs(-1), 2), builtin, [], []).
+% step 101
+step(transition(4, 3, -1, feasible(2, 2, 14)), rule(23), ['='('Time', 4), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 14), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 3, -1, 2, 2, 14), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(2, 1), '=<'(2, 4), '>='(2, 0), '=<'(2, 3), '=<'(abs(-1), 2)]).
+% step 102
+step('>='(2, 2), builtin, [], []).
+% step 103
+step(best_cost(5, 2, value(0)), rule(24), ['='('Time', 5), '='('Charge', 2), '='('Final', 2), '='('Capacity', 4)], [terminal_slot(5), final_charge_kwh(2), capacity_kwh(4), '>='(2, 2), '=<'(2, 4)]).
+% step 104
+step(is(14, '+'(14, 0)), builtin, [], []).
+% step 105
+step(add_cost(14, value(0), value(14)), rule(32), ['='('Own', 14), '='('Future', 0), '='('Cost', 14)], [is(14, '+'(14, 0))]).
+% step 106
+step(candidate_cost(4, 3, -1, value(14)), rule(30), ['='('Time', 4), '='('Charge', 3), '='('Power', -1), '='('Cost', value(14)), '='('NextCharge', 2), '='('_Grid', 2), '='('Own', 14), '='('NextTime', 5), '='('Future', value(0))], [transition(4, 3, -1, feasible(2, 2, 14)), is(5, '+'(4, 1)), best_cost(5, 2, value(0)), add_cost(14, value(0), value(14))]).
+% step 107
+step(is(3, '+'(3, '*'(0, 1))), builtin, [], []).
+% step 108
+step(is(3, '+'('-'(3, 0), 0)), builtin, [], []).
+% step 109
+step(is(21, '*'('*'(3, 1), 7)), builtin, [], []).
+% step 110
+step(step_values(4, 3, 0, 3, 3, 21), rule(16), ['='('Time', 4), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 21), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(3, '+'(3, '*'(0, 1))), is(3, '+'('-'(3, 0), 0)), is(21, '*'('*'(3, 1), 7))]).
+% step 111
+step('=<'(abs(0), 2), builtin, [], []).
+% step 112
+step(transition(4, 3, 0, feasible(3, 3, 21)), rule(23), ['='('Time', 4), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 21), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 3, 0, 3, 3, 21), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(3, 1), '=<'(3, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(0), 2)]).
+% step 113
+step('>='(3, 2), builtin, [], []).
+% step 114
+step(best_cost(5, 3, value(0)), rule(24), ['='('Time', 5), '='('Charge', 3), '='('Final', 2), '='('Capacity', 4)], [terminal_slot(5), final_charge_kwh(2), capacity_kwh(4), '>='(3, 2), '=<'(3, 4)]).
+% step 115
+step(is(21, '+'(21, 0)), builtin, [], []).
+% step 116
+step(add_cost(21, value(0), value(21)), rule(32), ['='('Own', 21), '='('Future', 0), '='('Cost', 21)], [is(21, '+'(21, 0))]).
+% step 117
+step(candidate_cost(4, 3, 0, value(21)), rule(30), ['='('Time', 4), '='('Charge', 3), '='('Power', 0), '='('Cost', value(21)), '='('NextCharge', 3), '='('_Grid', 3), '='('Own', 21), '='('NextTime', 5), '='('Future', value(0))], [transition(4, 3, 0, feasible(3, 3, 21)), is(5, '+'(4, 1)), best_cost(5, 3, value(0)), add_cost(21, value(0), value(21))]).
+% step 118
+step(is(4, '+'(3, '*'(1, 1))), builtin, [], []).
+% step 119
+step(is(4, '+'('-'(3, 0), 1)), builtin, [], []).
+% step 120
+step(is(28, '*'('*'(4, 1), 7)), builtin, [], []).
+% step 121
+step(step_values(4, 3, 1, 4, 4, 28), rule(16), ['='('Time', 4), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', 4), '='('Cost', 28), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(4, '+'(3, '*'(1, 1))), is(4, '+'('-'(3, 0), 1)), is(28, '*'('*'(4, 1), 7))]).
+% step 122
+step('>'(4, 3), builtin, [], []).
+% step 123
+step(step_problem(4, 4, 1, grid_limit), rule(20), ['='('_NextCharge', 4), '='('Grid', 4), '='('_Power', 1), '='('Limit', 3)], [grid_limit_kw(3), '>'(4, 3)]).
+% step 124
+step(transition(4, 3, 1, infeasible), rule(22), ['='('Time', 4), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', 4), '='('$anonymous3', 28), '='('$anonymous4', grid_limit)], [step_values(4, 3, 1, 4, 4, 28), step_problem(4, 4, 1, grid_limit)]).
+% step 125
+step(candidate_cost(4, 3, 1, infeasible), rule(29), ['='('Time', 4), '='('Charge', 3), '='('Power', 1)], [transition(4, 3, 1, infeasible)]).
+% step 126
+step(is(5, '+'(3, '*'(2, 1))), builtin, [], []).
+% step 127
+step(is(5, '+'('-'(3, 0), 2)), builtin, [], []).
+% step 128
+step(is(35, '*'('*'(5, 1), 7)), builtin, [], []).
+% step 129
+step(step_values(4, 3, 2, 5, 5, 35), rule(16), ['='('Time', 4), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 5), '='('Cost', 35), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(5, '+'(3, '*'(2, 1))), is(5, '+'('-'(3, 0), 2)), is(35, '*'('*'(5, 1), 7))]).
+% step 130
+step('>'(5, 4), builtin, [], []).
+% step 131
+step(step_problem(5, 5, 2, above_capacity), rule(18), ['='('NextCharge', 5), '='('_Grid', 5), '='('_Power', 2), '='('Capacity', 4)], [capacity_kwh(4), '>'(5, 4)]).
+% step 132
+step(transition(4, 3, 2, infeasible), rule(22), ['='('Time', 4), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 5), '='('$anonymous3', 35), '='('$anonymous4', above_capacity)], [step_values(4, 3, 2, 5, 5, 35), step_problem(5, 5, 2, above_capacity)]).
+% step 133
+step(candidate_cost(4, 3, 2, infeasible), rule(29), ['='('Time', 4), '='('Charge', 3), '='('Power', 2)], [transition(4, 3, 2, infeasible)]).
+% step 134
+step(minimum_actions([], 4, 3, infeasible), fact(27), ['='('_Time', 4), '='('_Charge', 3)], []).
+% step 135
+step(minimum(infeasible, infeasible, infeasible), fact(33), ['='('Right', infeasible)], []).
+% step 136
+step(minimum_actions([2], 4, 3, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 4), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(4, 3, 2, infeasible), minimum_actions([], 4, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 137
+step(minimum_actions([1, 2], 4, 3, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 4), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(4, 3, 1, infeasible), minimum_actions([2], 4, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 138
+step(minimum(value(21), infeasible, value(21)), fact(34), ['='('Left', 21)], []).
+% step 139
+step(minimum_actions([0, 1, 2], 4, 3, value(21)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 4), '='('Charge', 3), '='('Best', value(21)), '='('Cost', value(21)), '='('Remaining', infeasible)], [candidate_cost(4, 3, 0, value(21)), minimum_actions([1, 2], 4, 3, infeasible), minimum(value(21), infeasible, value(21))]).
+% step 140
+step(is(14, min(14, 21)), builtin, [], []).
+% step 141
+step(minimum(value(14), value(21), value(14)), rule(35), ['='('Left', 14), '='('Right', 21), '='('Best', 14)], [is(14, min(14, 21))]).
+% step 142
+step(minimum_actions([-1, 0, 1, 2], 4, 3, value(14)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 4), '='('Charge', 3), '='('Best', value(14)), '='('Cost', value(14)), '='('Remaining', value(21))], [candidate_cost(4, 3, -1, value(14)), minimum_actions([0, 1, 2], 4, 3, value(21)), minimum(value(14), value(21), value(14))]).
+% step 143
+step(minimum(infeasible, value(14), value(14)), fact(33), ['='('Right', value(14))], []).
+% step 144
+step(minimum_actions([-2, -1, 0, 1, 2], 4, 3, value(14)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 4), '='('Charge', 3), '='('Best', value(14)), '='('Cost', infeasible), '='('Remaining', value(14))], [candidate_cost(4, 3, -2, infeasible), minimum_actions([-1, 0, 1, 2], 4, 3, value(14)), minimum(infeasible, value(14), value(14))]).
+% step 145
+step(best_cost(4, 3, value(14)), rule(26), ['='('Time', 4), '='('Charge', 3), '='('Best', value(14)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(4, 4), '>='(4, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 4, 3, value(14))]).
+% step 146
+step(is(14, '+'(0, 14)), builtin, [], []).
+% step 147
+step(add_cost(0, value(14), value(14)), rule(32), ['='('Own', 0), '='('Future', 14), '='('Cost', 14)], [is(14, '+'(0, 14))]).
+% step 148
+step(candidate_cost(3, 1, 2, value(14)), rule(30), ['='('Time', 3), '='('Charge', 1), '='('Power', 2), '='('Cost', value(14)), '='('NextCharge', 3), '='('_Grid', 0), '='('Own', 0), '='('NextTime', 4), '='('Future', value(14))], [transition(3, 1, 2, feasible(3, 0, 0)), is(4, '+'(3, 1)), best_cost(4, 3, value(14)), add_cost(0, value(14), value(14))]).
+% step 149
+step(minimum_actions([], 3, 1, infeasible), fact(27), ['='('_Time', 3), '='('_Charge', 1)], []).
+% step 150
+step(minimum(value(14), infeasible, value(14)), fact(34), ['='('Left', 14)], []).
+% step 151
+step(minimum_actions([2], 3, 1, value(14)), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Cost', value(14)), '='('Remaining', infeasible)], [candidate_cost(3, 1, 2, value(14)), minimum_actions([], 3, 1, infeasible), minimum(value(14), infeasible, value(14))]).
+% step 152
+step(minimum_actions([1, 2], 3, 1, value(14)), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Cost', infeasible), '='('Remaining', value(14))], [candidate_cost(3, 1, 1, infeasible), minimum_actions([2], 3, 1, value(14)), minimum(infeasible, value(14), value(14))]).
+% step 153
+step(minimum_actions([0, 1, 2], 3, 1, value(14)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Cost', infeasible), '='('Remaining', value(14))], [candidate_cost(3, 1, 0, infeasible), minimum_actions([1, 2], 3, 1, value(14)), minimum(infeasible, value(14), value(14))]).
+% step 154
+step(minimum_actions([-1, 0, 1, 2], 3, 1, value(14)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Cost', infeasible), '='('Remaining', value(14))], [candidate_cost(3, 1, -1, infeasible), minimum_actions([0, 1, 2], 3, 1, value(14)), minimum(infeasible, value(14), value(14))]).
+% step 155
+step(minimum_actions([-2, -1, 0, 1, 2], 3, 1, value(14)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Cost', infeasible), '='('Remaining', value(14))], [candidate_cost(3, 1, -2, infeasible), minimum_actions([-1, 0, 1, 2], 3, 1, value(14)), minimum(infeasible, value(14), value(14))]).
+% step 156
+step(best_cost(3, 1, value(14)), rule(26), ['='('Time', 3), '='('Charge', 1), '='('Best', value(14)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(3, 4), '>='(3, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 3, 1, value(14))]).
+% step 157
+step(is(22, '+'(8, 14)), builtin, [], []).
+% step 158
+step(add_cost(8, value(14), value(22)), rule(32), ['='('Own', 8), '='('Future', 14), '='('Cost', 22)], [is(22, '+'(8, 14))]).
+% step 159
+step(candidate_cost(2, 3, -2, value(22)), rule(30), ['='('Time', 2), '='('Charge', 3), '='('Power', -2), '='('Cost', value(22)), '='('NextCharge', 1), '='('_Grid', 1), '='('Own', 8), '='('NextTime', 3), '='('Future', value(14))], [transition(2, 3, -2, feasible(1, 1, 8)), is(3, '+'(2, 1)), best_cost(3, 1, value(14)), add_cost(8, value(14), value(22))]).
+% step 160
+step(is(2, '+'('-'(4, 1), -1)), builtin, [], []).
+% step 161
+step(is(16, '*'('*'(2, 1), 8)), builtin, [], []).
+% step 162
+step(step_values(2, 3, -1, 2, 2, 16), rule(16), ['='('Time', 2), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 16), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(2, '+'(3, '*'(-1, 1))), is(2, '+'('-'(4, 1), -1)), is(16, '*'('*'(2, 1), 8))]).
+% step 163
+step(transition(2, 3, -1, feasible(2, 2, 16)), rule(23), ['='('Time', 2), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 16), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 3, -1, 2, 2, 16), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(2, 1), '=<'(2, 4), '>='(2, 0), '=<'(2, 3), '=<'(abs(-1), 2)]).
+% step 164
+step(is(0, '+'(2, '*'(-2, 1))), builtin, [], []).
+% step 165
+step(step_values(3, 2, -2, 0, -4, -8), rule(16), ['='('Time', 3), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', -4), '='('Cost', -8), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(0, '+'(2, '*'(-2, 1))), is(-4, '+'('-'(1, 3), -2)), is(-8, '*'('*'(-4, 1), 2))]).
+% step 166
+step(step_problem(0, -4, -2, would_export), rule(19), ['='('_NextCharge', 0), '='('Grid', -4), '='('_Power', -2)], ['<'(-4, 0)]).
+% step 167
+step(transition(3, 2, -2, infeasible), rule(22), ['='('Time', 3), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', -4), '='('$anonymous3', -8), '='('$anonymous4', would_export)], [step_values(3, 2, -2, 0, -4, -8), step_problem(0, -4, -2, would_export)]).
+% step 168
+step(candidate_cost(3, 2, -2, infeasible), rule(29), ['='('Time', 3), '='('Charge', 2), '='('Power', -2)], [transition(3, 2, -2, infeasible)]).
+% step 169
+step(is(1, '+'(2, '*'(-1, 1))), builtin, [], []).
+% step 170
+step(step_values(3, 2, -1, 1, -3, -6), rule(16), ['='('Time', 3), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', -3), '='('Cost', -6), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(1, '+'(2, '*'(-1, 1))), is(-3, '+'('-'(1, 3), -1)), is(-6, '*'('*'(-3, 1), 2))]).
+% step 171
+step(step_problem(1, -3, -1, would_export), rule(19), ['='('_NextCharge', 1), '='('Grid', -3), '='('_Power', -1)], ['<'(-3, 0)]).
+% step 172
+step(transition(3, 2, -1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', -3), '='('$anonymous3', -6), '='('$anonymous4', would_export)], [step_values(3, 2, -1, 1, -3, -6), step_problem(1, -3, -1, would_export)]).
+% step 173
+step(candidate_cost(3, 2, -1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 2), '='('Power', -1)], [transition(3, 2, -1, infeasible)]).
+% step 174
+step(is(2, '+'(2, '*'(0, 1))), builtin, [], []).
+% step 175
+step(step_values(3, 2, 0, 2, -2, -4), rule(16), ['='('Time', 3), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', -2), '='('Cost', -4), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(2, '+'(2, '*'(0, 1))), is(-2, '+'('-'(1, 3), 0)), is(-4, '*'('*'(-2, 1), 2))]).
+% step 176
+step(step_problem(2, -2, 0, would_export), rule(19), ['='('_NextCharge', 2), '='('Grid', -2), '='('_Power', 0)], ['<'(-2, 0)]).
+% step 177
+step(transition(3, 2, 0, infeasible), rule(22), ['='('Time', 3), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', -2), '='('$anonymous3', -4), '='('$anonymous4', would_export)], [step_values(3, 2, 0, 2, -2, -4), step_problem(2, -2, 0, would_export)]).
+% step 178
+step(candidate_cost(3, 2, 0, infeasible), rule(29), ['='('Time', 3), '='('Charge', 2), '='('Power', 0)], [transition(3, 2, 0, infeasible)]).
+% step 179
+step(step_values(3, 2, 1, 3, -1, -2), rule(16), ['='('Time', 3), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', -1), '='('Cost', -2), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(3, '+'(2, '*'(1, 1))), is(-1, '+'('-'(1, 3), 1)), is(-2, '*'('*'(-1, 1), 2))]).
+% step 180
+step(step_problem(3, -1, 1, would_export), rule(19), ['='('_NextCharge', 3), '='('Grid', -1), '='('_Power', 1)], ['<'(-1, 0)]).
+% step 181
+step(transition(3, 2, 1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', -1), '='('$anonymous3', -2), '='('$anonymous4', would_export)], [step_values(3, 2, 1, 3, -1, -2), step_problem(3, -1, 1, would_export)]).
+% step 182
+step(candidate_cost(3, 2, 1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 2), '='('Power', 1)], [transition(3, 2, 1, infeasible)]).
+% step 183
+step(is(4, '+'(2, '*'(2, 1))), builtin, [], []).
+% step 184
+step(step_values(3, 2, 2, 4, 0, 0), rule(16), ['='('Time', 3), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 0), '='('Cost', 0), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(4, '+'(2, '*'(2, 1))), is(0, '+'('-'(1, 3), 2)), is(0, '*'('*'(0, 1), 2))]).
+% step 185
+step(transition(3, 2, 2, feasible(4, 0, 0)), rule(23), ['='('Time', 3), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 0), '='('Cost', 0), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(3, 2, 2, 4, 0, 0), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(4, 1), '=<'(4, 4), '>='(0, 0), '=<'(0, 3), '=<'(abs(2), 2)]).
+% step 186
+step(is(2, '+'(4, '*'(-2, 1))), builtin, [], []).
+% step 187
+step(step_values(4, 4, -2, 2, 1, 7), rule(16), ['='('Time', 4), '='('Charge', 4), '='('Power', -2), '='('NextCharge', 2), '='('Grid', 1), '='('Cost', 7), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(2, '+'(4, '*'(-2, 1))), is(1, '+'('-'(3, 0), -2)), is(7, '*'('*'(1, 1), 7))]).
+% step 188
+step(transition(4, 4, -2, feasible(2, 1, 7)), rule(23), ['='('Time', 4), '='('Charge', 4), '='('Power', -2), '='('NextCharge', 2), '='('Grid', 1), '='('Cost', 7), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 4, -2, 2, 1, 7), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(2, 1), '=<'(2, 4), '>='(1, 0), '=<'(1, 3), '=<'(abs(-2), 2)]).
+% step 189
+step(is(7, '+'(7, 0)), builtin, [], []).
+% step 190
+step(add_cost(7, value(0), value(7)), rule(32), ['='('Own', 7), '='('Future', 0), '='('Cost', 7)], [is(7, '+'(7, 0))]).
+% step 191
+step(candidate_cost(4, 4, -2, value(7)), rule(30), ['='('Time', 4), '='('Charge', 4), '='('Power', -2), '='('Cost', value(7)), '='('NextCharge', 2), '='('_Grid', 1), '='('Own', 7), '='('NextTime', 5), '='('Future', value(0))], [transition(4, 4, -2, feasible(2, 1, 7)), is(5, '+'(4, 1)), best_cost(5, 2, value(0)), add_cost(7, value(0), value(7))]).
+% step 192
+step(is(3, '+'(4, '*'(-1, 1))), builtin, [], []).
+% step 193
+step(step_values(4, 4, -1, 3, 2, 14), rule(16), ['='('Time', 4), '='('Charge', 4), '='('Power', -1), '='('NextCharge', 3), '='('Grid', 2), '='('Cost', 14), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(3, '+'(4, '*'(-1, 1))), is(2, '+'('-'(3, 0), -1)), is(14, '*'('*'(2, 1), 7))]).
+% step 194
+step(transition(4, 4, -1, feasible(3, 2, 14)), rule(23), ['='('Time', 4), '='('Charge', 4), '='('Power', -1), '='('NextCharge', 3), '='('Grid', 2), '='('Cost', 14), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 4, -1, 3, 2, 14), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(3, 1), '=<'(3, 4), '>='(2, 0), '=<'(2, 3), '=<'(abs(-1), 2)]).
+% step 195
+step(candidate_cost(4, 4, -1, value(14)), rule(30), ['='('Time', 4), '='('Charge', 4), '='('Power', -1), '='('Cost', value(14)), '='('NextCharge', 3), '='('_Grid', 2), '='('Own', 14), '='('NextTime', 5), '='('Future', value(0))], [transition(4, 4, -1, feasible(3, 2, 14)), is(5, '+'(4, 1)), best_cost(5, 3, value(0)), add_cost(14, value(0), value(14))]).
+% step 196
+step(is(4, '+'(4, '*'(0, 1))), builtin, [], []).
+% step 197
+step(step_values(4, 4, 0, 4, 3, 21), rule(16), ['='('Time', 4), '='('Charge', 4), '='('Power', 0), '='('NextCharge', 4), '='('Grid', 3), '='('Cost', 21), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(4, '+'(4, '*'(0, 1))), is(3, '+'('-'(3, 0), 0)), is(21, '*'('*'(3, 1), 7))]).
+% step 198
+step(transition(4, 4, 0, feasible(4, 3, 21)), rule(23), ['='('Time', 4), '='('Charge', 4), '='('Power', 0), '='('NextCharge', 4), '='('Grid', 3), '='('Cost', 21), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(4, 4, 0, 4, 3, 21), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(4, 1), '=<'(4, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(0), 2)]).
+% step 199
+step('>='(4, 2), builtin, [], []).
+% step 200
+step(best_cost(5, 4, value(0)), rule(24), ['='('Time', 5), '='('Charge', 4), '='('Final', 2), '='('Capacity', 4)], [terminal_slot(5), final_charge_kwh(2), capacity_kwh(4), '>='(4, 2), '=<'(4, 4)]).
+% step 201
+step(candidate_cost(4, 4, 0, value(21)), rule(30), ['='('Time', 4), '='('Charge', 4), '='('Power', 0), '='('Cost', value(21)), '='('NextCharge', 4), '='('_Grid', 3), '='('Own', 21), '='('NextTime', 5), '='('Future', value(0))], [transition(4, 4, 0, feasible(4, 3, 21)), is(5, '+'(4, 1)), best_cost(5, 4, value(0)), add_cost(21, value(0), value(21))]).
+% step 202
+step(is(5, '+'(4, '*'(1, 1))), builtin, [], []).
+% step 203
+step(step_values(4, 4, 1, 5, 4, 28), rule(16), ['='('Time', 4), '='('Charge', 4), '='('Power', 1), '='('NextCharge', 5), '='('Grid', 4), '='('Cost', 28), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(5, '+'(4, '*'(1, 1))), is(4, '+'('-'(3, 0), 1)), is(28, '*'('*'(4, 1), 7))]).
+% step 204
+step(step_problem(5, 4, 1, above_capacity), rule(18), ['='('NextCharge', 5), '='('_Grid', 4), '='('_Power', 1), '='('Capacity', 4)], [capacity_kwh(4), '>'(5, 4)]).
+% step 205
+step(transition(4, 4, 1, infeasible), rule(22), ['='('Time', 4), '='('Charge', 4), '='('Power', 1), '='('NextCharge', 5), '='('Grid', 4), '='('$anonymous3', 28), '='('$anonymous4', above_capacity)], [step_values(4, 4, 1, 5, 4, 28), step_problem(5, 4, 1, above_capacity)]).
+% step 206
+step(candidate_cost(4, 4, 1, infeasible), rule(29), ['='('Time', 4), '='('Charge', 4), '='('Power', 1)], [transition(4, 4, 1, infeasible)]).
+% step 207
+step(is(6, '+'(4, '*'(2, 1))), builtin, [], []).
+% step 208
+step(step_values(4, 4, 2, 6, 5, 35), rule(16), ['='('Time', 4), '='('Charge', 4), '='('Power', 2), '='('NextCharge', 6), '='('Grid', 5), '='('Cost', 35), '='('Load', 3), '='('Solar', 0), '='('Tariff', 7), '='('Hours', 1)], [slot(4, 3, 0, 7, 1), is(6, '+'(4, '*'(2, 1))), is(5, '+'('-'(3, 0), 2)), is(35, '*'('*'(5, 1), 7))]).
+% step 209
+step('>'(6, 4), builtin, [], []).
+% step 210
+step(step_problem(6, 5, 2, above_capacity), rule(18), ['='('NextCharge', 6), '='('_Grid', 5), '='('_Power', 2), '='('Capacity', 4)], [capacity_kwh(4), '>'(6, 4)]).
+% step 211
+step(transition(4, 4, 2, infeasible), rule(22), ['='('Time', 4), '='('Charge', 4), '='('Power', 2), '='('NextCharge', 6), '='('Grid', 5), '='('$anonymous3', 35), '='('$anonymous4', above_capacity)], [step_values(4, 4, 2, 6, 5, 35), step_problem(6, 5, 2, above_capacity)]).
+% step 212
+step(candidate_cost(4, 4, 2, infeasible), rule(29), ['='('Time', 4), '='('Charge', 4), '='('Power', 2)], [transition(4, 4, 2, infeasible)]).
+% step 213
+step(minimum_actions([], 4, 4, infeasible), fact(27), ['='('_Time', 4), '='('_Charge', 4)], []).
+% step 214
+step(minimum_actions([2], 4, 4, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 4), '='('Charge', 4), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(4, 4, 2, infeasible), minimum_actions([], 4, 4, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 215
+step(minimum_actions([1, 2], 4, 4, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 4), '='('Charge', 4), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(4, 4, 1, infeasible), minimum_actions([2], 4, 4, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 216
+step(minimum_actions([0, 1, 2], 4, 4, value(21)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 4), '='('Charge', 4), '='('Best', value(21)), '='('Cost', value(21)), '='('Remaining', infeasible)], [candidate_cost(4, 4, 0, value(21)), minimum_actions([1, 2], 4, 4, infeasible), minimum(value(21), infeasible, value(21))]).
+% step 217
+step(minimum_actions([-1, 0, 1, 2], 4, 4, value(14)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 4), '='('Charge', 4), '='('Best', value(14)), '='('Cost', value(14)), '='('Remaining', value(21))], [candidate_cost(4, 4, -1, value(14)), minimum_actions([0, 1, 2], 4, 4, value(21)), minimum(value(14), value(21), value(14))]).
+% step 218
+step(is(7, min(7, 14)), builtin, [], []).
+% step 219
+step(minimum(value(7), value(14), value(7)), rule(35), ['='('Left', 7), '='('Right', 14), '='('Best', 7)], [is(7, min(7, 14))]).
+% step 220
+step(minimum_actions([-2, -1, 0, 1, 2], 4, 4, value(7)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 4), '='('Charge', 4), '='('Best', value(7)), '='('Cost', value(7)), '='('Remaining', value(14))], [candidate_cost(4, 4, -2, value(7)), minimum_actions([-1, 0, 1, 2], 4, 4, value(14)), minimum(value(7), value(14), value(7))]).
+% step 221
+step(best_cost(4, 4, value(7)), rule(26), ['='('Time', 4), '='('Charge', 4), '='('Best', value(7)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(4, 4), '>='(4, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 4, 4, value(7))]).
+% step 222
+step(is(7, '+'(0, 7)), builtin, [], []).
+% step 223
+step(add_cost(0, value(7), value(7)), rule(32), ['='('Own', 0), '='('Future', 7), '='('Cost', 7)], [is(7, '+'(0, 7))]).
+% step 224
+step(candidate_cost(3, 2, 2, value(7)), rule(30), ['='('Time', 3), '='('Charge', 2), '='('Power', 2), '='('Cost', value(7)), '='('NextCharge', 4), '='('_Grid', 0), '='('Own', 0), '='('NextTime', 4), '='('Future', value(7))], [transition(3, 2, 2, feasible(4, 0, 0)), is(4, '+'(3, 1)), best_cost(4, 4, value(7)), add_cost(0, value(7), value(7))]).
+% step 225
+step(minimum_actions([], 3, 2, infeasible), fact(27), ['='('_Time', 3), '='('_Charge', 2)], []).
+% step 226
+step(minimum(value(7), infeasible, value(7)), fact(34), ['='('Left', 7)], []).
+% step 227
+step(minimum_actions([2], 3, 2, value(7)), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Cost', value(7)), '='('Remaining', infeasible)], [candidate_cost(3, 2, 2, value(7)), minimum_actions([], 3, 2, infeasible), minimum(value(7), infeasible, value(7))]).
+% step 228
+step(minimum(infeasible, value(7), value(7)), fact(33), ['='('Right', value(7))], []).
+% step 229
+step(minimum_actions([1, 2], 3, 2, value(7)), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Cost', infeasible), '='('Remaining', value(7))], [candidate_cost(3, 2, 1, infeasible), minimum_actions([2], 3, 2, value(7)), minimum(infeasible, value(7), value(7))]).
+% step 230
+step(minimum_actions([0, 1, 2], 3, 2, value(7)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Cost', infeasible), '='('Remaining', value(7))], [candidate_cost(3, 2, 0, infeasible), minimum_actions([1, 2], 3, 2, value(7)), minimum(infeasible, value(7), value(7))]).
+% step 231
+step(minimum_actions([-1, 0, 1, 2], 3, 2, value(7)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Cost', infeasible), '='('Remaining', value(7))], [candidate_cost(3, 2, -1, infeasible), minimum_actions([0, 1, 2], 3, 2, value(7)), minimum(infeasible, value(7), value(7))]).
+% step 232
+step(minimum_actions([-2, -1, 0, 1, 2], 3, 2, value(7)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Cost', infeasible), '='('Remaining', value(7))], [candidate_cost(3, 2, -2, infeasible), minimum_actions([-1, 0, 1, 2], 3, 2, value(7)), minimum(infeasible, value(7), value(7))]).
+% step 233
+step(best_cost(3, 2, value(7)), rule(26), ['='('Time', 3), '='('Charge', 2), '='('Best', value(7)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(3, 4), '>='(3, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 3, 2, value(7))]).
+% step 234
+step(is(23, '+'(16, 7)), builtin, [], []).
+% step 235
+step(add_cost(16, value(7), value(23)), rule(32), ['='('Own', 16), '='('Future', 7), '='('Cost', 23)], [is(23, '+'(16, 7))]).
+% step 236
+step(candidate_cost(2, 3, -1, value(23)), rule(30), ['='('Time', 2), '='('Charge', 3), '='('Power', -1), '='('Cost', value(23)), '='('NextCharge', 2), '='('_Grid', 2), '='('Own', 16), '='('NextTime', 3), '='('Future', value(7))], [transition(2, 3, -1, feasible(2, 2, 16)), is(3, '+'(2, 1)), best_cost(3, 2, value(7)), add_cost(16, value(7), value(23))]).
+% step 237
+step(is(3, '+'('-'(4, 1), 0)), builtin, [], []).
+% step 238
+step(is(24, '*'('*'(3, 1), 8)), builtin, [], []).
+% step 239
+step(step_values(2, 3, 0, 3, 3, 24), rule(16), ['='('Time', 2), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 24), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(3, '+'(3, '*'(0, 1))), is(3, '+'('-'(4, 1), 0)), is(24, '*'('*'(3, 1), 8))]).
+% step 240
+step(transition(2, 3, 0, feasible(3, 3, 24)), rule(23), ['='('Time', 2), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', 3), '='('Cost', 24), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 3, 0, 3, 3, 24), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(3, 1), '=<'(3, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(0), 2)]).
+% step 241
+step(step_values(3, 3, -2, 1, -4, -8), rule(16), ['='('Time', 3), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', -4), '='('Cost', -8), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(1, '+'(3, '*'(-2, 1))), is(-4, '+'('-'(1, 3), -2)), is(-8, '*'('*'(-4, 1), 2))]).
+% step 242
+step(step_problem(1, -4, -2, would_export), rule(19), ['='('_NextCharge', 1), '='('Grid', -4), '='('_Power', -2)], ['<'(-4, 0)]).
+% step 243
+step(transition(3, 3, -2, infeasible), rule(22), ['='('Time', 3), '='('Charge', 3), '='('Power', -2), '='('NextCharge', 1), '='('Grid', -4), '='('$anonymous3', -8), '='('$anonymous4', would_export)], [step_values(3, 3, -2, 1, -4, -8), step_problem(1, -4, -2, would_export)]).
+% step 244
+step(candidate_cost(3, 3, -2, infeasible), rule(29), ['='('Time', 3), '='('Charge', 3), '='('Power', -2)], [transition(3, 3, -2, infeasible)]).
+% step 245
+step(step_values(3, 3, -1, 2, -3, -6), rule(16), ['='('Time', 3), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', -3), '='('Cost', -6), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(2, '+'(3, '*'(-1, 1))), is(-3, '+'('-'(1, 3), -1)), is(-6, '*'('*'(-3, 1), 2))]).
+% step 246
+step(step_problem(2, -3, -1, would_export), rule(19), ['='('_NextCharge', 2), '='('Grid', -3), '='('_Power', -1)], ['<'(-3, 0)]).
+% step 247
+step(transition(3, 3, -1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 3), '='('Power', -1), '='('NextCharge', 2), '='('Grid', -3), '='('$anonymous3', -6), '='('$anonymous4', would_export)], [step_values(3, 3, -1, 2, -3, -6), step_problem(2, -3, -1, would_export)]).
+% step 248
+step(candidate_cost(3, 3, -1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 3), '='('Power', -1)], [transition(3, 3, -1, infeasible)]).
+% step 249
+step(step_values(3, 3, 0, 3, -2, -4), rule(16), ['='('Time', 3), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', -2), '='('Cost', -4), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(3, '+'(3, '*'(0, 1))), is(-2, '+'('-'(1, 3), 0)), is(-4, '*'('*'(-2, 1), 2))]).
+% step 250
+step(step_problem(3, -2, 0, would_export), rule(19), ['='('_NextCharge', 3), '='('Grid', -2), '='('_Power', 0)], ['<'(-2, 0)]).
+% step 251
+step(transition(3, 3, 0, infeasible), rule(22), ['='('Time', 3), '='('Charge', 3), '='('Power', 0), '='('NextCharge', 3), '='('Grid', -2), '='('$anonymous3', -4), '='('$anonymous4', would_export)], [step_values(3, 3, 0, 3, -2, -4), step_problem(3, -2, 0, would_export)]).
+% step 252
+step(candidate_cost(3, 3, 0, infeasible), rule(29), ['='('Time', 3), '='('Charge', 3), '='('Power', 0)], [transition(3, 3, 0, infeasible)]).
+% step 253
+step(step_values(3, 3, 1, 4, -1, -2), rule(16), ['='('Time', 3), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', -1), '='('Cost', -2), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(4, '+'(3, '*'(1, 1))), is(-1, '+'('-'(1, 3), 1)), is(-2, '*'('*'(-1, 1), 2))]).
+% step 254
+step(step_problem(4, -1, 1, would_export), rule(19), ['='('_NextCharge', 4), '='('Grid', -1), '='('_Power', 1)], ['<'(-1, 0)]).
+% step 255
+step(transition(3, 3, 1, infeasible), rule(22), ['='('Time', 3), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', -1), '='('$anonymous3', -2), '='('$anonymous4', would_export)], [step_values(3, 3, 1, 4, -1, -2), step_problem(4, -1, 1, would_export)]).
+% step 256
+step(candidate_cost(3, 3, 1, infeasible), rule(29), ['='('Time', 3), '='('Charge', 3), '='('Power', 1)], [transition(3, 3, 1, infeasible)]).
+% step 257
+step(step_values(3, 3, 2, 5, 0, 0), rule(16), ['='('Time', 3), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 0), '='('Cost', 0), '='('Load', 1), '='('Solar', 3), '='('Tariff', 2), '='('Hours', 1)], [slot(3, 1, 3, 2, 1), is(5, '+'(3, '*'(2, 1))), is(0, '+'('-'(1, 3), 2)), is(0, '*'('*'(0, 1), 2))]).
+% step 258
+step(step_problem(5, 0, 2, above_capacity), rule(18), ['='('NextCharge', 5), '='('_Grid', 0), '='('_Power', 2), '='('Capacity', 4)], [capacity_kwh(4), '>'(5, 4)]).
+% step 259
+step(transition(3, 3, 2, infeasible), rule(22), ['='('Time', 3), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 0), '='('$anonymous3', 0), '='('$anonymous4', above_capacity)], [step_values(3, 3, 2, 5, 0, 0), step_problem(5, 0, 2, above_capacity)]).
+% step 260
+step(candidate_cost(3, 3, 2, infeasible), rule(29), ['='('Time', 3), '='('Charge', 3), '='('Power', 2)], [transition(3, 3, 2, infeasible)]).
+% step 261
+step(minimum_actions([], 3, 3, infeasible), fact(27), ['='('_Time', 3), '='('_Charge', 3)], []).
+% step 262
+step(minimum_actions([2], 3, 3, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(3, 3, 2, infeasible), minimum_actions([], 3, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 263
+step(minimum_actions([1, 2], 3, 3, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(3, 3, 1, infeasible), minimum_actions([2], 3, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 264
+step(minimum_actions([0, 1, 2], 3, 3, infeasible), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(3, 3, 0, infeasible), minimum_actions([1, 2], 3, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 265
+step(minimum_actions([-1, 0, 1, 2], 3, 3, infeasible), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(3, 3, -1, infeasible), minimum_actions([0, 1, 2], 3, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 266
+step(minimum_actions([-2, -1, 0, 1, 2], 3, 3, infeasible), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(3, 3, -2, infeasible), minimum_actions([-1, 0, 1, 2], 3, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 267
+step(best_cost(3, 3, infeasible), rule(26), ['='('Time', 3), '='('Charge', 3), '='('Best', infeasible), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(3, 4), '>='(3, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 3, 3, infeasible)]).
+% step 268
+step(add_cost(24, infeasible, infeasible), fact(31), ['='('_Own', 24)], []).
+% step 269
+step(candidate_cost(2, 3, 0, infeasible), rule(30), ['='('Time', 2), '='('Charge', 3), '='('Power', 0), '='('Cost', infeasible), '='('NextCharge', 3), '='('_Grid', 3), '='('Own', 24), '='('NextTime', 3), '='('Future', infeasible)], [transition(2, 3, 0, feasible(3, 3, 24)), is(3, '+'(2, 1)), best_cost(3, 3, infeasible), add_cost(24, infeasible, infeasible)]).
+% step 270
+step(is(4, '+'('-'(4, 1), 1)), builtin, [], []).
+% step 271
+step(is(32, '*'('*'(4, 1), 8)), builtin, [], []).
+% step 272
+step(step_values(2, 3, 1, 4, 4, 32), rule(16), ['='('Time', 2), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', 4), '='('Cost', 32), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(4, '+'(3, '*'(1, 1))), is(4, '+'('-'(4, 1), 1)), is(32, '*'('*'(4, 1), 8))]).
+% step 273
+step(transition(2, 3, 1, infeasible), rule(22), ['='('Time', 2), '='('Charge', 3), '='('Power', 1), '='('NextCharge', 4), '='('Grid', 4), '='('$anonymous3', 32), '='('$anonymous4', grid_limit)], [step_values(2, 3, 1, 4, 4, 32), step_problem(4, 4, 1, grid_limit)]).
+% step 274
+step(candidate_cost(2, 3, 1, infeasible), rule(29), ['='('Time', 2), '='('Charge', 3), '='('Power', 1)], [transition(2, 3, 1, infeasible)]).
+% step 275
+step(is(5, '+'('-'(4, 1), 2)), builtin, [], []).
+% step 276
+step(is(40, '*'('*'(5, 1), 8)), builtin, [], []).
+% step 277
+step(step_values(2, 3, 2, 5, 5, 40), rule(16), ['='('Time', 2), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 5), '='('Cost', 40), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(5, '+'(3, '*'(2, 1))), is(5, '+'('-'(4, 1), 2)), is(40, '*'('*'(5, 1), 8))]).
+% step 278
+step(transition(2, 3, 2, infeasible), rule(22), ['='('Time', 2), '='('Charge', 3), '='('Power', 2), '='('NextCharge', 5), '='('Grid', 5), '='('$anonymous3', 40), '='('$anonymous4', above_capacity)], [step_values(2, 3, 2, 5, 5, 40), step_problem(5, 5, 2, above_capacity)]).
+% step 279
+step(candidate_cost(2, 3, 2, infeasible), rule(29), ['='('Time', 2), '='('Charge', 3), '='('Power', 2)], [transition(2, 3, 2, infeasible)]).
+% step 280
+step(minimum_actions([], 2, 3, infeasible), fact(27), ['='('_Time', 2), '='('_Charge', 3)], []).
+% step 281
+step(minimum_actions([2], 2, 3, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 2), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 3, 2, infeasible), minimum_actions([], 2, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 282
+step(minimum_actions([1, 2], 2, 3, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 2), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 3, 1, infeasible), minimum_actions([2], 2, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 283
+step(minimum_actions([0, 1, 2], 2, 3, infeasible), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 2), '='('Charge', 3), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 3, 0, infeasible), minimum_actions([1, 2], 2, 3, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 284
+step(minimum(value(23), infeasible, value(23)), fact(34), ['='('Left', 23)], []).
+% step 285
+step(minimum_actions([-1, 0, 1, 2], 2, 3, value(23)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 2), '='('Charge', 3), '='('Best', value(23)), '='('Cost', value(23)), '='('Remaining', infeasible)], [candidate_cost(2, 3, -1, value(23)), minimum_actions([0, 1, 2], 2, 3, infeasible), minimum(value(23), infeasible, value(23))]).
+% step 286
+step(is(22, min(22, 23)), builtin, [], []).
+% step 287
+step(minimum(value(22), value(23), value(22)), rule(35), ['='('Left', 22), '='('Right', 23), '='('Best', 22)], [is(22, min(22, 23))]).
+% step 288
+step(minimum_actions([-2, -1, 0, 1, 2], 2, 3, value(22)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 2), '='('Charge', 3), '='('Best', value(22)), '='('Cost', value(22)), '='('Remaining', value(23))], [candidate_cost(2, 3, -2, value(22)), minimum_actions([-1, 0, 1, 2], 2, 3, value(23)), minimum(value(22), value(23), value(22))]).
+% step 289
+step(best_cost(2, 3, value(22)), rule(26), ['='('Time', 2), '='('Charge', 3), '='('Best', value(22)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(2, 4), '>='(2, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 2, 3, value(22))]).
+% step 290
+step(is(0, '+'('-'(2, 0), -2)), builtin, [], []).
+% step 291
+step(step_values(1, 2, -2, 0, 0, 0), rule(16), ['='('Time', 1), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', 0), '='('Cost', 0), '='('Load', 2), '='('Solar', 0), '='('Tariff', 2), '='('Hours', 1)], [slot(1, 2, 0, 2, 1), is(0, '+'(2, '*'(-2, 1))), is(0, '+'('-'(2, 0), -2)), is(0, '*'('*'(0, 1), 2))]).
+% step 292
+step('<'(0, 1), builtin, [], []).
+% step 293
+step(step_problem(0, 0, -2, below_reserve), rule(17), ['='('NextCharge', 0), '='('_Grid', 0), '='('_Power', -2), '='('Reserve', 1)], [reserve_kwh(1), '<'(0, 1)]).
+% step 294
+step(transition(1, 2, -2, infeasible), rule(22), ['='('Time', 1), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', 0), '='('$anonymous3', 0), '='('$anonymous4', below_reserve)], [step_values(1, 2, -2, 0, 0, 0), step_problem(0, 0, -2, below_reserve)]).
+% step 295
+step(candidate_cost(1, 2, -2, infeasible), rule(29), ['='('Time', 1), '='('Charge', 2), '='('Power', -2)], [transition(1, 2, -2, infeasible)]).
+% step 296
+step(is(1, '+'('-'(2, 0), -1)), builtin, [], []).
+% step 297
+step(is(2, '*'('*'(1, 1), 2)), builtin, [], []).
+% step 298
+step(step_values(1, 2, -1, 1, 1, 2), rule(16), ['='('Time', 1), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 2), '='('Load', 2), '='('Solar', 0), '='('Tariff', 2), '='('Hours', 1)], [slot(1, 2, 0, 2, 1), is(1, '+'(2, '*'(-1, 1))), is(1, '+'('-'(2, 0), -1)), is(2, '*'('*'(1, 1), 2))]).
+% step 299
+step(transition(1, 2, -1, feasible(1, 1, 2)), rule(23), ['='('Time', 1), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', 1), '='('Cost', 2), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(1, 2, -1, 1, 1, 2), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(1, 1), '=<'(1, 4), '>='(1, 0), '=<'(1, 3), '=<'(abs(-1), 2)]).
+% step 300
+step(step_values(2, 1, -2, -1, 1, 8), rule(16), ['='('Time', 2), '='('Charge', 1), '='('Power', -2), '='('NextCharge', -1), '='('Grid', 1), '='('Cost', 8), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(-1, '+'(1, '*'(-2, 1))), is(1, '+'('-'(4, 1), -2)), is(8, '*'('*'(1, 1), 8))]).
+% step 301
+step('<'(-1, 1), builtin, [], []).
+% step 302
+step(step_problem(-1, 1, -2, below_reserve), rule(17), ['='('NextCharge', -1), '='('_Grid', 1), '='('_Power', -2), '='('Reserve', 1)], [reserve_kwh(1), '<'(-1, 1)]).
+% step 303
+step(transition(2, 1, -2, infeasible), rule(22), ['='('Time', 2), '='('Charge', 1), '='('Power', -2), '='('NextCharge', -1), '='('Grid', 1), '='('$anonymous3', 8), '='('$anonymous4', below_reserve)], [step_values(2, 1, -2, -1, 1, 8), step_problem(-1, 1, -2, below_reserve)]).
+% step 304
+step(candidate_cost(2, 1, -2, infeasible), rule(29), ['='('Time', 2), '='('Charge', 1), '='('Power', -2)], [transition(2, 1, -2, infeasible)]).
+% step 305
+step(step_values(2, 1, -1, 0, 2, 16), rule(16), ['='('Time', 2), '='('Charge', 1), '='('Power', -1), '='('NextCharge', 0), '='('Grid', 2), '='('Cost', 16), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(0, '+'(1, '*'(-1, 1))), is(2, '+'('-'(4, 1), -1)), is(16, '*'('*'(2, 1), 8))]).
+% step 306
+step(step_problem(0, 2, -1, below_reserve), rule(17), ['='('NextCharge', 0), '='('_Grid', 2), '='('_Power', -1), '='('Reserve', 1)], [reserve_kwh(1), '<'(0, 1)]).
+% step 307
+step(transition(2, 1, -1, infeasible), rule(22), ['='('Time', 2), '='('Charge', 1), '='('Power', -1), '='('NextCharge', 0), '='('Grid', 2), '='('$anonymous3', 16), '='('$anonymous4', below_reserve)], [step_values(2, 1, -1, 0, 2, 16), step_problem(0, 2, -1, below_reserve)]).
+% step 308
+step(candidate_cost(2, 1, -1, infeasible), rule(29), ['='('Time', 2), '='('Charge', 1), '='('Power', -1)], [transition(2, 1, -1, infeasible)]).
+% step 309
+step(step_values(2, 1, 0, 1, 3, 24), rule(16), ['='('Time', 2), '='('Charge', 1), '='('Power', 0), '='('NextCharge', 1), '='('Grid', 3), '='('Cost', 24), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(1, '+'(1, '*'(0, 1))), is(3, '+'('-'(4, 1), 0)), is(24, '*'('*'(3, 1), 8))]).
+% step 310
+step(transition(2, 1, 0, feasible(1, 3, 24)), rule(23), ['='('Time', 2), '='('Charge', 1), '='('Power', 0), '='('NextCharge', 1), '='('Grid', 3), '='('Cost', 24), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 1, 0, 1, 3, 24), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(1, 1), '=<'(1, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(0), 2)]).
+% step 311
+step(is(38, '+'(24, 14)), builtin, [], []).
+% step 312
+step(add_cost(24, value(14), value(38)), rule(32), ['='('Own', 24), '='('Future', 14), '='('Cost', 38)], [is(38, '+'(24, 14))]).
+% step 313
+step(candidate_cost(2, 1, 0, value(38)), rule(30), ['='('Time', 2), '='('Charge', 1), '='('Power', 0), '='('Cost', value(38)), '='('NextCharge', 1), '='('_Grid', 3), '='('Own', 24), '='('NextTime', 3), '='('Future', value(14))], [transition(2, 1, 0, feasible(1, 3, 24)), is(3, '+'(2, 1)), best_cost(3, 1, value(14)), add_cost(24, value(14), value(38))]).
+% step 314
+step(step_values(2, 1, 1, 2, 4, 32), rule(16), ['='('Time', 2), '='('Charge', 1), '='('Power', 1), '='('NextCharge', 2), '='('Grid', 4), '='('Cost', 32), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(2, '+'(1, '*'(1, 1))), is(4, '+'('-'(4, 1), 1)), is(32, '*'('*'(4, 1), 8))]).
+% step 315
+step(step_problem(2, 4, 1, grid_limit), rule(20), ['='('_NextCharge', 2), '='('Grid', 4), '='('_Power', 1), '='('Limit', 3)], [grid_limit_kw(3), '>'(4, 3)]).
+% step 316
+step(transition(2, 1, 1, infeasible), rule(22), ['='('Time', 2), '='('Charge', 1), '='('Power', 1), '='('NextCharge', 2), '='('Grid', 4), '='('$anonymous3', 32), '='('$anonymous4', grid_limit)], [step_values(2, 1, 1, 2, 4, 32), step_problem(2, 4, 1, grid_limit)]).
+% step 317
+step(candidate_cost(2, 1, 1, infeasible), rule(29), ['='('Time', 2), '='('Charge', 1), '='('Power', 1)], [transition(2, 1, 1, infeasible)]).
+% step 318
+step(step_values(2, 1, 2, 3, 5, 40), rule(16), ['='('Time', 2), '='('Charge', 1), '='('Power', 2), '='('NextCharge', 3), '='('Grid', 5), '='('Cost', 40), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(3, '+'(1, '*'(2, 1))), is(5, '+'('-'(4, 1), 2)), is(40, '*'('*'(5, 1), 8))]).
+% step 319
+step('>'(5, 3), builtin, [], []).
+% step 320
+step(step_problem(3, 5, 2, grid_limit), rule(20), ['='('_NextCharge', 3), '='('Grid', 5), '='('_Power', 2), '='('Limit', 3)], [grid_limit_kw(3), '>'(5, 3)]).
+% step 321
+step(transition(2, 1, 2, infeasible), rule(22), ['='('Time', 2), '='('Charge', 1), '='('Power', 2), '='('NextCharge', 3), '='('Grid', 5), '='('$anonymous3', 40), '='('$anonymous4', grid_limit)], [step_values(2, 1, 2, 3, 5, 40), step_problem(3, 5, 2, grid_limit)]).
+% step 322
+step(candidate_cost(2, 1, 2, infeasible), rule(29), ['='('Time', 2), '='('Charge', 1), '='('Power', 2)], [transition(2, 1, 2, infeasible)]).
+% step 323
+step(minimum_actions([], 2, 1, infeasible), fact(27), ['='('_Time', 2), '='('_Charge', 1)], []).
+% step 324
+step(minimum_actions([2], 2, 1, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 2), '='('Charge', 1), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 1, 2, infeasible), minimum_actions([], 2, 1, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 325
+step(minimum_actions([1, 2], 2, 1, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 2), '='('Charge', 1), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 1, 1, infeasible), minimum_actions([2], 2, 1, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 326
+step(minimum(value(38), infeasible, value(38)), fact(34), ['='('Left', 38)], []).
+% step 327
+step(minimum_actions([0, 1, 2], 2, 1, value(38)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 2), '='('Charge', 1), '='('Best', value(38)), '='('Cost', value(38)), '='('Remaining', infeasible)], [candidate_cost(2, 1, 0, value(38)), minimum_actions([1, 2], 2, 1, infeasible), minimum(value(38), infeasible, value(38))]).
+% step 328
+step(minimum(infeasible, value(38), value(38)), fact(33), ['='('Right', value(38))], []).
+% step 329
+step(minimum_actions([-1, 0, 1, 2], 2, 1, value(38)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 2), '='('Charge', 1), '='('Best', value(38)), '='('Cost', infeasible), '='('Remaining', value(38))], [candidate_cost(2, 1, -1, infeasible), minimum_actions([0, 1, 2], 2, 1, value(38)), minimum(infeasible, value(38), value(38))]).
+% step 330
+step(minimum_actions([-2, -1, 0, 1, 2], 2, 1, value(38)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 2), '='('Charge', 1), '='('Best', value(38)), '='('Cost', infeasible), '='('Remaining', value(38))], [candidate_cost(2, 1, -2, infeasible), minimum_actions([-1, 0, 1, 2], 2, 1, value(38)), minimum(infeasible, value(38), value(38))]).
+% step 331
+step(best_cost(2, 1, value(38)), rule(26), ['='('Time', 2), '='('Charge', 1), '='('Best', value(38)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(2, 4), '>='(2, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 2, 1, value(38))]).
+% step 332
+step(is(40, '+'(2, 38)), builtin, [], []).
+% step 333
+step(add_cost(2, value(38), value(40)), rule(32), ['='('Own', 2), '='('Future', 38), '='('Cost', 40)], [is(40, '+'(2, 38))]).
+% step 334
+step(candidate_cost(1, 2, -1, value(40)), rule(30), ['='('Time', 1), '='('Charge', 2), '='('Power', -1), '='('Cost', value(40)), '='('NextCharge', 1), '='('_Grid', 1), '='('Own', 2), '='('NextTime', 2), '='('Future', value(38))], [transition(1, 2, -1, feasible(1, 1, 2)), is(2, '+'(1, 1)), best_cost(2, 1, value(38)), add_cost(2, value(38), value(40))]).
+% step 335
+step(is(2, '+'('-'(2, 0), 0)), builtin, [], []).
+% step 336
+step(is(4, '*'('*'(2, 1), 2)), builtin, [], []).
+% step 337
+step(step_values(1, 2, 0, 2, 2, 4), rule(16), ['='('Time', 1), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 4), '='('Load', 2), '='('Solar', 0), '='('Tariff', 2), '='('Hours', 1)], [slot(1, 2, 0, 2, 1), is(2, '+'(2, '*'(0, 1))), is(2, '+'('-'(2, 0), 0)), is(4, '*'('*'(2, 1), 2))]).
+% step 338
+step(transition(1, 2, 0, feasible(2, 2, 4)), rule(23), ['='('Time', 1), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', 2), '='('Cost', 4), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(1, 2, 0, 2, 2, 4), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(2, 1), '=<'(2, 4), '>='(2, 0), '=<'(2, 3), '=<'(abs(0), 2)]).
+% step 339
+step(step_values(2, 2, -2, 0, 1, 8), rule(16), ['='('Time', 2), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', 1), '='('Cost', 8), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(0, '+'(2, '*'(-2, 1))), is(1, '+'('-'(4, 1), -2)), is(8, '*'('*'(1, 1), 8))]).
+% step 340
+step(step_problem(0, 1, -2, below_reserve), rule(17), ['='('NextCharge', 0), '='('_Grid', 1), '='('_Power', -2), '='('Reserve', 1)], [reserve_kwh(1), '<'(0, 1)]).
+% step 341
+step(transition(2, 2, -2, infeasible), rule(22), ['='('Time', 2), '='('Charge', 2), '='('Power', -2), '='('NextCharge', 0), '='('Grid', 1), '='('$anonymous3', 8), '='('$anonymous4', below_reserve)], [step_values(2, 2, -2, 0, 1, 8), step_problem(0, 1, -2, below_reserve)]).
+% step 342
+step(candidate_cost(2, 2, -2, infeasible), rule(29), ['='('Time', 2), '='('Charge', 2), '='('Power', -2)], [transition(2, 2, -2, infeasible)]).
+% step 343
+step(step_values(2, 2, -1, 1, 2, 16), rule(16), ['='('Time', 2), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', 2), '='('Cost', 16), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(1, '+'(2, '*'(-1, 1))), is(2, '+'('-'(4, 1), -1)), is(16, '*'('*'(2, 1), 8))]).
+% step 344
+step(transition(2, 2, -1, feasible(1, 2, 16)), rule(23), ['='('Time', 2), '='('Charge', 2), '='('Power', -1), '='('NextCharge', 1), '='('Grid', 2), '='('Cost', 16), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 2, -1, 1, 2, 16), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(1, 1), '=<'(1, 4), '>='(2, 0), '=<'(2, 3), '=<'(abs(-1), 2)]).
+% step 345
+step(is(30, '+'(16, 14)), builtin, [], []).
+% step 346
+step(add_cost(16, value(14), value(30)), rule(32), ['='('Own', 16), '='('Future', 14), '='('Cost', 30)], [is(30, '+'(16, 14))]).
+% step 347
+step(candidate_cost(2, 2, -1, value(30)), rule(30), ['='('Time', 2), '='('Charge', 2), '='('Power', -1), '='('Cost', value(30)), '='('NextCharge', 1), '='('_Grid', 2), '='('Own', 16), '='('NextTime', 3), '='('Future', value(14))], [transition(2, 2, -1, feasible(1, 2, 16)), is(3, '+'(2, 1)), best_cost(3, 1, value(14)), add_cost(16, value(14), value(30))]).
+% step 348
+step(step_values(2, 2, 0, 2, 3, 24), rule(16), ['='('Time', 2), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', 3), '='('Cost', 24), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(2, '+'(2, '*'(0, 1))), is(3, '+'('-'(4, 1), 0)), is(24, '*'('*'(3, 1), 8))]).
+% step 349
+step(transition(2, 2, 0, feasible(2, 3, 24)), rule(23), ['='('Time', 2), '='('Charge', 2), '='('Power', 0), '='('NextCharge', 2), '='('Grid', 3), '='('Cost', 24), '='('Reserve', 1), '='('Capacity', 4), '='('GridLimit', 3), '='('PowerLimit', 2)], [step_values(2, 2, 0, 2, 3, 24), reserve_kwh(1), capacity_kwh(4), grid_limit_kw(3), power_limit_kw(2), '>='(2, 1), '=<'(2, 4), '>='(3, 0), '=<'(3, 3), '=<'(abs(0), 2)]).
+% step 350
+step(is(31, '+'(24, 7)), builtin, [], []).
+% step 351
+step(add_cost(24, value(7), value(31)), rule(32), ['='('Own', 24), '='('Future', 7), '='('Cost', 31)], [is(31, '+'(24, 7))]).
+% step 352
+step(candidate_cost(2, 2, 0, value(31)), rule(30), ['='('Time', 2), '='('Charge', 2), '='('Power', 0), '='('Cost', value(31)), '='('NextCharge', 2), '='('_Grid', 3), '='('Own', 24), '='('NextTime', 3), '='('Future', value(7))], [transition(2, 2, 0, feasible(2, 3, 24)), is(3, '+'(2, 1)), best_cost(3, 2, value(7)), add_cost(24, value(7), value(31))]).
+% step 353
+step(step_values(2, 2, 1, 3, 4, 32), rule(16), ['='('Time', 2), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', 4), '='('Cost', 32), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(3, '+'(2, '*'(1, 1))), is(4, '+'('-'(4, 1), 1)), is(32, '*'('*'(4, 1), 8))]).
+% step 354
+step(step_problem(3, 4, 1, grid_limit), rule(20), ['='('_NextCharge', 3), '='('Grid', 4), '='('_Power', 1), '='('Limit', 3)], [grid_limit_kw(3), '>'(4, 3)]).
+% step 355
+step(transition(2, 2, 1, infeasible), rule(22), ['='('Time', 2), '='('Charge', 2), '='('Power', 1), '='('NextCharge', 3), '='('Grid', 4), '='('$anonymous3', 32), '='('$anonymous4', grid_limit)], [step_values(2, 2, 1, 3, 4, 32), step_problem(3, 4, 1, grid_limit)]).
+% step 356
+step(candidate_cost(2, 2, 1, infeasible), rule(29), ['='('Time', 2), '='('Charge', 2), '='('Power', 1)], [transition(2, 2, 1, infeasible)]).
+% step 357
+step(step_values(2, 2, 2, 4, 5, 40), rule(16), ['='('Time', 2), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 5), '='('Cost', 40), '='('Load', 4), '='('Solar', 1), '='('Tariff', 8), '='('Hours', 1)], [slot(2, 4, 1, 8, 1), is(4, '+'(2, '*'(2, 1))), is(5, '+'('-'(4, 1), 2)), is(40, '*'('*'(5, 1), 8))]).
+% step 358
+step(step_problem(4, 5, 2, grid_limit), rule(20), ['='('_NextCharge', 4), '='('Grid', 5), '='('_Power', 2), '='('Limit', 3)], [grid_limit_kw(3), '>'(5, 3)]).
+% step 359
+step(transition(2, 2, 2, infeasible), rule(22), ['='('Time', 2), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 5), '='('$anonymous3', 40), '='('$anonymous4', grid_limit)], [step_values(2, 2, 2, 4, 5, 40), step_problem(4, 5, 2, grid_limit)]).
+% step 360
+step(candidate_cost(2, 2, 2, infeasible), rule(29), ['='('Time', 2), '='('Charge', 2), '='('Power', 2)], [transition(2, 2, 2, infeasible)]).
+% step 361
+step(minimum_actions([], 2, 2, infeasible), fact(27), ['='('_Time', 2), '='('_Charge', 2)], []).
+% step 362
+step(minimum_actions([2], 2, 2, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 2), '='('Charge', 2), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 2, 2, infeasible), minimum_actions([], 2, 2, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 363
+step(minimum_actions([1, 2], 2, 2, infeasible), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 2), '='('Charge', 2), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(2, 2, 1, infeasible), minimum_actions([2], 2, 2, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 364
+step(minimum(value(31), infeasible, value(31)), fact(34), ['='('Left', 31)], []).
+% step 365
+step(minimum_actions([0, 1, 2], 2, 2, value(31)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 2), '='('Charge', 2), '='('Best', value(31)), '='('Cost', value(31)), '='('Remaining', infeasible)], [candidate_cost(2, 2, 0, value(31)), minimum_actions([1, 2], 2, 2, infeasible), minimum(value(31), infeasible, value(31))]).
+% step 366
+step(is(30, min(30, 31)), builtin, [], []).
+% step 367
+step(minimum(value(30), value(31), value(30)), rule(35), ['='('Left', 30), '='('Right', 31), '='('Best', 30)], [is(30, min(30, 31))]).
+% step 368
+step(minimum_actions([-1, 0, 1, 2], 2, 2, value(30)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 2), '='('Charge', 2), '='('Best', value(30)), '='('Cost', value(30)), '='('Remaining', value(31))], [candidate_cost(2, 2, -1, value(30)), minimum_actions([0, 1, 2], 2, 2, value(31)), minimum(value(30), value(31), value(30))]).
+% step 369
+step(minimum(infeasible, value(30), value(30)), fact(33), ['='('Right', value(30))], []).
+% step 370
+step(minimum_actions([-2, -1, 0, 1, 2], 2, 2, value(30)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 2), '='('Charge', 2), '='('Best', value(30)), '='('Cost', infeasible), '='('Remaining', value(30))], [candidate_cost(2, 2, -2, infeasible), minimum_actions([-1, 0, 1, 2], 2, 2, value(30)), minimum(infeasible, value(30), value(30))]).
+% step 371
+step(best_cost(2, 2, value(30)), rule(26), ['='('Time', 2), '='('Charge', 2), '='('Best', value(30)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(2, 4), '>='(2, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 2, 2, value(30))]).
+% step 372
+step(is(34, '+'(4, 30)), builtin, [], []).
+% step 373
+step(add_cost(4, value(30), value(34)), rule(32), ['='('Own', 4), '='('Future', 30), '='('Cost', 34)], [is(34, '+'(4, 30))]).
+% step 374
+step(candidate_cost(1, 2, 0, value(34)), rule(30), ['='('Time', 1), '='('Charge', 2), '='('Power', 0), '='('Cost', value(34)), '='('NextCharge', 2), '='('_Grid', 2), '='('Own', 4), '='('NextTime', 2), '='('Future', value(30))], [transition(1, 2, 0, feasible(2, 2, 4)), is(2, '+'(1, 1)), best_cost(2, 2, value(30)), add_cost(4, value(30), value(34))]).
+% step 375
+step(is(28, '+'(6, 22)), builtin, [], []).
+% step 376
+step(add_cost(6, value(22), value(28)), rule(32), ['='('Own', 6), '='('Future', 22), '='('Cost', 28)], [is(28, '+'(6, 22))]).
+% step 377
+step(candidate_cost(1, 2, 1, value(28)), rule(30), ['='('Time', 1), '='('Charge', 2), '='('Power', 1), '='('Cost', value(28)), '='('NextCharge', 3), '='('_Grid', 3), '='('Own', 6), '='('NextTime', 2), '='('Future', value(22))], [transition(1, 2, 1, feasible(3, 3, 6)), is(2, '+'(1, 1)), best_cost(2, 3, value(22)), add_cost(6, value(22), value(28))]).
+% step 378
+step(is(4, '+'('-'(2, 0), 2)), builtin, [], []).
+% step 379
+step(is(8, '*'('*'(4, 1), 2)), builtin, [], []).
+% step 380
+step(step_values(1, 2, 2, 4, 4, 8), rule(16), ['='('Time', 1), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 4), '='('Cost', 8), '='('Load', 2), '='('Solar', 0), '='('Tariff', 2), '='('Hours', 1)], [slot(1, 2, 0, 2, 1), is(4, '+'(2, '*'(2, 1))), is(4, '+'('-'(2, 0), 2)), is(8, '*'('*'(4, 1), 2))]).
+% step 381
+step(step_problem(4, 4, 2, grid_limit), rule(20), ['='('_NextCharge', 4), '='('Grid', 4), '='('_Power', 2), '='('Limit', 3)], [grid_limit_kw(3), '>'(4, 3)]).
+% step 382
+step(transition(1, 2, 2, infeasible), rule(22), ['='('Time', 1), '='('Charge', 2), '='('Power', 2), '='('NextCharge', 4), '='('Grid', 4), '='('$anonymous3', 8), '='('$anonymous4', grid_limit)], [step_values(1, 2, 2, 4, 4, 8), step_problem(4, 4, 2, grid_limit)]).
+% step 383
+step(candidate_cost(1, 2, 2, infeasible), rule(29), ['='('Time', 1), '='('Charge', 2), '='('Power', 2)], [transition(1, 2, 2, infeasible)]).
+% step 384
+step(minimum_actions([], 1, 2, infeasible), fact(27), ['='('_Time', 1), '='('_Charge', 2)], []).
+% step 385
+step(minimum_actions([2], 1, 2, infeasible), rule(28), ['='('Power', 2), '='('Rest', []), '='('Time', 1), '='('Charge', 2), '='('Best', infeasible), '='('Cost', infeasible), '='('Remaining', infeasible)], [candidate_cost(1, 2, 2, infeasible), minimum_actions([], 1, 2, infeasible), minimum(infeasible, infeasible, infeasible)]).
+% step 386
+step(minimum(value(28), infeasible, value(28)), fact(34), ['='('Left', 28)], []).
+% step 387
+step(minimum_actions([1, 2], 1, 2, value(28)), rule(28), ['='('Power', 1), '='('Rest', [2]), '='('Time', 1), '='('Charge', 2), '='('Best', value(28)), '='('Cost', value(28)), '='('Remaining', infeasible)], [candidate_cost(1, 2, 1, value(28)), minimum_actions([2], 1, 2, infeasible), minimum(value(28), infeasible, value(28))]).
+% step 388
+step(is(28, min(34, 28)), builtin, [], []).
+% step 389
+step(minimum(value(34), value(28), value(28)), rule(35), ['='('Left', 34), '='('Right', 28), '='('Best', 28)], [is(28, min(34, 28))]).
+% step 390
+step(minimum_actions([0, 1, 2], 1, 2, value(28)), rule(28), ['='('Power', 0), '='('Rest', [1, 2]), '='('Time', 1), '='('Charge', 2), '='('Best', value(28)), '='('Cost', value(34)), '='('Remaining', value(28))], [candidate_cost(1, 2, 0, value(34)), minimum_actions([1, 2], 1, 2, value(28)), minimum(value(34), value(28), value(28))]).
+% step 391
+step(is(28, min(40, 28)), builtin, [], []).
+% step 392
+step(minimum(value(40), value(28), value(28)), rule(35), ['='('Left', 40), '='('Right', 28), '='('Best', 28)], [is(28, min(40, 28))]).
+% step 393
+step(minimum_actions([-1, 0, 1, 2], 1, 2, value(28)), rule(28), ['='('Power', -1), '='('Rest', [0, 1, 2]), '='('Time', 1), '='('Charge', 2), '='('Best', value(28)), '='('Cost', value(40)), '='('Remaining', value(28))], [candidate_cost(1, 2, -1, value(40)), minimum_actions([0, 1, 2], 1, 2, value(28)), minimum(value(40), value(28), value(28))]).
+% step 394
+step(minimum(infeasible, value(28), value(28)), fact(33), ['='('Right', value(28))], []).
+% step 395
+step(minimum_actions([-2, -1, 0, 1, 2], 1, 2, value(28)), rule(28), ['='('Power', -2), '='('Rest', [-1, 0, 1, 2]), '='('Time', 1), '='('Charge', 2), '='('Best', value(28)), '='('Cost', infeasible), '='('Remaining', value(28))], [candidate_cost(1, 2, -2, infeasible), minimum_actions([-1, 0, 1, 2], 1, 2, value(28)), minimum(infeasible, value(28), value(28))]).
+% step 396
+step(best_cost(1, 2, value(28)), rule(26), ['='('Time', 1), '='('Charge', 2), '='('Best', value(28)), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2])], [last_slot(4), '=<'(1, 4), '>='(1, 1), actions([-2, -1, 0, 1, 2]), minimum_actions([-2, -1, 0, 1, 2], 1, 2, value(28))]).
+% step 397
+step('=:='(28, '+'(6, 22)), builtin, [], []).
+% step 398
+step(member(-2, [-2, -1, 0, 1, 2]), fact(13), ['='('Head', -2), '='('$anonymous1', [-1, 0, 1, 2])], []).
+% step 399
+step('=:='(22, '+'(8, 14)), builtin, [], []).
+% step 400
+step(member(2, [2]), fact(13), ['='('Head', 2), '='('$anonymous1', [])], []).
+% step 401
+step(member(2, [1, 2]), rule(14), ['='('Value', 2), '='('$anonymous2', 1), '='('Rest', [2])], [member(2, [2])]).
+% step 402
+step(member(2, [0, 1, 2]), rule(14), ['='('Value', 2), '='('$anonymous2', 0), '='('Rest', [1, 2])], [member(2, [1, 2])]).
+% step 403
+step(member(2, [-1, 0, 1, 2]), rule(14), ['='('Value', 2), '='('$anonymous2', -1), '='('Rest', [0, 1, 2])], [member(2, [0, 1, 2])]).
+% step 404
+step(member(2, [-2, -1, 0, 1, 2]), rule(14), ['='('Value', 2), '='('$anonymous2', -2), '='('Rest', [-1, 0, 1, 2])], [member(2, [-1, 0, 1, 2])]).
+% step 405
+step('=:='(14, '+'(0, 14)), builtin, [], []).
+% step 406
+step(member(-1, [-1, 0, 1, 2]), fact(13), ['='('Head', -1), '='('$anonymous1', [0, 1, 2])], []).
+% step 407
+step(member(-1, [-2, -1, 0, 1, 2]), rule(14), ['='('Value', -1), '='('$anonymous2', -2), '='('Rest', [-1, 0, 1, 2])], [member(-1, [-1, 0, 1, 2])]).
+% step 408
+step('=:='(14, '+'(14, 0)), builtin, [], []).
+% step 409
+step(optimal_from(5, 2, [], 0), rule(36), ['='('Time', 5), '='('Charge', 2)], [terminal_slot(5), best_cost(5, 2, value(0))]).
+% step 410
+step(optimal_from(4, 3, [dispatch(4, -1, 2, 2)], 14), rule(37), ['='('Time', 4), '='('Charge', 3), '='('Cost', 14), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2]), '='('Power', -1), '='('NextCharge', 2), '='('Grid', 2), '='('Own', 14), '='('NextTime', 5), '='('Future', 0), '='('Rest', [])], [last_slot(4), '=<'(4, 4), actions([-2, -1, 0, 1, 2]), member(-1, [-2, -1, 0, 1, 2]), transition(4, 3, -1, feasible(2, 2, 14)), is(5, '+'(4, 1)), best_cost(5, 2, value(0)), best_cost(4, 3, value(14)), '=:='(14, '+'(14, 0)), optimal_from(5, 2, [], 0)]).
+% step 411
+step(optimal_from(3, 1, [dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 14), rule(37), ['='('Time', 3), '='('Charge', 1), '='('Cost', 14), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2]), '='('Power', 2), '='('NextCharge', 3), '='('Grid', 0), '='('Own', 0), '='('NextTime', 4), '='('Future', 14), '='('Rest', [dispatch(4, -1, 2, 2)])], [last_slot(4), '=<'(3, 4), actions([-2, -1, 0, 1, 2]), member(2, [-2, -1, 0, 1, 2]), transition(3, 1, 2, feasible(3, 0, 0)), is(4, '+'(3, 1)), best_cost(4, 3, value(14)), best_cost(3, 1, value(14)), '=:='(14, '+'(0, 14)), optimal_from(4, 3, [dispatch(4, -1, 2, 2)], 14)]).
+% step 412
+step(optimal_from(2, 3, [dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 22), rule(37), ['='('Time', 2), '='('Charge', 3), '='('Cost', 22), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2]), '='('Power', -2), '='('NextCharge', 1), '='('Grid', 1), '='('Own', 8), '='('NextTime', 3), '='('Future', 14), '='('Rest', [dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)])], [last_slot(4), '=<'(2, 4), actions([-2, -1, 0, 1, 2]), member(-2, [-2, -1, 0, 1, 2]), transition(2, 3, -2, feasible(1, 1, 8)), is(3, '+'(2, 1)), best_cost(3, 1, value(14)), best_cost(2, 3, value(22)), '=:='(22, '+'(8, 14)), optimal_from(3, 1, [dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 14)]).
+% step 413
+step(optimal_from(1, 2, [dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28), rule(37), ['='('Time', 1), '='('Charge', 2), '='('Cost', 28), '='('Last', 4), '='('Actions', [-2, -1, 0, 1, 2]), '='('Power', 1), '='('NextCharge', 3), '='('Grid', 3), '='('Own', 6), '='('NextTime', 2), '='('Future', 22), '='('Rest', [dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)])], [last_slot(4), '=<'(1, 4), actions([-2, -1, 0, 1, 2]), member(1, [-2, -1, 0, 1, 2]), transition(1, 2, 1, feasible(3, 3, 6)), is(2, '+'(1, 1)), best_cost(2, 3, value(22)), best_cost(1, 2, value(28)), '=:='(28, '+'(6, 22)), optimal_from(2, 3, [dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 22)]).
+% step 414
+step(dispatch_plan([dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28), rule(38), ['='('Charge', 2), '='('Plan', [dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)]), '='('Cost', 28)], [initial_charge_kwh(2), optimal_from(1, 2, [dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28)]).
+
+% Check
+check passed: dispatch_plan([dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28).
+
+check passed: best_cost(1, 2, value(28)).
+
+check passed: aggregate_all(count, (dispatch_plan(Plan, Cost)), 1).
+
+check passed: transition(2, 3, -2, feasible(1, 1, 8)).
+
+check passed: transition(3, 1, 2, feasible(3, 0, 0)).
+
+check passed: best_cost(5, 1, infeasible).
+
+check passed: best_cost(5, 2, value(0)).
+
+check passed: transition(1, 2, 2, infeasible).
+
+check passed: transition(3, 1, 0, infeasible).
+
+condition('C1', resolution, ok, 293).
+condition('C2', well_founded, ok, 414).
+condition('C3', justification, ok, 414).
+condition('C4', coverage, ok, 814).
+condition('C5', re_decision, ok, 121).
+condition('C6', boundary_consistency, ok, 0).
+condition('C7', relevance, ok, 415).
+steps(414).
+verified(293).
+recomputed(121).
+trusted(0).
+claims(1).
+verdict(checked).

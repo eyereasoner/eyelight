@@ -1,7 +1,7 @@
 % Names, text, and numbers
 %
 % Three records store an atom, a string, and an integer as different values.
-% Whye selects the record with a string value, then lists every record.
+% Wheye selects the record with a string value, then lists every record.
 % Quoted atoms allow complete IRIs and names with spaces or punctuation.
 
 value(atom_record, '42').

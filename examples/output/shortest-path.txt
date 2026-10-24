@@ -1,0 +1,73 @@
+% Answer
+?- path(a, d, Cost).
+Cost = 7.
+Cost = 10.
+Cost = 6.
+
+?- shortest(a, d, Cost).
+Cost = 6.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(2), [shortest(a, d, 6)]).
+
+clause(2, edge(a, c, 2), []).
+clause(3, edge(c, b, 1), []).
+clause(4, edge(b, d, 3), []).
+clause(6, path(var('X'), var('Y'), var('Cost')), [edge(var('X'), var('Y'), var('Cost'))]).
+clause(7, path(var('X'), var('Z'), var('Cost')), [path(var('X'), var('Y'), var('Before')), edge(var('Y'), var('Z'), var('Weight')), is(var('Cost'), '+'(var('Before'), var('Weight')))]).
+clause(9, shortest(var('X'), var('Y'), var('Cost')), [path(var('X'), var('Y'), var('Cost')), '\\+'(cheaper(var('X'), var('Y'), var('Cost')))]).
+
+% step 1
+step(edge(a, c, 2), fact(2), [], []).
+% step 2
+step(path(a, c, 2), rule(6), ['='('X', a), '='('Y', c), '='('Cost', 2)], [edge(a, c, 2)]).
+% step 3
+step(edge(c, b, 1), fact(3), [], []).
+% step 4
+step(is(3, '+'(2, 1)), builtin, [], []).
+% step 5
+step(path(a, b, 3), rule(7), ['='('X', a), '='('Y', c), '='('Before', 2), '='('Z', b), '='('Weight', 1), '='('Cost', 3)], [path(a, c, 2), edge(c, b, 1), is(3, '+'(2, 1))]).
+% step 6
+step(edge(b, d, 3), fact(4), [], []).
+% step 7
+step(is(6, '+'(3, 3)), builtin, [], []).
+% step 8
+step(path(a, d, 6), rule(7), ['='('X', a), '='('Y', b), '='('Before', 3), '='('Z', d), '='('Weight', 3), '='('Cost', 6)], [path(a, b, 3), edge(b, d, 3), is(6, '+'(3, 3))]).
+% step 9
+step('\\+'(cheaper(a, d, 6)), absent, [], []).
+% step 10
+step(shortest(a, d, 6), rule(9), ['='('X', a), '='('Y', d), '='('Cost', 6)], [path(a, d, 6), '\\+'(cheaper(a, d, 6))]).
+
+% Check
+check passed: path(a, d, 7).
+
+check passed: path(a, d, 10).
+
+check passed: path(a, d, 6).
+
+check passed: aggregate_all(count, (path(a, d, Cost)), 3).
+
+check passed: shortest(a, d, 6).
+
+check passed: shortest(a, b, 3).
+
+check passed: \+ (shortest(a, d, 7)).
+
+check passed: \+ (shortest(a, d, 10)).
+
+condition('C1', resolution, ok, 7).
+condition('C2', well_founded, ok, 10).
+condition('C3', justification, ok, 10).
+condition('C4', coverage, ok, 10).
+condition('C5', re_decision, ok, 2).
+condition('C6', boundary_consistency, ok, 1).
+condition('C7', relevance, ok, 11).
+obligation(absent, theory_scoped, '\\+'(cheaper(a, d, 6))).
+steps(10).
+verified(7).
+recomputed(2).
+trusted(1).
+claims(1).
+verdict(checked_with_obligations).

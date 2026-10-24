@@ -1,0 +1,92 @@
+% Answer
+?- input(case1, What).
+What = [1, 0, 1, 0, 0, 1].
+
+?- input(case2, What).
+What = [1, 0, 1, 1, 1, 1].
+
+?- input(case3, What).
+What = [1, 1, 1, 1, 1, 1].
+
+?- input(case4, What).
+What = [].
+
+?- output(case1, What).
+What = [1, 0, 1, 0, 1, 0, blank].
+
+?- output(case2, What).
+What = [1, 1, 0, 0, 0, 0, blank].
+
+?- output(case3, What).
+What = [1, 0, 0, 0, 0, 0, 0, blank].
+
+?- output(case4, What).
+What = [1, blank].
+
+?- is_a(Who, 'finished-case').
+Who = case4.
+Who = case1.
+Who = case2.
+Who = case3.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(8), [output(case4, [1, blank])]).
+
+clause(1, start('add-one', scan), []).
+clause(4, transition(['add-one', scan, blank], [carry, blank, left]), []).
+clause(7, transition(['add-one', carry, blank], [halt, 1, stay]), []).
+clause(14, machine(case4, 'add-one'), []).
+clause(15, input(case4, []), []).
+clause(17, runs(var('Case'), [var('State'), [], blank, []]), [machine(var('Case'), var('Machine')), start(var('Machine'), var('State')), input(var('Case'), [])]).
+clause(21, runs(var('Case'), [var('NextState'), [], blank, list([var('Write')], var('Right'))]), [runs(var('Case'), [var('State'), [], var('Read'), var('Right')]), machine(var('Case'), var('Machine')), transition([var('Machine'), var('State'), var('Read')], [var('NextState'), var('Write'), left])]).
+clause(22, runs(var('Case'), [var('NextState'), var('Left'), var('Write'), var('Right')]), [runs(var('Case'), [var('State'), var('Left'), var('Read'), var('Right')]), machine(var('Case'), var('Machine')), transition([var('Machine'), var('State'), var('Read')], [var('NextState'), var('Write'), stay])]).
+clause(23, 'unfinished-output'(var('Case'), [var('Left'), list([var('Symbol')], var('Right'))]), [runs(var('Case'), [halt, var('Left'), var('Symbol'), var('Right')])]).
+clause(25, output(var('Case'), var('Output')), ['unfinished-output'(var('Case'), [[], var('Output')])]).
+
+% step 1
+step(machine(case4, 'add-one'), fact(14), [], []).
+% step 2
+step(start('add-one', scan), fact(1), [], []).
+% step 3
+step(input(case4, []), fact(15), [], []).
+% step 4
+step(runs(case4, [scan, [], blank, []]), rule(17), ['='('Case', case4), '='('Machine', 'add-one'), '='('State', scan)], [machine(case4, 'add-one'), start('add-one', scan), input(case4, [])]).
+% step 5
+step(transition(['add-one', scan, blank], [carry, blank, left]), fact(4), [], []).
+% step 6
+step(runs(case4, [carry, [], blank, [blank]]), rule(21), ['='('Case', case4), '='('State', scan), '='('Read', blank), '='('Right', []), '='('Machine', 'add-one'), '='('NextState', carry), '='('Write', blank)], [runs(case4, [scan, [], blank, []]), machine(case4, 'add-one'), transition(['add-one', scan, blank], [carry, blank, left])]).
+% step 7
+step(transition(['add-one', carry, blank], [halt, 1, stay]), fact(7), [], []).
+% step 8
+step(runs(case4, [halt, [], 1, [blank]]), rule(22), ['='('Case', case4), '='('State', carry), '='('Left', []), '='('Read', blank), '='('Right', [blank]), '='('Machine', 'add-one'), '='('NextState', halt), '='('Write', 1)], [runs(case4, [carry, [], blank, [blank]]), machine(case4, 'add-one'), transition(['add-one', carry, blank], [halt, 1, stay])]).
+% step 9
+step('unfinished-output'(case4, [[], [1, blank]]), rule(23), ['='('Case', case4), '='('Left', []), '='('Symbol', 1), '='('Right', [blank])], [runs(case4, [halt, [], 1, [blank]])]).
+% step 10
+step(output(case4, [1, blank]), rule(25), ['='('Case', case4), '='('Output', [1, blank])], ['unfinished-output'(case4, [[], [1, blank]])]).
+
+% Check
+check passed: output(case1, [1, 0, 1, 0, 1, 0, blank]).
+
+check passed: output(case2, [1, 1, 0, 0, 0, 0, blank]).
+
+check passed: output(case3, [1, 0, 0, 0, 0, 0, 0, blank]).
+
+check passed: output(case4, [1, blank]).
+
+check passed: aggregate_all(count, (is_a(Subject, 'finished-case')), 4).
+
+condition('C1', resolution, ok, 10).
+condition('C2', well_founded, ok, 10).
+condition('C3', justification, ok, 10).
+condition('C4', coverage, ok, 12).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 0).
+condition('C7', relevance, ok, 11).
+steps(10).
+verified(10).
+recomputed(0).
+trusted(0).
+claims(1).
+verdict(checked).

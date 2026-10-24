@@ -1,10 +1,14 @@
-% Socrates and mortality
-%
-% Socrates is human, and every human in this model is mortal.
-% Whye derives his mortality and returns it as a query answer.
-% This introduces facts, a rule, and a named query variable.
+% Infer that Socrates is mortal from the fact that Socrates is human and the
+% rule that every human is mortal. The query asks who is mortal, why asks for
+% the reasoning, and assertions check the expected answer.
 
 human(socrates).
 mortal(Person) :- human(Person).
 
+% Answer
 ?- mortal(Who).
+% Reason
+?- why.
+% Check
+:- assertion(mortal(socrates)).
+:- assertion(aggregate_all(count, mortal(Person), 1)).

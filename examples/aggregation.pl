@@ -1,26 +1,30 @@
-% Department budgets
-%
-% Each purchase belongs to a department and has a price. Whye counts
-% purchases and computes each budget, including an empty department.
-% Aggregate-local variables stay inside braces; item keys keep equal prices
-% on different purchases distinct when summing.
+% Summarize three players' scores using a count, sum, minimum, and maximum.
+% Repeating Luna's score fact does not count it twice. Milo and Luna still
+% contribute separately, even though their scores are equal, because they are
+% different players.
 
-department(library).
-department(garden).
-department(museum).
-purchase(library, atlas, 20).
-purchase(library, dictionary, 20).
-purchase(garden, seeds, 5).
+is_a(milo, player).
+is_a(luna, player).
+is_a(rex, player).
+score(milo, 7).
+score(luna, 7).
+score(rex, 10).
+score(luna, 7).
 
-budget(Department, Items, Total) :-
-    department(Department),
-    count { Item : purchase(Department, Item, Price) } = Items,
-    sum { Price, Item : purchase(Department, Item, Price) } = Total.
+is_a(Player, 'team-member') :-
+    is_a(Player, player).
 
-range(Department, Cheapest, Dearest) :-
-    department(Department),
-    min { Price : purchase(Department, Item, Price) } = Cheapest,
-    max { Price : purchase(Department, Item, Price) } = Dearest.
+% Answer and Reason
+?- aggregate_all(count, is_a(Subject, player), Result).
+?- aggregate_all(count, is_a(Subject, 'team-member'), Result).
+?- aggregate_all(sum(Value), score(Subject, Value), Result).
+?- why.
+?- aggregate_all(min(Value), score(Subject, Value), Result).
+?- aggregate_all(max(Value), score(Subject, Value), Result).
 
-?- budget(Department, Items, Total).
-?- range(Department, Cheapest, Dearest).
+% Check
+:- assertion((aggregate_all(count, is_a(Subject, player), 3))).
+:- assertion((aggregate_all(count, is_a(Subject, 'team-member'), 3))).
+:- assertion((aggregate_all(sum(Value), score(Subject, Value), 24))).
+:- assertion((aggregate_all(min(Value), score(Subject, Value), 7))).
+:- assertion((aggregate_all(max(Value), score(Subject, Value), 10))).

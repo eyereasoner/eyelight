@@ -1,0 +1,268 @@
+% Answer
+?- assessment(Session, Result).
+Session = [baseline, r3], Result = [['deny-policy', ['prohibited-by', 'no-marketing']], [policy]].
+Session = [baseline, r6], Result = [['deny-policy', ['prohibited-by', 'no-transfer-us']], [policy]].
+Session = ['omnibus-proposal', r3], Result = [['deny-policy', ['prohibited-by', 'no-marketing']], [policy]].
+Session = ['omnibus-proposal', r6], Result = [['deny-policy', ['prohibited-by', 'no-transfer-us']], [policy]].
+Session = [baseline, r11], Result = [['deny-policy', 'no-matching-permission'], [policy]].
+Session = ['omnibus-proposal', r11], Result = [['deny-policy', 'no-matching-permission'], [policy]].
+Session = ['omnibus-proposal', r1], Result = [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]].
+Session = [baseline, r10], Result = [[permit, research], [policy, "ePrivacy Art. 5(3)"]].
+Session = ['omnibus-proposal', r10], Result = [[permit, research], [policy, "GDPR Art. 88a(3)(b)"]].
+Session = [baseline, r1], Result = [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]].
+Session = [baseline, r7], Result = [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]].
+Session = [baseline, r8], Result = [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]].
+Session = [baseline, r9], Result = [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]].
+Session = ['omnibus-proposal', r9], Result = [['await-device-consent', research], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]].
+Session = [baseline, r2], Result = [['deny-policy', ['not-permitted', [[unmet, 'for-research', purpose, 'personalised-advertising', within, 'research-and-development'], [unmet, 'under-consent', 'legal-basis', 'legitimate-interest', equal, consent], [unmet, 'consent-given', 'consent-status', 'consent-unknown', equal, 'consent-given']]]], [policy]].
+Session = ['omnibus-proposal', r2], Result = [['deny-policy', ['not-permitted', [[unmet, 'for-research', purpose, 'personalised-advertising', within, 'research-and-development'], [unmet, 'under-consent', 'legal-basis', 'legitimate-interest', equal, consent], [unmet, 'consent-given', 'consent-status', 'consent-unknown', equal, 'consent-given']]]], [policy]].
+Session = [baseline, r4], Result = [['deny-policy', ['not-permitted', [[unmet, 'consent-given', 'consent-status', 'consent-withdrawn', equal, 'consent-given']]]], [policy]].
+Session = ['omnibus-proposal', r4], Result = [['deny-policy', ['not-permitted', [[unmet, 'consent-given', 'consent-status', 'consent-withdrawn', equal, 'consent-given']]]], [policy]].
+Session = [baseline, r5], Result = [['deny-policy', ['not-permitted', [[unmet, pseudonymised, 'technical-measure', encryption, equal, pseudonymisation], [unmet, 'before-2027', date, 20270301, 'less-than', 20270101]]]], [policy]].
+Session = ['omnibus-proposal', r5], Result = [['deny-policy', ['not-permitted', [[unmet, pseudonymised, 'technical-measure', encryption, equal, pseudonymisation], [unmet, 'before-2027', date, 20270301, 'less-than', 20270101]]]], [policy]].
+Session = ['omnibus-proposal', r7], Result = [['deny-device', 'refused-by-signal'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88b(1)-(2)"]].
+Session = ['omnibus-proposal', r8], Result = [['deny-device', 'do-not-ask-again'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]].
+
+?- 'breach-plan'(Incident, Plan).
+Incident = [baseline, b1], Plan = [[notify, [authority, none], [people, none]], 'document-breach', ["GDPR Art. 33(1)", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+Incident = [baseline, b2], Plan = [[notify, [authority, ['within-hours', 72]], [people, none]], 'document-breach', ["GDPR Art. 33(1)", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+Incident = [baseline, b3], Plan = [[notify, [authority, ['within-hours', 72]], [people, 'without-undue-delay']], 'document-breach', ["GDPR Art. 33(1)", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+Incident = ['omnibus-proposal', b1], Plan = [[notify, [authority, none], [people, none]], 'document-breach', ["GDPR Art. 33(1) as amended", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+Incident = ['omnibus-proposal', b2], Plan = [[notify, [authority, none], [people, none]], 'document-breach', ["GDPR Art. 33(1) as amended", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+Incident = ['omnibus-proposal', b3], Plan = [[notify, [authority, ['within-hours-via-single-entry-point', 96]], [people, 'without-undue-delay']], 'document-breach', ["GDPR Art. 33(1) as amended", "GDPR Art. 34(1)", "GDPR Art. 33(5)"]].
+
+?- 'planned-duty'(Session, Duty).
+Session = ['omnibus-proposal', r1], Duty = [delete, ['within-days', 90]].
+Session = [baseline, r10], Duty = [delete, ['within-days', 90]].
+Session = ['omnibus-proposal', r10], Duty = [delete, ['within-days', 90]].
+
+?- 'policy-conflict'(Process, Conflict).
+Process = r6, Conflict = ['resolved-by', prohibit, 'no-transfer-us', [overrides, research]].
+
+?- change(Item, Difference).
+Item = [breach, b2], Difference = [from, [notify, [authority, ['within-hours', 72]], [people, none]], to, [notify, [authority, none], [people, none]]].
+Item = [breach, b3], Difference = [from, [notify, [authority, ['within-hours', 72]], [people, 'without-undue-delay']], to, [notify, [authority, ['within-hours-via-single-entry-point', 96]], [people, 'without-undue-delay']]].
+Item = [session, r1], Difference = [from, ['await-device-consent', research], to, [permit, research]].
+Item = [session, r7], Difference = [from, ['await-device-consent', research], to, ['deny-device', 'refused-by-signal']].
+Item = [session, r8], Difference = [from, ['await-device-consent', research], to, ['deny-device', 'do-not-ask-again']].
+
+?- assessment(['omnibus-proposal', r1], What).
+What = [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]].
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(6), [assessment(['omnibus-proposal', r1], [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]])]).
+
+clause(1, 'has-broader-purpose'('academic-research', 'research-and-development'), []).
+clause(4, 'belongs-to'('partner-be', consortium), []).
+clause(6, is_a(policy, agreement), []).
+clause(7, assigner(policy, hospital), []).
+clause(8, 'conflict-strategies'(policy, [prohibit]), []).
+clause(9, permissions(policy, [research]), []).
+clause(11, assignee(research, consortium), []).
+clause(12, action(research, use), []).
+clause(13, target(research, 'lab-results'), []).
+clause(14, constraints(research, ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027']), []).
+clause(26, constraint('for-research', [purpose, within, 'research-and-development']), []).
+clause(27, constraint('under-consent', ['legal-basis', equal, consent]), []).
+clause(28, constraint('consent-given', ['consent-status', equal, 'consent-given']), []).
+clause(29, constraint(pseudonymised, ['technical-measure', equal, pseudonymisation]), []).
+clause(30, constraint('before-2027', [date, 'less-than', 20270101]), []).
+clause(32, process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115]), []).
+clause(43, 'mapped-action'(use, use), []).
+clause(45, session(r1, ['own-audience-measurement', 'first-visit']), []).
+clause(57, is_a('omnibus-proposal', rulebook), []).
+clause(64, consent(['omnibus-proposal', 'own-audience-measurement'], ['not-needed', "GDPR Art. 88a(3)(c)"]), []).
+clause(78, is_a(var('Process'), 'research-process'), [process(var('Process'), var('Profile'))]).
+clause(79, controller(var('Process'), var('Controller')), [process(var('Process'), list([var('Controller')], var('Rest')))]).
+clause(80, requester(var('Process'), var('Requester')), [process(var('Process'), list([var('Controller'), var('Requester')], var('Rest')))]).
+clause(81, processing(var('Process'), var('Processing')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing')], var('Rest')))]).
+clause(82, data(var('Process'), var('Data')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing'), var('Data')], var('Rest')))]).
+clause(83, operand([var('Process'), purpose], var('Purpose')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing'), var('Data'), var('Purpose')], var('Rest')))]).
+clause(84, operand([var('Process'), 'legal-basis'], var('Basis')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing'), var('Data'), var('Purpose'), var('Basis')], var('Rest')))]).
+clause(85, operand([var('Process'), 'consent-status'], var('Consent')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing'), var('Data'), var('Purpose'), var('Basis'), var('Consent')], var('Rest')))]).
+clause(86, operand([var('Process'), 'technical-measure'], var('Measure')), [process(var('Process'), list([var('Controller'), var('Requester'), var('Processing'), var('Data'), var('Purpose'), var('Basis'), var('Consent'), var('Measure')], var('Rest')))]).
+clause(87, operand([var('Process'), date], var('Date')), [process(var('Process'), [var('Controller'), var('Requester'), var('Processing'), var('Data'), var('Purpose'), var('Basis'), var('Consent'), var('Measure'), var('Date')])]).
+clause(91, 'is-member-of'(var('Party'), var('Group')), ['belongs-to'(var('Party'), var('Group'))]).
+clause(94, is_a(var('Broader'), purpose), ['has-broader-purpose'(var('Purpose'), var('Broader'))]).
+clause(96, 'falls-within'(var('Purpose'), var('Purpose')), [is_a(var('Purpose'), purpose)]).
+clause(97, 'falls-within'(var('Purpose'), var('Class')), ['has-broader-purpose'(var('Purpose'), var('Middle')), 'falls-within'(var('Middle'), var('Class'))]).
+clause(98, addresses(var('Process'), var('Rule')), [requester(var('Process'), var('Requester')), assignee(var('Rule'), var('Assignee')), 'is-member-of'(var('Requester'), var('Assignee')), processing(var('Process'), var('Processing')), 'mapped-action'(var('Processing'), var('Action')), action(var('Rule'), var('Action')), data(var('Process'), var('Data')), target(var('Rule'), var('Data'))]).
+clause(99, is_a([var('Process'), var('Constraint')], 'met-constraint'), [constraint(var('Constraint'), [var('Operand'), equal, var('Expected')]), operand([var('Process'), var('Operand')], var('Expected'))]).
+clause(100, is_a([var('Process'), var('Constraint')], 'met-constraint'), [constraint(var('Constraint'), [var('Operand'), 'less-than', var('Limit')]), operand([var('Process'), var('Operand')], var('Value')), '<'(var('Value'), var('Limit'))]).
+clause(101, is_a([var('Process'), var('Constraint')], 'met-constraint'), [constraint(var('Constraint'), [var('Operand'), within, var('Class')]), operand([var('Process'), var('Operand')], var('Value')), 'falls-within'(var('Value'), var('Class'))]).
+clause(102, failures([var('Process'), []], []), [is_a(var('Process'), 'research-process')]).
+clause(103, failures([var('Process'), list([var('Constraint')], var('Rest'))], var('Failures')), [is_a([var('Process'), var('Constraint')], 'met-constraint'), failures([var('Process'), var('Rest')], var('Failures'))]).
+clause(105, member(list([var('Head')], var('Rest')), var('Head')), ['='(var('Head'), var('Head'))]).
+clause(109, governs(var('Policy'), var('Process')), [is_a(var('Policy'), agreement), assigner(var('Policy'), var('Controller')), controller(var('Process'), var('Controller'))]).
+clause(110, is_a([var('Process'), var('Rule')], 'applied-rule'), [addresses(var('Process'), var('Rule')), constraints(var('Rule'), var('Constraints')), failures([var('Process'), var('Constraints')], [])]).
+clause(111, 'is-permitted-by'(var('Process'), var('Rule')), [governs(var('Policy'), var('Process')), permissions(var('Policy'), var('Rules')), member(var('Rules'), var('Rule')), is_a([var('Process'), var('Rule')], 'applied-rule')]).
+clause(117, is_a(var('Process'), 'policy-ready-process'), [governs(var('Policy'), var('Process')), 'conflict-strategies'(var('Policy'), [prohibit])]).
+clause(121, 'policy-result'(var('Process'), [permit, var('Rule')]), [is_a(var('Process'), 'policy-ready-process'), 'is-permitted-by'(var('Process'), var('Rule')), '\\+'(is_a(var('Process'), 'prohibited-process'))]).
+clause(133, assessment([var('Rulebook'), var('Process')], [[permit, var('Rule')], [policy, var('Provision')]]), [is_a(var('Rulebook'), rulebook), 'policy-result'(var('Process'), [permit, var('Rule')]), session(var('Process'), [var('Kind'), var('Choice')]), consent([var('Rulebook'), var('Kind')], ['not-needed', var('Provision')])]).
+
+% step 1
+step(is_a('omnibus-proposal', rulebook), fact(57), [], []).
+% step 2
+step(is_a(policy, agreement), fact(6), [], []).
+% step 3
+step(assigner(policy, hospital), fact(7), [], []).
+% step 4
+step(process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115]), fact(32), [], []).
+% step 5
+step(controller(r1, hospital), rule(79), ['='('Process', r1), '='('Controller', hospital), '='('Rest', ['partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 6
+step(governs(policy, r1), rule(109), ['='('Policy', policy), '='('Process', r1), '='('Controller', hospital)], [is_a(policy, agreement), assigner(policy, hospital), controller(r1, hospital)]).
+% step 7
+step('conflict-strategies'(policy, [prohibit]), fact(8), [], []).
+% step 8
+step(is_a(r1, 'policy-ready-process'), rule(117), ['='('Process', r1), '='('Policy', policy)], [governs(policy, r1), 'conflict-strategies'(policy, [prohibit])]).
+% step 9
+step(permissions(policy, [research]), fact(9), [], []).
+% step 10
+step('='(research, research), builtin, [], []).
+% step 11
+step(member([research], research), rule(105), ['='('Head', research), '='('Rest', [])], ['='(research, research)]).
+% step 12
+step(requester(r1, 'partner-be'), rule(80), ['='('Process', r1), '='('Requester', 'partner-be'), '='('Controller', hospital), '='('Rest', [use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 13
+step(assignee(research, consortium), fact(11), [], []).
+% step 14
+step('belongs-to'('partner-be', consortium), fact(4), [], []).
+% step 15
+step('is-member-of'('partner-be', consortium), rule(91), ['='('Party', 'partner-be'), '='('Group', consortium)], ['belongs-to'('partner-be', consortium)]).
+% step 16
+step(processing(r1, use), rule(81), ['='('Process', r1), '='('Processing', use), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Rest', ['lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 17
+step('mapped-action'(use, use), fact(43), [], []).
+% step 18
+step(action(research, use), fact(12), [], []).
+% step 19
+step(data(r1, 'lab-results'), rule(82), ['='('Process', r1), '='('Data', 'lab-results'), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Rest', ['academic-research', consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 20
+step(target(research, 'lab-results'), fact(13), [], []).
+% step 21
+step(addresses(r1, research), rule(98), ['='('Process', r1), '='('Rule', research), '='('Requester', 'partner-be'), '='('Assignee', consortium), '='('Processing', use), '='('Action', use), '='('Data', 'lab-results')], [requester(r1, 'partner-be'), assignee(research, consortium), 'is-member-of'('partner-be', consortium), processing(r1, use), 'mapped-action'(use, use), action(research, use), data(r1, 'lab-results'), target(research, 'lab-results')]).
+% step 22
+step(constraints(research, ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027']), fact(14), [], []).
+% step 23
+step(constraint('for-research', [purpose, within, 'research-and-development']), fact(26), [], []).
+% step 24
+step(operand([r1, purpose], 'academic-research'), rule(83), ['='('Process', r1), '='('Purpose', 'academic-research'), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Data', 'lab-results'), '='('Rest', [consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 25
+step('has-broader-purpose'('academic-research', 'research-and-development'), fact(1), [], []).
+% step 26
+step(is_a('research-and-development', purpose), rule(94), ['='('Broader', 'research-and-development'), '='('Purpose', 'academic-research')], ['has-broader-purpose'('academic-research', 'research-and-development')]).
+% step 27
+step('falls-within'('research-and-development', 'research-and-development'), rule(96), ['='('Purpose', 'research-and-development')], [is_a('research-and-development', purpose)]).
+% step 28
+step('falls-within'('academic-research', 'research-and-development'), rule(97), ['='('Purpose', 'academic-research'), '='('Class', 'research-and-development'), '='('Middle', 'research-and-development')], ['has-broader-purpose'('academic-research', 'research-and-development'), 'falls-within'('research-and-development', 'research-and-development')]).
+% step 29
+step(is_a([r1, 'for-research'], 'met-constraint'), rule(101), ['='('Process', r1), '='('Constraint', 'for-research'), '='('Operand', purpose), '='('Class', 'research-and-development'), '='('Value', 'academic-research')], [constraint('for-research', [purpose, within, 'research-and-development']), operand([r1, purpose], 'academic-research'), 'falls-within'('academic-research', 'research-and-development')]).
+% step 30
+step(constraint('under-consent', ['legal-basis', equal, consent]), fact(27), [], []).
+% step 31
+step(operand([r1, 'legal-basis'], consent), rule(84), ['='('Process', r1), '='('Basis', consent), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Data', 'lab-results'), '='('Purpose', 'academic-research'), '='('Rest', ['consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 32
+step(is_a([r1, 'under-consent'], 'met-constraint'), rule(99), ['='('Process', r1), '='('Constraint', 'under-consent'), '='('Operand', 'legal-basis'), '='('Expected', consent)], [constraint('under-consent', ['legal-basis', equal, consent]), operand([r1, 'legal-basis'], consent)]).
+% step 33
+step(constraint('consent-given', ['consent-status', equal, 'consent-given']), fact(28), [], []).
+% step 34
+step(operand([r1, 'consent-status'], 'consent-given'), rule(85), ['='('Process', r1), '='('Consent', 'consent-given'), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Data', 'lab-results'), '='('Purpose', 'academic-research'), '='('Basis', consent), '='('Rest', [pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 35
+step(is_a([r1, 'consent-given'], 'met-constraint'), rule(99), ['='('Process', r1), '='('Constraint', 'consent-given'), '='('Operand', 'consent-status'), '='('Expected', 'consent-given')], [constraint('consent-given', ['consent-status', equal, 'consent-given']), operand([r1, 'consent-status'], 'consent-given')]).
+% step 36
+step(constraint(pseudonymised, ['technical-measure', equal, pseudonymisation]), fact(29), [], []).
+% step 37
+step(operand([r1, 'technical-measure'], pseudonymisation), rule(86), ['='('Process', r1), '='('Measure', pseudonymisation), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Data', 'lab-results'), '='('Purpose', 'academic-research'), '='('Basis', consent), '='('Consent', 'consent-given'), '='('Rest', [20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 38
+step(is_a([r1, pseudonymised], 'met-constraint'), rule(99), ['='('Process', r1), '='('Constraint', pseudonymised), '='('Operand', 'technical-measure'), '='('Expected', pseudonymisation)], [constraint(pseudonymised, ['technical-measure', equal, pseudonymisation]), operand([r1, 'technical-measure'], pseudonymisation)]).
+% step 39
+step(constraint('before-2027', [date, 'less-than', 20270101]), fact(30), [], []).
+% step 40
+step(operand([r1, date], 20261115), rule(87), ['='('Process', r1), '='('Date', 20261115), '='('Controller', hospital), '='('Requester', 'partner-be'), '='('Processing', use), '='('Data', 'lab-results'), '='('Purpose', 'academic-research'), '='('Basis', consent), '='('Consent', 'consent-given'), '='('Measure', pseudonymisation)], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 41
+step('<'(20261115, 20270101), builtin, [], []).
+% step 42
+step(is_a([r1, 'before-2027'], 'met-constraint'), rule(100), ['='('Process', r1), '='('Constraint', 'before-2027'), '='('Operand', date), '='('Limit', 20270101), '='('Value', 20261115)], [constraint('before-2027', [date, 'less-than', 20270101]), operand([r1, date], 20261115), '<'(20261115, 20270101)]).
+% step 43
+step(is_a(r1, 'research-process'), rule(78), ['='('Process', r1), '='('Profile', [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])], [process(r1, [hospital, 'partner-be', use, 'lab-results', 'academic-research', consent, 'consent-given', pseudonymisation, 20261115])]).
+% step 44
+step(failures([r1, []], []), rule(102), ['='('Process', r1)], [is_a(r1, 'research-process')]).
+% step 45
+step(failures([r1, ['before-2027']], []), rule(103), ['='('Process', r1), '='('Constraint', 'before-2027'), '='('Rest', []), '='('Failures', [])], [is_a([r1, 'before-2027'], 'met-constraint'), failures([r1, []], [])]).
+% step 46
+step(failures([r1, [pseudonymised, 'before-2027']], []), rule(103), ['='('Process', r1), '='('Constraint', pseudonymised), '='('Rest', ['before-2027']), '='('Failures', [])], [is_a([r1, pseudonymised], 'met-constraint'), failures([r1, ['before-2027']], [])]).
+% step 47
+step(failures([r1, ['consent-given', pseudonymised, 'before-2027']], []), rule(103), ['='('Process', r1), '='('Constraint', 'consent-given'), '='('Rest', [pseudonymised, 'before-2027']), '='('Failures', [])], [is_a([r1, 'consent-given'], 'met-constraint'), failures([r1, [pseudonymised, 'before-2027']], [])]).
+% step 48
+step(failures([r1, ['under-consent', 'consent-given', pseudonymised, 'before-2027']], []), rule(103), ['='('Process', r1), '='('Constraint', 'under-consent'), '='('Rest', ['consent-given', pseudonymised, 'before-2027']), '='('Failures', [])], [is_a([r1, 'under-consent'], 'met-constraint'), failures([r1, ['consent-given', pseudonymised, 'before-2027']], [])]).
+% step 49
+step(failures([r1, ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027']], []), rule(103), ['='('Process', r1), '='('Constraint', 'for-research'), '='('Rest', ['under-consent', 'consent-given', pseudonymised, 'before-2027']), '='('Failures', [])], [is_a([r1, 'for-research'], 'met-constraint'), failures([r1, ['under-consent', 'consent-given', pseudonymised, 'before-2027']], [])]).
+% step 50
+step(is_a([r1, research], 'applied-rule'), rule(110), ['='('Process', r1), '='('Rule', research), '='('Constraints', ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027'])], [addresses(r1, research), constraints(research, ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027']), failures([r1, ['for-research', 'under-consent', 'consent-given', pseudonymised, 'before-2027']], [])]).
+% step 51
+step('is-permitted-by'(r1, research), rule(111), ['='('Policy', policy), '='('Process', r1), '='('Rules', [research]), '='('Rule', research)], [governs(policy, r1), permissions(policy, [research]), member([research], research), is_a([r1, research], 'applied-rule')]).
+% step 52
+step('\\+'(is_a(r1, 'prohibited-process')), absent, [], []).
+% step 53
+step('policy-result'(r1, [permit, research]), rule(121), ['='('Process', r1), '='('Rule', research)], [is_a(r1, 'policy-ready-process'), 'is-permitted-by'(r1, research), '\\+'(is_a(r1, 'prohibited-process'))]).
+% step 54
+step(session(r1, ['own-audience-measurement', 'first-visit']), fact(45), [], []).
+% step 55
+step(consent(['omnibus-proposal', 'own-audience-measurement'], ['not-needed', "GDPR Art. 88a(3)(c)"]), fact(64), [], []).
+% step 56
+step(assessment(['omnibus-proposal', r1], [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]]), rule(133), ['='('Rulebook', 'omnibus-proposal'), '='('Process', r1), '='('Rule', research), '='('Kind', 'own-audience-measurement'), '='('Choice', 'first-visit'), '='('Provision', "GDPR Art. 88a(3)(c)")], [is_a('omnibus-proposal', rulebook), 'policy-result'(r1, [permit, research]), session(r1, ['own-audience-measurement', 'first-visit']), consent(['omnibus-proposal', 'own-audience-measurement'], ['not-needed', "GDPR Art. 88a(3)(c)"])]).
+
+% Check
+check passed: aggregate_all(count, (is_a(Subject, 'assessed-session')), 22).
+
+check passed: aggregate_all(count, (is_a(Subject, 'planned-breach')), 6).
+
+check passed: aggregate_all(count, (is_a(Subject, 'planned-deletion')), 3).
+
+check passed: aggregate_all(count, (is_a(Subject, 'changed-outcome')), 5).
+
+check passed: aggregate_all(count, (is_a(Subject, 'conflicting-process')), 1).
+
+check passed: 'policy-result'(r1, [permit, research]).
+
+check passed: assessment([baseline, r1], [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]]).
+
+check passed: assessment(['omnibus-proposal', r1], [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]]).
+
+check passed: assessment(['omnibus-proposal', r7], [['deny-device', 'refused-by-signal'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88b(1)-(2)"]]).
+
+check passed: assessment(['omnibus-proposal', r8], [['deny-device', 'do-not-ask-again'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]).
+
+check passed: assessment(['omnibus-proposal', r9], [['await-device-consent', research], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]).
+
+check passed: 'policy-result'(r3, [deny, ['prohibited-by', 'no-marketing']]).
+
+check passed: 'policy-result'(r4, [deny, ['not-permitted', [[unmet, 'consent-given', 'consent-status', 'consent-withdrawn', equal, 'consent-given']]]]).
+
+check passed: 'policy-result'(r5, [deny, ['not-permitted', [[unmet, pseudonymised, 'technical-measure', encryption, equal, pseudonymisation], [unmet, 'before-2027', date, 20270301, 'less-than', 20270101]]]]).
+
+check passed: 'policy-result'(r6, [deny, ['prohibited-by', 'no-transfer-us']]).
+
+check passed: 'policy-conflict'(r6, ['resolved-by', prohibit, 'no-transfer-us', [overrides, research]]).
+
+check passed: 'policy-result'(r11, [deny, 'no-matching-permission']).
+
+check passed: \+ ('planned-duty'([baseline, r1], [delete, ['within-days', 90]])).
+
+condition('C1', resolution, ok, 53).
+condition('C2', well_founded, ok, 56).
+condition('C3', justification, ok, 56).
+condition('C4', coverage, ok, 67).
+condition('C5', re_decision, ok, 2).
+condition('C6', boundary_consistency, ok, 1).
+condition('C7', relevance, ok, 57).
+obligation(absent, theory_scoped, '\\+'(is_a(r1, 'prohibited-process'))).
+steps(56).
+verified(53).
+recomputed(2).
+trusted(1).
+claims(1).
+verdict(checked_with_obligations).

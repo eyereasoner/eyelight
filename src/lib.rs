@@ -5,15 +5,16 @@
 //! it does not run the evaluator or establish answer completeness.
 //!
 //! ```
-//! use whye::{check, parse, reason, Limits};
+//! use wheye::{check, parse, reason, Limits};
 //! let program = parse("human(socrates). mortal(X) :- human(X). ?- mortal(Who).")?;
 //! let run = reason(&program, Limits::default())?;
 //! let report = check(&program, &run.certificate(&program))?;
 //! assert!(report.valid());
 //! assert_eq!(report.claims, 1);
-//! # Ok::<(), whye::Error>(())
+//! # Ok::<(), wheye::Error>(())
 //! ```
 
+mod arithmetic;
 mod engine;
 mod language;
 mod model;

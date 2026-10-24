@@ -1,4 +1,4 @@
-use whye::{
+use wheye::{
     check, parse, reason, Boundary, Certificate, Condition, Justification, Limits, Owner, Program,
     Value,
 };
@@ -24,25 +24,25 @@ fn inspect(source: &str, text: &str, condition: Condition) {
 fn c1_distinguishes_relational_premises_from_negative_and_builtin_decisions() {
     inspect(
         "p :- eq(a,a). ?- p.",
-        "whye-proof 1\nstep 1 builtin : eq(a,a).\nstep 2 rule 1 [1] : p.\nanswer 1 [2]\n",
+        "wheye-proof 1\nstep 1 builtin : eq(a,a).\nstep 2 rule 1 [1] : p.\nanswer 1 [2]\n",
         Condition::C1,
     );
-    inspect("p :- missing(a). ?- p.","whye-proof 1\nstep 1 absent 1 : missing(a).\nstep 2 rule 1 [1] : p.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C1);
+    inspect("p :- missing(a). ?- p.","wheye-proof 1\nstep 1 absent 1 : missing(a).\nstep 2 rule 1 [1] : p.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C1);
     inspect(
-        "add(2,3,99). p(X):-@add(2,3,X). ?- p(X).",
-        "whye-proof 1\nstep 1 source 1 : add(2,3,99).\nstep 2 rule 1 [1] : p(99).\nanswer 1 [2]\n",
+        "add(2,3,99). p(X):-X is 2 + 3. ?- p(X).",
+        "wheye-proof 1\nstep 1 source 1 : add(2,3,99).\nstep 2 rule 1 [1] : p(99).\nanswer 1 [2]\n",
         Condition::C1,
     );
 }
 
 #[test]
 fn c2_rejects_boundary_evidence_later_than_the_negative_decision() {
-    inspect("p(a). q:-not missing. ?- q.","whye-proof 1\nstep 1 absent 1 : missing.\nstep 2 source 1 : p(a).\nstep 3 rule 1 [1] : q.\nboundary 1 level 0 [2]\nanswer 1 [3]\n",Condition::C2);
+    inspect("p(a). q:-\\+ missing. ?- q.","wheye-proof 1\nstep 1 absent 1 : missing.\nstep 2 source 1 : p(a).\nstep 3 rule 1 [1] : q.\nboundary 1 level 0 [2]\nanswer 1 [3]\n",Condition::C2);
 }
 
 #[test]
 fn c3_rejects_duplicate_boundary_levels_and_wrong_aggregate_goal_kinds() {
-    let (p, mut c) = proof("p(a). ?- count{X:p(X)}=N.");
+    let (p, mut c) = proof("p(a). ?- aggregate_all(count, (p(X)), N).");
     c.boundaries.push(c.boundaries[0].clone());
     rejects(&p, &c, Condition::C3);
     let (p, mut c) = proof("p(a). ?- p(X).");
@@ -52,6 +52,7 @@ fn c3_rejects_duplicate_boundary_levels_and_wrong_aggregate_goal_kinds() {
         boundary: 1,
     };
     c.boundaries.push(Boundary {
+        calls: Vec::new(),
         level: 0,
         steps: vec![],
     });
@@ -60,7 +61,7 @@ fn c3_rejects_duplicate_boundary_levels_and_wrong_aggregate_goal_kinds() {
 
 #[test]
 fn c4_checks_boundary_members_owners_and_goal_positions_without_panicking() {
-    let (p, original) = proof("p(a). ?- count{X:p(X)}=N.");
+    let (p, original) = proof("p(a). ?- aggregate_all(count, (p(X)), N).");
     for id in [0, 999] {
         let mut c = original.clone();
         c.boundaries[0].steps.push(id);
@@ -91,21 +92,22 @@ fn c4_checks_boundary_members_owners_and_goal_positions_without_panicking() {
 
 #[test]
 fn c5_recomputes_arithmetic_and_never_trusts_a_recorded_result() {
-    let (p, mut c) = proof("q(N):-@add(2,3,N). ?- q(N).");
-    c.steps[0].atom.values[2] = Value::Integer(99);
+    let (p, mut c) = proof("q(N):-N is 2 + 3. ?- q(N).");
+    c.steps[0].atom.values[0] = Value::Integer(99);
     c.steps[1].atom.values[0] = Value::Integer(99);
     rejects(&p, &c, Condition::C5);
     assert_eq!(check(&p, &c).unwrap().condition(Condition::C1).failed, 0);
     inspect(
-        "?- @eq(a,b).",
-        "whye-proof 1\nstep 1 builtin : eq(a,b).\nanswer 1 [1]\n",
+        "?- a = b.",
+        "wheye-proof 1\nstep 1 builtin : eq(a,b).\nanswer 1 [1]\n",
         Condition::C5,
     );
 }
 
 #[test]
 fn c5_recomputes_aggregate_results_including_distinct_tuple_keys() {
-    let (p, mut c) = proof("row(x,5). row(y,5). total(N):-sum{V,I:row(I,V)}=N. ?- total(N).");
+    let (p, mut c) =
+        proof("row(x,5). row(y,5). total(N):-aggregate_all(sum(V), (row(I,V)), N). ?- total(N).");
     for s in &mut c.steps {
         match s.justification {
             Justification::Aggregate { .. } => {
@@ -121,19 +123,19 @@ fn c5_recomputes_aggregate_results_including_distinct_tuple_keys() {
 
 #[test]
 fn c6_rejects_a_negative_claim_that_hides_a_derivable_counterexample() {
-    inspect("seed(a). blocked(X):-seed(X). allowed(X):-seed(X),not blocked(X). ?- allowed(X).",
-        "whye-proof 1\nstep 1 source 1 : seed(a).\nstep 2 absent 1 : blocked(a).\nstep 3 rule 2 [1,2] : allowed(a).\nboundary 1 level 0 [1]\nanswer 1 [3]\n",Condition::C6);
+    inspect("seed(a). blocked(X):-seed(X). allowed(X):-seed(X),\\+ blocked(X). ?- allowed(X).",
+        "wheye-proof 1\nstep 1 source 1 : seed(a).\nstep 2 absent 1 : blocked(a).\nstep 3 rule 2 [1,2] : allowed(a).\nboundary 1 level 0 [1]\nanswer 1 [3]\n",Condition::C6);
 }
 
 #[test]
 fn c6_rejects_a_negative_claim_that_hides_an_input_fact() {
-    inspect("blocked(a). allowed:-not blocked(a). ?- allowed.",
-        "whye-proof 1\nstep 1 absent 1 : blocked(a).\nstep 2 rule 1 [1] : allowed.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C6);
+    inspect("blocked(a). allowed:-\\+ blocked(a). ?- allowed.",
+        "wheye-proof 1\nstep 1 absent 1 : blocked(a).\nstep 2 rule 1 [1] : allowed.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C6);
 }
 
 #[test]
 fn c6_rejects_an_aggregate_over_an_incomplete_but_locally_consistent_boundary() {
-    let (p, mut c) = proof("p(a). p(b). total(N):-count{X:p(X)}=N. ?- total(N).");
+    let (p, mut c) = proof("p(a). p(b). total(N):-aggregate_all(count, (p(X)), N). ?- total(N).");
     c.boundaries[0]
         .steps
         .retain(|id| c.steps[id - 1].atom.values != vec![Value::Symbol("b".into())]);
@@ -154,13 +156,13 @@ fn c6_rejects_an_aggregate_over_an_incomplete_but_locally_consistent_boundary() 
 
 #[test]
 fn c6_detects_missing_derived_members_in_aggregate_boundaries() {
-    inspect("p(a). p(b). q(X):-p(X). total(N):-count{X:q(X)}=N. ?- total(N).",
-        "whye-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : p(b).\nstep 3 rule 1 [1] : q(a).\nstep 4 aggregate r2 1 1 : '$aggregate:r2:1'(1).\nstep 5 rule 2 [4] : total(1).\nboundary 1 level 0 [1,2,3]\nanswer 1 [5]\n",Condition::C6);
+    inspect("p(a). p(b). q(X):-p(X). total(N):-aggregate_all(count, (q(X)), N). ?- total(N).",
+        "wheye-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : p(b).\nstep 3 rule 1 [1] : q(a).\nstep 4 aggregate r2 1 1 : '$aggregate:r2:1'(1).\nstep 5 rule 2 [4] : total(1).\nboundary 1 level 0 [1,2,3]\nanswer 1 [5]\n",Condition::C6);
 }
 
 #[test]
 fn c6_rejects_wrong_levels_decisions_and_negative_contradictions_in_boundaries() {
-    let (p, original) = proof("p(a). q(X):-p(X),not blocked(X). ?- q(X).");
+    let (p, original) = proof("p(a). q(X):-p(X),\\+ blocked(X). ?- q(X).");
     let mut c = original.clone();
     c.boundaries[0].level = 99;
     rejects(&p, &c, Condition::C6);
@@ -182,18 +184,19 @@ fn c6_rejects_wrong_levels_decisions_and_negative_contradictions_in_boundaries()
 fn c7_requires_every_boundary_and_decision_to_support_a_claim() {
     let (p, mut c) = proof("p(a). ?- p(X).");
     c.boundaries.push(Boundary {
+        calls: Vec::new(),
         level: 0,
         steps: vec![1],
     });
     rejects(&p, &c, Condition::C7);
-    let (p, mut c) = proof("?- @add(1,2,N).");
+    let (p, mut c) = proof("?- N is 1 + 2.");
     c.claims.clear();
     rejects(&p, &c, Condition::C7);
 }
 
 #[test]
 fn c8_rejects_forged_witnesses_even_when_all_rule_matches_are_consistent() {
-    let (p, mut c) = proof("visitor(a). ticket(P,W):-visitor(P),@fresh(W). ?- ticket(P,W).");
+    let (p, mut c) = proof("visitor(a). ticket(P,W):-visitor(P),fresh(W). ?- ticket(P,W).");
     for step in &mut c.steps {
         for v in &mut step.atom.values {
             if matches!(v, Value::Witness(_)) {
@@ -208,7 +211,7 @@ fn c8_rejects_forged_witnesses_even_when_all_rule_matches_are_consistent() {
 #[test]
 fn c8_prevents_reuse_of_a_witness_from_a_different_firing() {
     let (p, mut c) =
-        proof("visitor(a). visitor(b). ticket(P,W):-visitor(P),@fresh(W). ?- ticket(P,W).");
+        proof("visitor(a). visitor(b). ticket(P,W):-visitor(P),fresh(W). ?- ticket(P,W).");
     let identities: Vec<_> = c
         .steps
         .iter()
@@ -231,19 +234,21 @@ fn c8_prevents_reuse_of_a_witness_from_a_different_firing() {
 fn c9_never_selects_a_test_as_an_ordinary_query_fact() {
     inspect(
         "?- eq(a,a).",
-        "whye-proof 1\nstep 1 builtin : eq(a,a).\nanswer 1 [1]\n",
+        "wheye-proof 1\nstep 1 builtin : eq(a,a).\nanswer 1 [1]\n",
         Condition::C9,
     );
     inspect(
         "?- missing(a).",
-        "whye-proof 1\nstep 1 absent 1 : missing(a).\nboundary 1 level 0 []\nanswer 1 [1]\n",
+        "wheye-proof 1\nstep 1 absent 1 : missing(a).\nboundary 1 level 0 []\nanswer 1 [1]\n",
         Condition::C9,
     );
 }
 
 #[test]
 fn c9_does_not_allow_a_query_aggregate_to_become_rule_evidence() {
-    let (p, mut c) = proof("p(a). q(N):-count{X:p(X)}=N. ?- q(N). ?- count{X:p(X)}=N.");
+    let (p, mut c) = proof(
+        "p(a). q(N):-aggregate_all(count, (p(X)), N). ?- q(N). ?- aggregate_all(count, (p(X)), N).",
+    );
     let query_decision = c
         .steps
         .iter()

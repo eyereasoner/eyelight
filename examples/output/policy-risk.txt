@@ -1,0 +1,198 @@
+% Answer
+?- report(Rank, Clause, Score, Severity, Why, Fix).
+Rank = 4, Clause = c4, Score = 70, Severity = moderate, Why = export_prohibited, Fix = permit_export.
+Rank = 2, Clause = c3, Score = 97, Severity = high, Why = sharing_without_consent, Fix = require_consent.
+Rank = 3, Clause = c2, Score = 85, Severity = high, Why = short_notice(3, 14), Fix = increase_notice(14).
+Rank = 1, Clause = c1, Score = 100, Severity = high, Why = no_removal_safeguards, Fix = add_notice_and_inform.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [report(4, c4, 70, moderate, export_prohibited, permit_export)]).
+claim(query(1), [report(2, c3, 97, high, sharing_without_consent, require_consent)]).
+claim(query(1), [report(3, c2, 85, high, short_notice(3, 14), increase_notice(14))]).
+claim(query(1), [report(1, c1, 100, high, no_removal_safeguards, add_notice_and_inform)]).
+
+clause(1, permission(c1, remove_account), []).
+clause(2, permission(c2, change_terms), []).
+clause(3, permission(c3, share_data), []).
+clause(4, prohibition(c4, export_data), []).
+clause(5, notice_days(c2, 3), []).
+clause(10, importance(retention, 20), []).
+clause(11, importance(prior_notice, 15), []).
+clause(12, importance(consent, 12), []).
+clause(13, importance(portability, 10), []).
+clause(14, required_notice(14), []).
+clause(16, finding(var('Clause'), var('Raw'), no_removal_safeguards, add_notice_and_inform), [permission(var('Clause'), remove_account), importance(retention, var('Weight')), '\\+'(has_notice(var('Clause'))), '\\+'(safeguard(var('Clause'), inform)), is(var('Raw'), '+'(90, var('Weight')))]).
+clause(17, finding(var('Clause'), var('Raw'), short_notice(var('Days'), var('Required')), increase_notice(var('Required'))), [permission(var('Clause'), change_terms), notice_days(var('Clause'), var('Days')), required_notice(var('Required')), '<'(var('Days'), var('Required')), importance(prior_notice, var('Weight')), is(var('Raw'), '+'(70, var('Weight')))]).
+clause(18, finding(var('Clause'), var('Raw'), sharing_without_consent, require_consent), [permission(var('Clause'), share_data), '\\+'(safeguard(var('Clause'), consent)), importance(consent, var('Weight')), is(var('Raw'), '+'(85, var('Weight')))]).
+clause(19, finding(var('Clause'), var('Raw'), export_prohibited, permit_export), [prohibition(var('Clause'), export_data), importance(portability, var('Weight')), is(var('Raw'), '+'(60, var('Weight')))]).
+clause(20, score(var('Clause'), 100), [finding(var('Clause'), var('Raw'), var('Why'), var('Fix')), '>'(var('Raw'), 100)]).
+clause(21, score(var('Clause'), var('Raw')), [finding(var('Clause'), var('Raw'), var('Why'), var('Fix')), '=<'(var('Raw'), 100)]).
+clause(22, severity(var('Score'), high), ['>='(var('Score'), 80)]).
+clause(23, severity(var('Score'), moderate), ['>='(var('Score'), 50), '<'(var('Score'), 80)]).
+clause(25, higher(var('Score'), var('Other')), [score(var('Clause'), var('Other')), '>'(var('Other'), var('Score'))]).
+clause(26, report(var('Rank'), var('Clause'), var('Score'), var('Severity'), var('Why'), var('Fix')), [score(var('Clause'), var('Score')), finding(var('Clause'), var('Raw'), var('Why'), var('Fix')), severity(var('Score'), var('Severity')), aggregate_all(count, [higher(var('Score'), var('Other'))], var('Count')), is(var('Rank'), '+'(var('Count'), 1))]).
+
+% step 1
+step(prohibition(c4, export_data), fact(4), [], []).
+% step 2
+step(importance(portability, 10), fact(13), [], []).
+% step 3
+step(is(70, '+'(60, 10)), builtin, [], []).
+% step 4
+step(finding(c4, 70, export_prohibited, permit_export), rule(19), ['='('Clause', c4), '='('Weight', 10), '='('Raw', 70)], [prohibition(c4, export_data), importance(portability, 10), is(70, '+'(60, 10))]).
+% step 5
+step('=<'(70, 100), builtin, [], []).
+% step 6
+step(score(c4, 70), rule(21), ['='('Clause', c4), '='('Raw', 70), '='('Why', export_prohibited), '='('Fix', permit_export)], [finding(c4, 70, export_prohibited, permit_export), '=<'(70, 100)]).
+% step 7
+step('>='(70, 50), builtin, [], []).
+% step 8
+step('<'(70, 80), builtin, [], []).
+% step 9
+step(severity(70, moderate), rule(23), ['='('Score', 70)], ['>='(70, 50), '<'(70, 80)]).
+% step 10
+step(permission(c3, share_data), fact(3), [], []).
+% step 11
+step('\\+'(safeguard(c3, consent)), absent, [], []).
+% step 12
+step(importance(consent, 12), fact(12), [], []).
+% step 13
+step(is(97, '+'(85, 12)), builtin, [], []).
+% step 14
+step(finding(c3, 97, sharing_without_consent, require_consent), rule(18), ['='('Clause', c3), '='('Weight', 12), '='('Raw', 97)], [permission(c3, share_data), '\\+'(safeguard(c3, consent)), importance(consent, 12), is(97, '+'(85, 12))]).
+% step 15
+step('=<'(97, 100), builtin, [], []).
+% step 16
+step(score(c3, 97), rule(21), ['='('Clause', c3), '='('Raw', 97), '='('Why', sharing_without_consent), '='('Fix', require_consent)], [finding(c3, 97, sharing_without_consent, require_consent), '=<'(97, 100)]).
+% step 17
+step('>'(97, 70), builtin, [], []).
+% step 18
+step(higher(70, 97), rule(25), ['='('Score', 70), '='('Other', 97), '='('Clause', c3)], [score(c3, 97), '>'(97, 70)]).
+% step 19
+step(permission(c2, change_terms), fact(2), [], []).
+% step 20
+step(notice_days(c2, 3), fact(5), [], []).
+% step 21
+step(required_notice(14), fact(14), [], []).
+% step 22
+step('<'(3, 14), builtin, [], []).
+% step 23
+step(importance(prior_notice, 15), fact(11), [], []).
+% step 24
+step(is(85, '+'(70, 15)), builtin, [], []).
+% step 25
+step(finding(c2, 85, short_notice(3, 14), increase_notice(14)), rule(17), ['='('Clause', c2), '='('Days', 3), '='('Required', 14), '='('Weight', 15), '='('Raw', 85)], [permission(c2, change_terms), notice_days(c2, 3), required_notice(14), '<'(3, 14), importance(prior_notice, 15), is(85, '+'(70, 15))]).
+% step 26
+step('=<'(85, 100), builtin, [], []).
+% step 27
+step(score(c2, 85), rule(21), ['='('Clause', c2), '='('Raw', 85), '='('Why', short_notice(3, 14)), '='('Fix', increase_notice(14))], [finding(c2, 85, short_notice(3, 14), increase_notice(14)), '=<'(85, 100)]).
+% step 28
+step('>'(85, 70), builtin, [], []).
+% step 29
+step(higher(70, 85), rule(25), ['='('Score', 70), '='('Other', 85), '='('Clause', c2)], [score(c2, 85), '>'(85, 70)]).
+% step 30
+step(permission(c1, remove_account), fact(1), [], []).
+% step 31
+step(importance(retention, 20), fact(10), [], []).
+% step 32
+step('\\+'(has_notice(c1)), absent, [], []).
+% step 33
+step('\\+'(safeguard(c1, inform)), absent, [], []).
+% step 34
+step(is(110, '+'(90, 20)), builtin, [], []).
+% step 35
+step(finding(c1, 110, no_removal_safeguards, add_notice_and_inform), rule(16), ['='('Clause', c1), '='('Weight', 20), '='('Raw', 110)], [permission(c1, remove_account), importance(retention, 20), '\\+'(has_notice(c1)), '\\+'(safeguard(c1, inform)), is(110, '+'(90, 20))]).
+% step 36
+step('>'(110, 100), builtin, [], []).
+% step 37
+step(score(c1, 100), rule(20), ['='('Clause', c1), '='('Raw', 110), '='('Why', no_removal_safeguards), '='('Fix', add_notice_and_inform)], [finding(c1, 110, no_removal_safeguards, add_notice_and_inform), '>'(110, 100)]).
+% step 38
+step('>'(100, 70), builtin, [], []).
+% step 39
+step(higher(70, 100), rule(25), ['='('Score', 70), '='('Other', 100), '='('Clause', c1)], [score(c1, 100), '>'(100, 70)]).
+% step 40
+step(aggregate_all(count, [higher(70, V0)], 3), collected, [], [[higher(70, 97)], [higher(70, 85)], [higher(70, 100)]]).
+% step 41
+step(is(4, '+'(3, 1)), builtin, [], []).
+% step 42
+step(report(4, c4, 70, moderate, export_prohibited, permit_export), rule(26), ['='('Rank', 4), '='('Clause', c4), '='('Score', 70), '='('Severity', moderate), '='('Why', export_prohibited), '='('Fix', permit_export), '='('Raw', 70), '='('Count', 3)], [score(c4, 70), finding(c4, 70, export_prohibited, permit_export), severity(70, moderate), aggregate_all(count, [higher(70, V0)], 3), is(4, '+'(3, 1))]).
+% step 43
+step('>='(97, 80), builtin, [], []).
+% step 44
+step(severity(97, high), rule(22), ['='('Score', 97)], ['>='(97, 80)]).
+% step 45
+step('>'(100, 97), builtin, [], []).
+% step 46
+step(higher(97, 100), rule(25), ['='('Score', 97), '='('Other', 100), '='('Clause', c1)], [score(c1, 100), '>'(100, 97)]).
+% step 47
+step(aggregate_all(count, [higher(97, V0)], 1), collected, [], [[higher(97, 100)]]).
+% step 48
+step(is(2, '+'(1, 1)), builtin, [], []).
+% step 49
+step(report(2, c3, 97, high, sharing_without_consent, require_consent), rule(26), ['='('Rank', 2), '='('Clause', c3), '='('Score', 97), '='('Severity', high), '='('Why', sharing_without_consent), '='('Fix', require_consent), '='('Raw', 97), '='('Count', 1)], [score(c3, 97), finding(c3, 97, sharing_without_consent, require_consent), severity(97, high), aggregate_all(count, [higher(97, V0)], 1), is(2, '+'(1, 1))]).
+% step 50
+step('>='(85, 80), builtin, [], []).
+% step 51
+step(severity(85, high), rule(22), ['='('Score', 85)], ['>='(85, 80)]).
+% step 52
+step('>'(97, 85), builtin, [], []).
+% step 53
+step(higher(85, 97), rule(25), ['='('Score', 85), '='('Other', 97), '='('Clause', c3)], [score(c3, 97), '>'(97, 85)]).
+% step 54
+step('>'(100, 85), builtin, [], []).
+% step 55
+step(higher(85, 100), rule(25), ['='('Score', 85), '='('Other', 100), '='('Clause', c1)], [score(c1, 100), '>'(100, 85)]).
+% step 56
+step(aggregate_all(count, [higher(85, V0)], 2), collected, [], [[higher(85, 97)], [higher(85, 100)]]).
+% step 57
+step(is(3, '+'(2, 1)), builtin, [], []).
+% step 58
+step(report(3, c2, 85, high, short_notice(3, 14), increase_notice(14)), rule(26), ['='('Rank', 3), '='('Clause', c2), '='('Score', 85), '='('Severity', high), '='('Why', short_notice(3, 14)), '='('Fix', increase_notice(14)), '='('Raw', 85), '='('Count', 2)], [score(c2, 85), finding(c2, 85, short_notice(3, 14), increase_notice(14)), severity(85, high), aggregate_all(count, [higher(85, V0)], 2), is(3, '+'(2, 1))]).
+% step 59
+step('>='(100, 80), builtin, [], []).
+% step 60
+step(severity(100, high), rule(22), ['='('Score', 100)], ['>='(100, 80)]).
+% step 61
+step(aggregate_all(count, [higher(100, V0)], 0), collected, [], []).
+% step 62
+step(is(1, '+'(0, 1)), builtin, [], []).
+% step 63
+step(report(1, c1, 100, high, no_removal_safeguards, add_notice_and_inform), rule(26), ['='('Rank', 1), '='('Clause', c1), '='('Score', 100), '='('Severity', high), '='('Why', no_removal_safeguards), '='('Fix', add_notice_and_inform), '='('Raw', 110), '='('Count', 0)], [score(c1, 100), finding(c1, 110, no_removal_safeguards, add_notice_and_inform), severity(100, high), aggregate_all(count, [higher(100, V0)], 0), is(1, '+'(0, 1))]).
+
+% Check
+check passed: report(1, c1, 100, high, no_removal_safeguards, add_notice_and_inform).
+
+check passed: report(2, c3, 97, high, sharing_without_consent, require_consent).
+
+check passed: report(3, c2, 85, high, short_notice(3, 14), increase_notice(14)).
+
+check passed: report(4, c4, 70, moderate, export_prohibited, permit_export).
+
+check passed: aggregate_all(count, (report(Rank, Clause, Score, Severity, Why, Fix)), 4).
+
+check passed: aggregate_all(count, (score(c5, Score)), 0).
+
+check passed: aggregate_all(count, (score(c6, Score)), 0).
+
+condition('C1', resolution, ok, 32).
+condition('C2', well_founded, ok, 63).
+condition('C3', justification, ok, 63).
+condition('C4', coverage, ok, 73).
+condition('C5', re_decision, ok, 28).
+condition('C6', boundary_consistency, ok, 7).
+condition('C7', relevance, ok, 67).
+obligation(absent, theory_scoped, '\\+'(safeguard(c3, consent))).
+obligation(absent, theory_scoped, '\\+'(has_notice(c1))).
+obligation(absent, theory_scoped, '\\+'(safeguard(c1, inform))).
+obligation(collected, collection_completeness, aggregate_all(count, [higher(70, var('V0'))], 3)).
+obligation(collected, collection_completeness, aggregate_all(count, [higher(97, var('V0'))], 1)).
+obligation(collected, collection_completeness, aggregate_all(count, [higher(85, var('V0'))], 2)).
+obligation(collected, collection_completeness, aggregate_all(count, [higher(100, var('V0'))], 0)).
+steps(63).
+verified(32).
+recomputed(28).
+trusted(7).
+claims(4).
+verdict(checked_with_obligations).

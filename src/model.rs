@@ -16,12 +16,19 @@ impl fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 
-/// Values have structural identity: an atom, string, and integer are distinct.
+/// Ground values have structural identity; integers, reals, atoms, and strings are distinct.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Value {
     Symbol(String),
     Text(String),
     Integer(i64),
+    BigInteger(num_bigint::BigInt),
+    /// Finite binary64 number, stored as normalized IEEE bits.
+    Real(u64),
+    Nil,
+    Compound(String, Vec<Value>),
+    /// Variables occur only in source templates and transient substitutions.
+    Variable(String),
     /// Opaque identity produced only by a checked fresh-witness firing.
     Witness(String),
 }
@@ -58,6 +65,32 @@ impl fmt::Display for Value {
             Self::Symbol(value) => symbol(f, value),
             Self::Text(value) => quoted(f, value, '"'),
             Self::Integer(value) => write!(f, "{value}"),
+            Self::BigInteger(value) => write!(f, "{value}"),
+            Self::Real(bits) => write!(f, "{:?}", f64::from_bits(*bits)),
+            Self::Nil => f.write_str("[]"),
+            Self::Variable(name) if name.starts_with("_$") => f.write_str("_"),
+            Self::Variable(name) => f.write_str(name),
+            Self::Compound(name, values) if name == "." && values.len() == 2 => {
+                f.write_str("[")?;
+                let mut cursor = self;
+                let mut first = true;
+                while let Self::Compound(name, values) = cursor {
+                    if name != "." || values.len() != 2 {
+                        break;
+                    }
+                    if !first {
+                        f.write_str(", ")?;
+                    }
+                    first = false;
+                    write!(f, "{}", values[0])?;
+                    cursor = &values[1];
+                }
+                if cursor != &Self::Nil {
+                    write!(f, " | {cursor}")?;
+                }
+                f.write_str("]")
+            }
+            Self::Compound(name, values) => relation(f, name, values),
             Self::Witness(value) => {
                 f.write_str("~")?;
                 quoted(f, value, '"')
@@ -72,13 +105,13 @@ pub struct Atom {
     pub values: Vec<Value>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Term {
     Variable(String),
     Constant(Value),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Goal {
     pub predicate: String,
     pub terms: Vec<Term>,
@@ -86,13 +119,7 @@ pub struct Goal {
 
 impl Goal {
     pub fn variables(&self) -> BTreeSet<String> {
-        self.terms
-            .iter()
-            .filter_map(|t| match t {
-                Term::Variable(name) => Some(name.clone()),
-                _ => None,
-            })
-            .collect()
+        term_variables(&self.terms)
     }
     pub fn ground(&self) -> Option<Atom> {
         Some(Atom {
@@ -100,10 +127,7 @@ impl Goal {
             values: self
                 .terms
                 .iter()
-                .map(|t| match t {
-                    Term::Constant(value) => Some(value.clone()),
-                    _ => None,
-                })
+                .map(|t| crate::semantics::value(t, &Default::default()))
                 .collect::<Option<_>>()?,
         })
     }
@@ -153,6 +177,7 @@ pub enum AggregateKind {
     Sum,
     Min,
     Max,
+    List,
 }
 
 impl fmt::Display for AggregateKind {
@@ -162,6 +187,7 @@ impl fmt::Display for AggregateKind {
             Self::Sum => "sum",
             Self::Min => "min",
             Self::Max => "max",
+            Self::List => "list",
         })
     }
 }
@@ -179,6 +205,7 @@ pub enum Literal {
     Relation(Goal),
     Builtin(Goal),
     Not(Goal),
+    NotBuiltin(Goal),
     Aggregate(Aggregate),
     Fresh(Term),
 }
@@ -187,7 +214,9 @@ impl Literal {
     /// Aggregate-local variables are deliberately absent from outer projection.
     pub fn variables(&self) -> BTreeSet<String> {
         match self {
-            Self::Relation(g) | Self::Builtin(g) | Self::Not(g) => g.variables(),
+            Self::Relation(g) | Self::Builtin(g) | Self::Not(g) | Self::NotBuiltin(g) => {
+                g.variables()
+            }
             Self::Aggregate(a) => term_variables(std::slice::from_ref(&a.result)),
             Self::Fresh(t) => term_variables(std::slice::from_ref(t)),
         }
@@ -197,13 +226,7 @@ impl Literal {
 pub(crate) fn term_variables(terms: &[Term]) -> BTreeSet<String> {
     terms
         .iter()
-        .filter_map(|t| {
-            if let Term::Variable(n) = t {
-                Some(n.clone())
-            } else {
-                None
-            }
-        })
+        .flat_map(|t| value_variables(&term_value(t)))
         .collect()
 }
 
@@ -211,25 +234,43 @@ impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Relation(g) => write!(f, "{g}"),
-            Self::Builtin(g) => write!(f, "@{g}"),
-            Self::Not(g) => write!(f, "not {g}"),
-            Self::Fresh(t) => write!(f, "@fresh({t})"),
+            Self::Builtin(g)
+                if matches!(
+                    g.predicate.as_str(),
+                    "is" | "="
+                        | "\\="
+                        | "<"
+                        | "=<"
+                        | ">"
+                        | ">="
+                        | "=:="
+                        | "=\\="
+                        | "@<"
+                        | "@=<"
+                        | "@>"
+                        | "@>="
+                        | "=.."
+                ) =>
+            {
+                write!(f, "{} {} {}", g.terms[0], g.predicate, g.terms[1])
+            }
+            Self::Builtin(g) => write!(f, "{g}"),
+            Self::NotBuiltin(g) => write!(f, "\\+ ({})", Self::Builtin(g.clone())),
+            Self::Not(g) => write!(f, "\\+ ({g})"),
+            Self::Fresh(t) => write!(f, "fresh({t})"),
             Self::Aggregate(a) => {
-                write!(f, "{} {{ ", a.kind)?;
-                for (i, t) in a.template.iter().enumerate() {
-                    if i > 0 {
-                        f.write_str(", ")?;
-                    }
-                    write!(f, "{t}")?;
+                write!(f, "aggregate_all({}", a.kind)?;
+                if let Some(term) = a.template.first() {
+                    write!(f, "({term})")?;
                 }
-                f.write_str(" : ")?;
+                f.write_str(", (")?;
                 for (i, g) in a.body.iter().enumerate() {
                     if i > 0 {
                         f.write_str(", ")?;
                     }
                     write!(f, "{g}")?;
                 }
-                write!(f, " }} = {}", a.result)
+                write!(f, "), {})", a.result)
             }
         }
     }
@@ -258,6 +299,8 @@ impl fmt::Display for Rule {
 pub struct Query {
     pub goals: Vec<Literal>,
     pub variables: Vec<String>,
+    pub assertion: bool,
+    pub explain: bool,
 }
 
 /// Merge parsed documents with `extend`; variable scopes are local to clauses.
@@ -266,15 +309,77 @@ pub struct Program {
     pub facts: Vec<Atom>,
     pub rules: Vec<Rule>,
     pub queries: Vec<Query>,
+    pub tables: BTreeSet<(String, usize)>,
+    /// Follow-up explanations, indexed by the number of preceding requests.
+    pub followups: Vec<usize>,
 }
 
 impl Program {
     pub fn extend(&mut self, other: Self) {
         self.facts.extend(other.facts);
         self.rules.extend(other.rules);
+        self.followups
+            .extend(other.followups.into_iter().map(|i| i + self.queries.len()));
         self.queries.extend(other.queries);
+        self.tables.extend(other.tables);
     }
     pub fn validate(&self) -> Result<(), Error> {
         crate::language::plan(self).map(|_| ())
+    }
+}
+
+pub(crate) fn term_value(term: &Term) -> Value {
+    match term {
+        Term::Variable(name) => Value::Variable(name.clone()),
+        Term::Constant(value) => value.clone(),
+    }
+}
+pub(crate) fn value_variables(value: &Value) -> Vec<String> {
+    match value {
+        Value::Variable(name) => vec![name.clone()],
+        Value::Compound(_, args) => args.iter().flat_map(value_variables).collect(),
+        _ => Vec::new(),
+    }
+}
+impl Value {
+    pub(crate) fn ground(&self) -> bool {
+        value_variables(self).is_empty()
+    }
+    pub(crate) fn valid(&self) -> bool {
+        use num_traits::ToPrimitive;
+        let mut pending = vec![self];
+        while let Some(value) = pending.pop() {
+            match value {
+                Self::Real(bits)
+                    if !f64::from_bits(*bits).is_finite()
+                        || (f64::from_bits(*bits) == 0.0 && *bits != 0.0f64.to_bits()) =>
+                {
+                    return false
+                }
+                Self::BigInteger(n) if n.to_i64().is_some() => return false,
+                Self::Compound(name, args) => {
+                    if args.is_empty() || args.len() > 64 {
+                        return false;
+                    }
+                    if name == "."
+                        && args.len() == 2
+                        && !matches!(&args[1], Self::Nil | Self::Variable(_))
+                        && !matches!(&args[1],Self::Compound(n,a) if n=="." && a.len()==2)
+                    {
+                        return false;
+                    }
+                    pending.extend(args);
+                }
+                _ => {}
+            }
+        }
+        true
+    }
+    pub(crate) fn has_witness(&self) -> bool {
+        match self {
+            Self::Witness(_) => true,
+            Self::Compound(_, args) => args.iter().any(Self::has_witness),
+            _ => false,
+        }
     }
 }

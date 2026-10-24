@@ -1,13 +1,19 @@
-use std::fs;
-use whye::{check, parse, reason, Certificate, Condition, Limits, Value};
+use wheye::{check, parse, reason, Certificate, Condition, Limits, Value};
 
 const DEPTHS: [usize; 5] = [10, 100, 1_000, 10_000, 100_000];
 fn source(depth: usize) -> String {
-    fs::read_to_string(format!(
-        "{}/examples/deep-taxonomy-{depth}.pl",
-        env!("CARGO_MANIFEST_DIR")
-    ))
-    .unwrap()
+    let mut text = String::from("isa(ind,n000000). test(true):-isa(ind,a2). ");
+    text.push_str(&format!("isa(X,a2):-isa(X,n{depth:06}). "));
+    for level in 1..=depth {
+        for prefix in ["n", "i", "j"] {
+            text.push_str(&format!(
+                "isa(X,{prefix}{level:06}):-isa(X,n{:06}). ",
+                level - 1
+            ));
+        }
+    }
+    text.push_str("?- test(Result). ");
+    text
 }
 
 #[test]
@@ -92,7 +98,7 @@ fn ground_taxonomies_remain_linear_with_the_class_in_the_first_argument() {
             ));
         }
     }
-    source.push_str(&format!("?- isa(n{depth:06}, ind)."));
+    source.push_str(&format!("?- isa(n{depth:06}, ind). "));
     let program = parse(&source).unwrap();
     let run = reason(&program, Limits::default()).unwrap();
     assert!(run.matches <= 8 * depth + 32, "{} matches", run.matches);

@@ -1,317 +1,622 @@
-% Following a classification chain 100 levels deep
+% Follow a chain of 100 classification steps from n0 through n100. The
+% individual ind starts with label n0 and acquires the next n label plus two
+% side labels, i and j, at each step. The final n label implies a2.
 %
-% One individual starts in class n000000. Each level adds its next class
-% and two side labels. Reaching n000100 produces a final true answer.
-% This example exercises deep forward reasoning and a checkable proof chain.
+% The query asks which individual has label a2, and the explanation traces
+% the supporting chain. Longer versions produce larger proofs.
 
-% Starting classification
-isa(ind, n000000).
+is_a(ind, n0).
 
-% Completion
-test(true) :- isa(ind, a2).
-isa(X, a2) :- isa(X, n000100).
+is_a(Entity, a2) :-
+    is_a(Entity, n100).
+is_a(Entity, n1) :-
+    is_a(Entity, n0).
+is_a(Entity, i1) :-
+    is_a(Entity, n0).
+is_a(Entity, j1) :-
+    is_a(Entity, n0).
+is_a(Entity, n2) :-
+    is_a(Entity, n1).
+is_a(Entity, i2) :-
+    is_a(Entity, n1).
+is_a(Entity, j2) :-
+    is_a(Entity, n1).
+is_a(Entity, n3) :-
+    is_a(Entity, n2).
+is_a(Entity, i3) :-
+    is_a(Entity, n2).
+is_a(Entity, j3) :-
+    is_a(Entity, n2).
+is_a(Entity, n4) :-
+    is_a(Entity, n3).
+is_a(Entity, i4) :-
+    is_a(Entity, n3).
+is_a(Entity, j4) :-
+    is_a(Entity, n3).
+is_a(Entity, n5) :-
+    is_a(Entity, n4).
+is_a(Entity, i5) :-
+    is_a(Entity, n4).
+is_a(Entity, j5) :-
+    is_a(Entity, n4).
+is_a(Entity, n6) :-
+    is_a(Entity, n5).
+is_a(Entity, i6) :-
+    is_a(Entity, n5).
+is_a(Entity, j6) :-
+    is_a(Entity, n5).
+is_a(Entity, n7) :-
+    is_a(Entity, n6).
+is_a(Entity, i7) :-
+    is_a(Entity, n6).
+is_a(Entity, j7) :-
+    is_a(Entity, n6).
+is_a(Entity, n8) :-
+    is_a(Entity, n7).
+is_a(Entity, i8) :-
+    is_a(Entity, n7).
+is_a(Entity, j8) :-
+    is_a(Entity, n7).
+is_a(Entity, n9) :-
+    is_a(Entity, n8).
+is_a(Entity, i9) :-
+    is_a(Entity, n8).
+is_a(Entity, j9) :-
+    is_a(Entity, n8).
+is_a(Entity, n10) :-
+    is_a(Entity, n9).
+is_a(Entity, i10) :-
+    is_a(Entity, n9).
+is_a(Entity, j10) :-
+    is_a(Entity, n9).
+is_a(Entity, n11) :-
+    is_a(Entity, n10).
+is_a(Entity, i11) :-
+    is_a(Entity, n10).
+is_a(Entity, j11) :-
+    is_a(Entity, n10).
+is_a(Entity, n12) :-
+    is_a(Entity, n11).
+is_a(Entity, i12) :-
+    is_a(Entity, n11).
+is_a(Entity, j12) :-
+    is_a(Entity, n11).
+is_a(Entity, n13) :-
+    is_a(Entity, n12).
+is_a(Entity, i13) :-
+    is_a(Entity, n12).
+is_a(Entity, j13) :-
+    is_a(Entity, n12).
+is_a(Entity, n14) :-
+    is_a(Entity, n13).
+is_a(Entity, i14) :-
+    is_a(Entity, n13).
+is_a(Entity, j14) :-
+    is_a(Entity, n13).
+is_a(Entity, n15) :-
+    is_a(Entity, n14).
+is_a(Entity, i15) :-
+    is_a(Entity, n14).
+is_a(Entity, j15) :-
+    is_a(Entity, n14).
+is_a(Entity, n16) :-
+    is_a(Entity, n15).
+is_a(Entity, i16) :-
+    is_a(Entity, n15).
+is_a(Entity, j16) :-
+    is_a(Entity, n15).
+is_a(Entity, n17) :-
+    is_a(Entity, n16).
+is_a(Entity, i17) :-
+    is_a(Entity, n16).
+is_a(Entity, j17) :-
+    is_a(Entity, n16).
+is_a(Entity, n18) :-
+    is_a(Entity, n17).
+is_a(Entity, i18) :-
+    is_a(Entity, n17).
+is_a(Entity, j18) :-
+    is_a(Entity, n17).
+is_a(Entity, n19) :-
+    is_a(Entity, n18).
+is_a(Entity, i19) :-
+    is_a(Entity, n18).
+is_a(Entity, j19) :-
+    is_a(Entity, n18).
+is_a(Entity, n20) :-
+    is_a(Entity, n19).
+is_a(Entity, i20) :-
+    is_a(Entity, n19).
+is_a(Entity, j20) :-
+    is_a(Entity, n19).
+is_a(Entity, n21) :-
+    is_a(Entity, n20).
+is_a(Entity, i21) :-
+    is_a(Entity, n20).
+is_a(Entity, j21) :-
+    is_a(Entity, n20).
+is_a(Entity, n22) :-
+    is_a(Entity, n21).
+is_a(Entity, i22) :-
+    is_a(Entity, n21).
+is_a(Entity, j22) :-
+    is_a(Entity, n21).
+is_a(Entity, n23) :-
+    is_a(Entity, n22).
+is_a(Entity, i23) :-
+    is_a(Entity, n22).
+is_a(Entity, j23) :-
+    is_a(Entity, n22).
+is_a(Entity, n24) :-
+    is_a(Entity, n23).
+is_a(Entity, i24) :-
+    is_a(Entity, n23).
+is_a(Entity, j24) :-
+    is_a(Entity, n23).
+is_a(Entity, n25) :-
+    is_a(Entity, n24).
+is_a(Entity, i25) :-
+    is_a(Entity, n24).
+is_a(Entity, j25) :-
+    is_a(Entity, n24).
+is_a(Entity, n26) :-
+    is_a(Entity, n25).
+is_a(Entity, i26) :-
+    is_a(Entity, n25).
+is_a(Entity, j26) :-
+    is_a(Entity, n25).
+is_a(Entity, n27) :-
+    is_a(Entity, n26).
+is_a(Entity, i27) :-
+    is_a(Entity, n26).
+is_a(Entity, j27) :-
+    is_a(Entity, n26).
+is_a(Entity, n28) :-
+    is_a(Entity, n27).
+is_a(Entity, i28) :-
+    is_a(Entity, n27).
+is_a(Entity, j28) :-
+    is_a(Entity, n27).
+is_a(Entity, n29) :-
+    is_a(Entity, n28).
+is_a(Entity, i29) :-
+    is_a(Entity, n28).
+is_a(Entity, j29) :-
+    is_a(Entity, n28).
+is_a(Entity, n30) :-
+    is_a(Entity, n29).
+is_a(Entity, i30) :-
+    is_a(Entity, n29).
+is_a(Entity, j30) :-
+    is_a(Entity, n29).
+is_a(Entity, n31) :-
+    is_a(Entity, n30).
+is_a(Entity, i31) :-
+    is_a(Entity, n30).
+is_a(Entity, j31) :-
+    is_a(Entity, n30).
+is_a(Entity, n32) :-
+    is_a(Entity, n31).
+is_a(Entity, i32) :-
+    is_a(Entity, n31).
+is_a(Entity, j32) :-
+    is_a(Entity, n31).
+is_a(Entity, n33) :-
+    is_a(Entity, n32).
+is_a(Entity, i33) :-
+    is_a(Entity, n32).
+is_a(Entity, j33) :-
+    is_a(Entity, n32).
+is_a(Entity, n34) :-
+    is_a(Entity, n33).
+is_a(Entity, i34) :-
+    is_a(Entity, n33).
+is_a(Entity, j34) :-
+    is_a(Entity, n33).
+is_a(Entity, n35) :-
+    is_a(Entity, n34).
+is_a(Entity, i35) :-
+    is_a(Entity, n34).
+is_a(Entity, j35) :-
+    is_a(Entity, n34).
+is_a(Entity, n36) :-
+    is_a(Entity, n35).
+is_a(Entity, i36) :-
+    is_a(Entity, n35).
+is_a(Entity, j36) :-
+    is_a(Entity, n35).
+is_a(Entity, n37) :-
+    is_a(Entity, n36).
+is_a(Entity, i37) :-
+    is_a(Entity, n36).
+is_a(Entity, j37) :-
+    is_a(Entity, n36).
+is_a(Entity, n38) :-
+    is_a(Entity, n37).
+is_a(Entity, i38) :-
+    is_a(Entity, n37).
+is_a(Entity, j38) :-
+    is_a(Entity, n37).
+is_a(Entity, n39) :-
+    is_a(Entity, n38).
+is_a(Entity, i39) :-
+    is_a(Entity, n38).
+is_a(Entity, j39) :-
+    is_a(Entity, n38).
+is_a(Entity, n40) :-
+    is_a(Entity, n39).
+is_a(Entity, i40) :-
+    is_a(Entity, n39).
+is_a(Entity, j40) :-
+    is_a(Entity, n39).
+is_a(Entity, n41) :-
+    is_a(Entity, n40).
+is_a(Entity, i41) :-
+    is_a(Entity, n40).
+is_a(Entity, j41) :-
+    is_a(Entity, n40).
+is_a(Entity, n42) :-
+    is_a(Entity, n41).
+is_a(Entity, i42) :-
+    is_a(Entity, n41).
+is_a(Entity, j42) :-
+    is_a(Entity, n41).
+is_a(Entity, n43) :-
+    is_a(Entity, n42).
+is_a(Entity, i43) :-
+    is_a(Entity, n42).
+is_a(Entity, j43) :-
+    is_a(Entity, n42).
+is_a(Entity, n44) :-
+    is_a(Entity, n43).
+is_a(Entity, i44) :-
+    is_a(Entity, n43).
+is_a(Entity, j44) :-
+    is_a(Entity, n43).
+is_a(Entity, n45) :-
+    is_a(Entity, n44).
+is_a(Entity, i45) :-
+    is_a(Entity, n44).
+is_a(Entity, j45) :-
+    is_a(Entity, n44).
+is_a(Entity, n46) :-
+    is_a(Entity, n45).
+is_a(Entity, i46) :-
+    is_a(Entity, n45).
+is_a(Entity, j46) :-
+    is_a(Entity, n45).
+is_a(Entity, n47) :-
+    is_a(Entity, n46).
+is_a(Entity, i47) :-
+    is_a(Entity, n46).
+is_a(Entity, j47) :-
+    is_a(Entity, n46).
+is_a(Entity, n48) :-
+    is_a(Entity, n47).
+is_a(Entity, i48) :-
+    is_a(Entity, n47).
+is_a(Entity, j48) :-
+    is_a(Entity, n47).
+is_a(Entity, n49) :-
+    is_a(Entity, n48).
+is_a(Entity, i49) :-
+    is_a(Entity, n48).
+is_a(Entity, j49) :-
+    is_a(Entity, n48).
+is_a(Entity, n50) :-
+    is_a(Entity, n49).
+is_a(Entity, i50) :-
+    is_a(Entity, n49).
+is_a(Entity, j50) :-
+    is_a(Entity, n49).
+is_a(Entity, n51) :-
+    is_a(Entity, n50).
+is_a(Entity, i51) :-
+    is_a(Entity, n50).
+is_a(Entity, j51) :-
+    is_a(Entity, n50).
+is_a(Entity, n52) :-
+    is_a(Entity, n51).
+is_a(Entity, i52) :-
+    is_a(Entity, n51).
+is_a(Entity, j52) :-
+    is_a(Entity, n51).
+is_a(Entity, n53) :-
+    is_a(Entity, n52).
+is_a(Entity, i53) :-
+    is_a(Entity, n52).
+is_a(Entity, j53) :-
+    is_a(Entity, n52).
+is_a(Entity, n54) :-
+    is_a(Entity, n53).
+is_a(Entity, i54) :-
+    is_a(Entity, n53).
+is_a(Entity, j54) :-
+    is_a(Entity, n53).
+is_a(Entity, n55) :-
+    is_a(Entity, n54).
+is_a(Entity, i55) :-
+    is_a(Entity, n54).
+is_a(Entity, j55) :-
+    is_a(Entity, n54).
+is_a(Entity, n56) :-
+    is_a(Entity, n55).
+is_a(Entity, i56) :-
+    is_a(Entity, n55).
+is_a(Entity, j56) :-
+    is_a(Entity, n55).
+is_a(Entity, n57) :-
+    is_a(Entity, n56).
+is_a(Entity, i57) :-
+    is_a(Entity, n56).
+is_a(Entity, j57) :-
+    is_a(Entity, n56).
+is_a(Entity, n58) :-
+    is_a(Entity, n57).
+is_a(Entity, i58) :-
+    is_a(Entity, n57).
+is_a(Entity, j58) :-
+    is_a(Entity, n57).
+is_a(Entity, n59) :-
+    is_a(Entity, n58).
+is_a(Entity, i59) :-
+    is_a(Entity, n58).
+is_a(Entity, j59) :-
+    is_a(Entity, n58).
+is_a(Entity, n60) :-
+    is_a(Entity, n59).
+is_a(Entity, i60) :-
+    is_a(Entity, n59).
+is_a(Entity, j60) :-
+    is_a(Entity, n59).
+is_a(Entity, n61) :-
+    is_a(Entity, n60).
+is_a(Entity, i61) :-
+    is_a(Entity, n60).
+is_a(Entity, j61) :-
+    is_a(Entity, n60).
+is_a(Entity, n62) :-
+    is_a(Entity, n61).
+is_a(Entity, i62) :-
+    is_a(Entity, n61).
+is_a(Entity, j62) :-
+    is_a(Entity, n61).
+is_a(Entity, n63) :-
+    is_a(Entity, n62).
+is_a(Entity, i63) :-
+    is_a(Entity, n62).
+is_a(Entity, j63) :-
+    is_a(Entity, n62).
+is_a(Entity, n64) :-
+    is_a(Entity, n63).
+is_a(Entity, i64) :-
+    is_a(Entity, n63).
+is_a(Entity, j64) :-
+    is_a(Entity, n63).
+is_a(Entity, n65) :-
+    is_a(Entity, n64).
+is_a(Entity, i65) :-
+    is_a(Entity, n64).
+is_a(Entity, j65) :-
+    is_a(Entity, n64).
+is_a(Entity, n66) :-
+    is_a(Entity, n65).
+is_a(Entity, i66) :-
+    is_a(Entity, n65).
+is_a(Entity, j66) :-
+    is_a(Entity, n65).
+is_a(Entity, n67) :-
+    is_a(Entity, n66).
+is_a(Entity, i67) :-
+    is_a(Entity, n66).
+is_a(Entity, j67) :-
+    is_a(Entity, n66).
+is_a(Entity, n68) :-
+    is_a(Entity, n67).
+is_a(Entity, i68) :-
+    is_a(Entity, n67).
+is_a(Entity, j68) :-
+    is_a(Entity, n67).
+is_a(Entity, n69) :-
+    is_a(Entity, n68).
+is_a(Entity, i69) :-
+    is_a(Entity, n68).
+is_a(Entity, j69) :-
+    is_a(Entity, n68).
+is_a(Entity, n70) :-
+    is_a(Entity, n69).
+is_a(Entity, i70) :-
+    is_a(Entity, n69).
+is_a(Entity, j70) :-
+    is_a(Entity, n69).
+is_a(Entity, n71) :-
+    is_a(Entity, n70).
+is_a(Entity, i71) :-
+    is_a(Entity, n70).
+is_a(Entity, j71) :-
+    is_a(Entity, n70).
+is_a(Entity, n72) :-
+    is_a(Entity, n71).
+is_a(Entity, i72) :-
+    is_a(Entity, n71).
+is_a(Entity, j72) :-
+    is_a(Entity, n71).
+is_a(Entity, n73) :-
+    is_a(Entity, n72).
+is_a(Entity, i73) :-
+    is_a(Entity, n72).
+is_a(Entity, j73) :-
+    is_a(Entity, n72).
+is_a(Entity, n74) :-
+    is_a(Entity, n73).
+is_a(Entity, i74) :-
+    is_a(Entity, n73).
+is_a(Entity, j74) :-
+    is_a(Entity, n73).
+is_a(Entity, n75) :-
+    is_a(Entity, n74).
+is_a(Entity, i75) :-
+    is_a(Entity, n74).
+is_a(Entity, j75) :-
+    is_a(Entity, n74).
+is_a(Entity, n76) :-
+    is_a(Entity, n75).
+is_a(Entity, i76) :-
+    is_a(Entity, n75).
+is_a(Entity, j76) :-
+    is_a(Entity, n75).
+is_a(Entity, n77) :-
+    is_a(Entity, n76).
+is_a(Entity, i77) :-
+    is_a(Entity, n76).
+is_a(Entity, j77) :-
+    is_a(Entity, n76).
+is_a(Entity, n78) :-
+    is_a(Entity, n77).
+is_a(Entity, i78) :-
+    is_a(Entity, n77).
+is_a(Entity, j78) :-
+    is_a(Entity, n77).
+is_a(Entity, n79) :-
+    is_a(Entity, n78).
+is_a(Entity, i79) :-
+    is_a(Entity, n78).
+is_a(Entity, j79) :-
+    is_a(Entity, n78).
+is_a(Entity, n80) :-
+    is_a(Entity, n79).
+is_a(Entity, i80) :-
+    is_a(Entity, n79).
+is_a(Entity, j80) :-
+    is_a(Entity, n79).
+is_a(Entity, n81) :-
+    is_a(Entity, n80).
+is_a(Entity, i81) :-
+    is_a(Entity, n80).
+is_a(Entity, j81) :-
+    is_a(Entity, n80).
+is_a(Entity, n82) :-
+    is_a(Entity, n81).
+is_a(Entity, i82) :-
+    is_a(Entity, n81).
+is_a(Entity, j82) :-
+    is_a(Entity, n81).
+is_a(Entity, n83) :-
+    is_a(Entity, n82).
+is_a(Entity, i83) :-
+    is_a(Entity, n82).
+is_a(Entity, j83) :-
+    is_a(Entity, n82).
+is_a(Entity, n84) :-
+    is_a(Entity, n83).
+is_a(Entity, i84) :-
+    is_a(Entity, n83).
+is_a(Entity, j84) :-
+    is_a(Entity, n83).
+is_a(Entity, n85) :-
+    is_a(Entity, n84).
+is_a(Entity, i85) :-
+    is_a(Entity, n84).
+is_a(Entity, j85) :-
+    is_a(Entity, n84).
+is_a(Entity, n86) :-
+    is_a(Entity, n85).
+is_a(Entity, i86) :-
+    is_a(Entity, n85).
+is_a(Entity, j86) :-
+    is_a(Entity, n85).
+is_a(Entity, n87) :-
+    is_a(Entity, n86).
+is_a(Entity, i87) :-
+    is_a(Entity, n86).
+is_a(Entity, j87) :-
+    is_a(Entity, n86).
+is_a(Entity, n88) :-
+    is_a(Entity, n87).
+is_a(Entity, i88) :-
+    is_a(Entity, n87).
+is_a(Entity, j88) :-
+    is_a(Entity, n87).
+is_a(Entity, n89) :-
+    is_a(Entity, n88).
+is_a(Entity, i89) :-
+    is_a(Entity, n88).
+is_a(Entity, j89) :-
+    is_a(Entity, n88).
+is_a(Entity, n90) :-
+    is_a(Entity, n89).
+is_a(Entity, i90) :-
+    is_a(Entity, n89).
+is_a(Entity, j90) :-
+    is_a(Entity, n89).
+is_a(Entity, n91) :-
+    is_a(Entity, n90).
+is_a(Entity, i91) :-
+    is_a(Entity, n90).
+is_a(Entity, j91) :-
+    is_a(Entity, n90).
+is_a(Entity, n92) :-
+    is_a(Entity, n91).
+is_a(Entity, i92) :-
+    is_a(Entity, n91).
+is_a(Entity, j92) :-
+    is_a(Entity, n91).
+is_a(Entity, n93) :-
+    is_a(Entity, n92).
+is_a(Entity, i93) :-
+    is_a(Entity, n92).
+is_a(Entity, j93) :-
+    is_a(Entity, n92).
+is_a(Entity, n94) :-
+    is_a(Entity, n93).
+is_a(Entity, i94) :-
+    is_a(Entity, n93).
+is_a(Entity, j94) :-
+    is_a(Entity, n93).
+is_a(Entity, n95) :-
+    is_a(Entity, n94).
+is_a(Entity, i95) :-
+    is_a(Entity, n94).
+is_a(Entity, j95) :-
+    is_a(Entity, n94).
+is_a(Entity, n96) :-
+    is_a(Entity, n95).
+is_a(Entity, i96) :-
+    is_a(Entity, n95).
+is_a(Entity, j96) :-
+    is_a(Entity, n95).
+is_a(Entity, n97) :-
+    is_a(Entity, n96).
+is_a(Entity, i97) :-
+    is_a(Entity, n96).
+is_a(Entity, j97) :-
+    is_a(Entity, n96).
+is_a(Entity, n98) :-
+    is_a(Entity, n97).
+is_a(Entity, i98) :-
+    is_a(Entity, n97).
+is_a(Entity, j98) :-
+    is_a(Entity, n97).
+is_a(Entity, n99) :-
+    is_a(Entity, n98).
+is_a(Entity, i99) :-
+    is_a(Entity, n98).
+is_a(Entity, j99) :-
+    is_a(Entity, n98).
+is_a(Entity, n100) :-
+    is_a(Entity, n99).
+is_a(Entity, i100) :-
+    is_a(Entity, n99).
+is_a(Entity, j100) :-
+    is_a(Entity, n99).
 
-% Classification levels
-isa(X, n000001) :- isa(X, n000000).
-isa(X, i000001) :- isa(X, n000000).
-isa(X, j000001) :- isa(X, n000000).
-isa(X, n000002) :- isa(X, n000001).
-isa(X, i000002) :- isa(X, n000001).
-isa(X, j000002) :- isa(X, n000001).
-isa(X, n000003) :- isa(X, n000002).
-isa(X, i000003) :- isa(X, n000002).
-isa(X, j000003) :- isa(X, n000002).
-isa(X, n000004) :- isa(X, n000003).
-isa(X, i000004) :- isa(X, n000003).
-isa(X, j000004) :- isa(X, n000003).
-isa(X, n000005) :- isa(X, n000004).
-isa(X, i000005) :- isa(X, n000004).
-isa(X, j000005) :- isa(X, n000004).
-isa(X, n000006) :- isa(X, n000005).
-isa(X, i000006) :- isa(X, n000005).
-isa(X, j000006) :- isa(X, n000005).
-isa(X, n000007) :- isa(X, n000006).
-isa(X, i000007) :- isa(X, n000006).
-isa(X, j000007) :- isa(X, n000006).
-isa(X, n000008) :- isa(X, n000007).
-isa(X, i000008) :- isa(X, n000007).
-isa(X, j000008) :- isa(X, n000007).
-isa(X, n000009) :- isa(X, n000008).
-isa(X, i000009) :- isa(X, n000008).
-isa(X, j000009) :- isa(X, n000008).
-isa(X, n000010) :- isa(X, n000009).
-isa(X, i000010) :- isa(X, n000009).
-isa(X, j000010) :- isa(X, n000009).
-isa(X, n000011) :- isa(X, n000010).
-isa(X, i000011) :- isa(X, n000010).
-isa(X, j000011) :- isa(X, n000010).
-isa(X, n000012) :- isa(X, n000011).
-isa(X, i000012) :- isa(X, n000011).
-isa(X, j000012) :- isa(X, n000011).
-isa(X, n000013) :- isa(X, n000012).
-isa(X, i000013) :- isa(X, n000012).
-isa(X, j000013) :- isa(X, n000012).
-isa(X, n000014) :- isa(X, n000013).
-isa(X, i000014) :- isa(X, n000013).
-isa(X, j000014) :- isa(X, n000013).
-isa(X, n000015) :- isa(X, n000014).
-isa(X, i000015) :- isa(X, n000014).
-isa(X, j000015) :- isa(X, n000014).
-isa(X, n000016) :- isa(X, n000015).
-isa(X, i000016) :- isa(X, n000015).
-isa(X, j000016) :- isa(X, n000015).
-isa(X, n000017) :- isa(X, n000016).
-isa(X, i000017) :- isa(X, n000016).
-isa(X, j000017) :- isa(X, n000016).
-isa(X, n000018) :- isa(X, n000017).
-isa(X, i000018) :- isa(X, n000017).
-isa(X, j000018) :- isa(X, n000017).
-isa(X, n000019) :- isa(X, n000018).
-isa(X, i000019) :- isa(X, n000018).
-isa(X, j000019) :- isa(X, n000018).
-isa(X, n000020) :- isa(X, n000019).
-isa(X, i000020) :- isa(X, n000019).
-isa(X, j000020) :- isa(X, n000019).
-isa(X, n000021) :- isa(X, n000020).
-isa(X, i000021) :- isa(X, n000020).
-isa(X, j000021) :- isa(X, n000020).
-isa(X, n000022) :- isa(X, n000021).
-isa(X, i000022) :- isa(X, n000021).
-isa(X, j000022) :- isa(X, n000021).
-isa(X, n000023) :- isa(X, n000022).
-isa(X, i000023) :- isa(X, n000022).
-isa(X, j000023) :- isa(X, n000022).
-isa(X, n000024) :- isa(X, n000023).
-isa(X, i000024) :- isa(X, n000023).
-isa(X, j000024) :- isa(X, n000023).
-isa(X, n000025) :- isa(X, n000024).
-isa(X, i000025) :- isa(X, n000024).
-isa(X, j000025) :- isa(X, n000024).
-isa(X, n000026) :- isa(X, n000025).
-isa(X, i000026) :- isa(X, n000025).
-isa(X, j000026) :- isa(X, n000025).
-isa(X, n000027) :- isa(X, n000026).
-isa(X, i000027) :- isa(X, n000026).
-isa(X, j000027) :- isa(X, n000026).
-isa(X, n000028) :- isa(X, n000027).
-isa(X, i000028) :- isa(X, n000027).
-isa(X, j000028) :- isa(X, n000027).
-isa(X, n000029) :- isa(X, n000028).
-isa(X, i000029) :- isa(X, n000028).
-isa(X, j000029) :- isa(X, n000028).
-isa(X, n000030) :- isa(X, n000029).
-isa(X, i000030) :- isa(X, n000029).
-isa(X, j000030) :- isa(X, n000029).
-isa(X, n000031) :- isa(X, n000030).
-isa(X, i000031) :- isa(X, n000030).
-isa(X, j000031) :- isa(X, n000030).
-isa(X, n000032) :- isa(X, n000031).
-isa(X, i000032) :- isa(X, n000031).
-isa(X, j000032) :- isa(X, n000031).
-isa(X, n000033) :- isa(X, n000032).
-isa(X, i000033) :- isa(X, n000032).
-isa(X, j000033) :- isa(X, n000032).
-isa(X, n000034) :- isa(X, n000033).
-isa(X, i000034) :- isa(X, n000033).
-isa(X, j000034) :- isa(X, n000033).
-isa(X, n000035) :- isa(X, n000034).
-isa(X, i000035) :- isa(X, n000034).
-isa(X, j000035) :- isa(X, n000034).
-isa(X, n000036) :- isa(X, n000035).
-isa(X, i000036) :- isa(X, n000035).
-isa(X, j000036) :- isa(X, n000035).
-isa(X, n000037) :- isa(X, n000036).
-isa(X, i000037) :- isa(X, n000036).
-isa(X, j000037) :- isa(X, n000036).
-isa(X, n000038) :- isa(X, n000037).
-isa(X, i000038) :- isa(X, n000037).
-isa(X, j000038) :- isa(X, n000037).
-isa(X, n000039) :- isa(X, n000038).
-isa(X, i000039) :- isa(X, n000038).
-isa(X, j000039) :- isa(X, n000038).
-isa(X, n000040) :- isa(X, n000039).
-isa(X, i000040) :- isa(X, n000039).
-isa(X, j000040) :- isa(X, n000039).
-isa(X, n000041) :- isa(X, n000040).
-isa(X, i000041) :- isa(X, n000040).
-isa(X, j000041) :- isa(X, n000040).
-isa(X, n000042) :- isa(X, n000041).
-isa(X, i000042) :- isa(X, n000041).
-isa(X, j000042) :- isa(X, n000041).
-isa(X, n000043) :- isa(X, n000042).
-isa(X, i000043) :- isa(X, n000042).
-isa(X, j000043) :- isa(X, n000042).
-isa(X, n000044) :- isa(X, n000043).
-isa(X, i000044) :- isa(X, n000043).
-isa(X, j000044) :- isa(X, n000043).
-isa(X, n000045) :- isa(X, n000044).
-isa(X, i000045) :- isa(X, n000044).
-isa(X, j000045) :- isa(X, n000044).
-isa(X, n000046) :- isa(X, n000045).
-isa(X, i000046) :- isa(X, n000045).
-isa(X, j000046) :- isa(X, n000045).
-isa(X, n000047) :- isa(X, n000046).
-isa(X, i000047) :- isa(X, n000046).
-isa(X, j000047) :- isa(X, n000046).
-isa(X, n000048) :- isa(X, n000047).
-isa(X, i000048) :- isa(X, n000047).
-isa(X, j000048) :- isa(X, n000047).
-isa(X, n000049) :- isa(X, n000048).
-isa(X, i000049) :- isa(X, n000048).
-isa(X, j000049) :- isa(X, n000048).
-isa(X, n000050) :- isa(X, n000049).
-isa(X, i000050) :- isa(X, n000049).
-isa(X, j000050) :- isa(X, n000049).
-isa(X, n000051) :- isa(X, n000050).
-isa(X, i000051) :- isa(X, n000050).
-isa(X, j000051) :- isa(X, n000050).
-isa(X, n000052) :- isa(X, n000051).
-isa(X, i000052) :- isa(X, n000051).
-isa(X, j000052) :- isa(X, n000051).
-isa(X, n000053) :- isa(X, n000052).
-isa(X, i000053) :- isa(X, n000052).
-isa(X, j000053) :- isa(X, n000052).
-isa(X, n000054) :- isa(X, n000053).
-isa(X, i000054) :- isa(X, n000053).
-isa(X, j000054) :- isa(X, n000053).
-isa(X, n000055) :- isa(X, n000054).
-isa(X, i000055) :- isa(X, n000054).
-isa(X, j000055) :- isa(X, n000054).
-isa(X, n000056) :- isa(X, n000055).
-isa(X, i000056) :- isa(X, n000055).
-isa(X, j000056) :- isa(X, n000055).
-isa(X, n000057) :- isa(X, n000056).
-isa(X, i000057) :- isa(X, n000056).
-isa(X, j000057) :- isa(X, n000056).
-isa(X, n000058) :- isa(X, n000057).
-isa(X, i000058) :- isa(X, n000057).
-isa(X, j000058) :- isa(X, n000057).
-isa(X, n000059) :- isa(X, n000058).
-isa(X, i000059) :- isa(X, n000058).
-isa(X, j000059) :- isa(X, n000058).
-isa(X, n000060) :- isa(X, n000059).
-isa(X, i000060) :- isa(X, n000059).
-isa(X, j000060) :- isa(X, n000059).
-isa(X, n000061) :- isa(X, n000060).
-isa(X, i000061) :- isa(X, n000060).
-isa(X, j000061) :- isa(X, n000060).
-isa(X, n000062) :- isa(X, n000061).
-isa(X, i000062) :- isa(X, n000061).
-isa(X, j000062) :- isa(X, n000061).
-isa(X, n000063) :- isa(X, n000062).
-isa(X, i000063) :- isa(X, n000062).
-isa(X, j000063) :- isa(X, n000062).
-isa(X, n000064) :- isa(X, n000063).
-isa(X, i000064) :- isa(X, n000063).
-isa(X, j000064) :- isa(X, n000063).
-isa(X, n000065) :- isa(X, n000064).
-isa(X, i000065) :- isa(X, n000064).
-isa(X, j000065) :- isa(X, n000064).
-isa(X, n000066) :- isa(X, n000065).
-isa(X, i000066) :- isa(X, n000065).
-isa(X, j000066) :- isa(X, n000065).
-isa(X, n000067) :- isa(X, n000066).
-isa(X, i000067) :- isa(X, n000066).
-isa(X, j000067) :- isa(X, n000066).
-isa(X, n000068) :- isa(X, n000067).
-isa(X, i000068) :- isa(X, n000067).
-isa(X, j000068) :- isa(X, n000067).
-isa(X, n000069) :- isa(X, n000068).
-isa(X, i000069) :- isa(X, n000068).
-isa(X, j000069) :- isa(X, n000068).
-isa(X, n000070) :- isa(X, n000069).
-isa(X, i000070) :- isa(X, n000069).
-isa(X, j000070) :- isa(X, n000069).
-isa(X, n000071) :- isa(X, n000070).
-isa(X, i000071) :- isa(X, n000070).
-isa(X, j000071) :- isa(X, n000070).
-isa(X, n000072) :- isa(X, n000071).
-isa(X, i000072) :- isa(X, n000071).
-isa(X, j000072) :- isa(X, n000071).
-isa(X, n000073) :- isa(X, n000072).
-isa(X, i000073) :- isa(X, n000072).
-isa(X, j000073) :- isa(X, n000072).
-isa(X, n000074) :- isa(X, n000073).
-isa(X, i000074) :- isa(X, n000073).
-isa(X, j000074) :- isa(X, n000073).
-isa(X, n000075) :- isa(X, n000074).
-isa(X, i000075) :- isa(X, n000074).
-isa(X, j000075) :- isa(X, n000074).
-isa(X, n000076) :- isa(X, n000075).
-isa(X, i000076) :- isa(X, n000075).
-isa(X, j000076) :- isa(X, n000075).
-isa(X, n000077) :- isa(X, n000076).
-isa(X, i000077) :- isa(X, n000076).
-isa(X, j000077) :- isa(X, n000076).
-isa(X, n000078) :- isa(X, n000077).
-isa(X, i000078) :- isa(X, n000077).
-isa(X, j000078) :- isa(X, n000077).
-isa(X, n000079) :- isa(X, n000078).
-isa(X, i000079) :- isa(X, n000078).
-isa(X, j000079) :- isa(X, n000078).
-isa(X, n000080) :- isa(X, n000079).
-isa(X, i000080) :- isa(X, n000079).
-isa(X, j000080) :- isa(X, n000079).
-isa(X, n000081) :- isa(X, n000080).
-isa(X, i000081) :- isa(X, n000080).
-isa(X, j000081) :- isa(X, n000080).
-isa(X, n000082) :- isa(X, n000081).
-isa(X, i000082) :- isa(X, n000081).
-isa(X, j000082) :- isa(X, n000081).
-isa(X, n000083) :- isa(X, n000082).
-isa(X, i000083) :- isa(X, n000082).
-isa(X, j000083) :- isa(X, n000082).
-isa(X, n000084) :- isa(X, n000083).
-isa(X, i000084) :- isa(X, n000083).
-isa(X, j000084) :- isa(X, n000083).
-isa(X, n000085) :- isa(X, n000084).
-isa(X, i000085) :- isa(X, n000084).
-isa(X, j000085) :- isa(X, n000084).
-isa(X, n000086) :- isa(X, n000085).
-isa(X, i000086) :- isa(X, n000085).
-isa(X, j000086) :- isa(X, n000085).
-isa(X, n000087) :- isa(X, n000086).
-isa(X, i000087) :- isa(X, n000086).
-isa(X, j000087) :- isa(X, n000086).
-isa(X, n000088) :- isa(X, n000087).
-isa(X, i000088) :- isa(X, n000087).
-isa(X, j000088) :- isa(X, n000087).
-isa(X, n000089) :- isa(X, n000088).
-isa(X, i000089) :- isa(X, n000088).
-isa(X, j000089) :- isa(X, n000088).
-isa(X, n000090) :- isa(X, n000089).
-isa(X, i000090) :- isa(X, n000089).
-isa(X, j000090) :- isa(X, n000089).
-isa(X, n000091) :- isa(X, n000090).
-isa(X, i000091) :- isa(X, n000090).
-isa(X, j000091) :- isa(X, n000090).
-isa(X, n000092) :- isa(X, n000091).
-isa(X, i000092) :- isa(X, n000091).
-isa(X, j000092) :- isa(X, n000091).
-isa(X, n000093) :- isa(X, n000092).
-isa(X, i000093) :- isa(X, n000092).
-isa(X, j000093) :- isa(X, n000092).
-isa(X, n000094) :- isa(X, n000093).
-isa(X, i000094) :- isa(X, n000093).
-isa(X, j000094) :- isa(X, n000093).
-isa(X, n000095) :- isa(X, n000094).
-isa(X, i000095) :- isa(X, n000094).
-isa(X, j000095) :- isa(X, n000094).
-isa(X, n000096) :- isa(X, n000095).
-isa(X, i000096) :- isa(X, n000095).
-isa(X, j000096) :- isa(X, n000095).
-isa(X, n000097) :- isa(X, n000096).
-isa(X, i000097) :- isa(X, n000096).
-isa(X, j000097) :- isa(X, n000096).
-isa(X, n000098) :- isa(X, n000097).
-isa(X, i000098) :- isa(X, n000097).
-isa(X, j000098) :- isa(X, n000097).
-isa(X, n000099) :- isa(X, n000098).
-isa(X, i000099) :- isa(X, n000098).
-isa(X, j000099) :- isa(X, n000098).
-isa(X, n000100) :- isa(X, n000099).
-isa(X, i000100) :- isa(X, n000099).
-isa(X, j000100) :- isa(X, n000099).
+% Answer and Reason
+?- is_a(Who, a2).
+?- why.
 
-% Query
-?- test(Result).
+% Check
+:- assertion((is_a(ind, a2))).
+:- assertion((is_a(ind, n100))).
+:- assertion((is_a(ind, i100))).
+:- assertion((is_a(ind, j100))).
+:- assertion((\+ (is_a(ind, n101)))).

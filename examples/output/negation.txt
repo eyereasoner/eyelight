@@ -1,0 +1,72 @@
+% Answer
+?- is_a(Who, 'ready-player').
+Who = milo.
+Who = rex.
+
+?- is_a(Who, 'eager-player').
+Who = milo.
+Who = rex.
+
+?- \+ (needs(milo, rest)).
+true.
+
+?- \+ (needs(luna, rest)).
+false.
+
+?- aggregate_all(count, (is_a(Subject, 'ready-player')), Result).
+Result = 2.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [is_a(milo, 'ready-player')]).
+claim(query(1), [is_a(rex, 'ready-player')]).
+claim(query(4), ['\\+'(needs(milo, rest))]).
+
+clause(1, is_a(milo, player), []).
+clause(3, is_a(rex, player), []).
+clause(5, is_a(var('Player'), 'ready-player'), [is_a(var('Player'), player), '\\+'(needs(var('Player'), rest))]).
+
+% step 1
+step(is_a(milo, player), fact(1), [], []).
+% step 2
+step('\\+'(needs(milo, rest)), absent, [], []).
+% step 3
+step(is_a(milo, 'ready-player'), rule(5), ['='('Player', milo)], [is_a(milo, player), '\\+'(needs(milo, rest))]).
+% step 4
+step(is_a(rex, player), fact(3), [], []).
+% step 5
+step('\\+'(needs(rex, rest)), absent, [], []).
+% step 6
+step(is_a(rex, 'ready-player'), rule(5), ['='('Player', rex)], [is_a(rex, player), '\\+'(needs(rex, rest))]).
+
+% There is no successful answer to explain.
+
+% Check
+check passed: is_a(milo, 'ready-player').
+
+check passed: is_a(rex, 'ready-player').
+
+check passed: \+ (is_a(luna, 'ready-player')).
+
+check passed: needs(luna, rest).
+
+check passed: \+ (needs(milo, rest)).
+
+check passed: aggregate_all(count, (is_a(Subject, 'ready-player')), 2).
+
+condition('C1', resolution, ok, 4).
+condition('C2', well_founded, ok, 6).
+condition('C3', justification, ok, 6).
+condition('C4', coverage, ok, 7).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 2).
+condition('C7', relevance, ok, 9).
+obligation(absent, theory_scoped, '\\+'(needs(milo, rest))).
+obligation(absent, theory_scoped, '\\+'(needs(rex, rest))).
+steps(6).
+verified(4).
+recomputed(0).
+trusted(2).
+claims(3).
+verdict(checked_with_obligations).

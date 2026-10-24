@@ -39,18 +39,8 @@ pub(crate) fn match_goal(goal: &Goal, atom: &Atom, bindings: &mut Bindings) -> b
         return false;
     }
     for (term, value) in goal.terms.iter().zip(&atom.values) {
-        match term {
-            Term::Constant(expected) if expected != value => return false,
-            Term::Variable(name) => {
-                if let Some(expected) = bindings.get(name) {
-                    if expected != value {
-                        return false;
-                    }
-                } else {
-                    bindings.insert(name.clone(), value.clone());
-                }
-            }
-            _ => {}
+        if !bind(term, value.clone(), bindings) {
+            return false;
         }
     }
     true
@@ -62,10 +52,7 @@ pub(crate) fn instantiate(goal: &Goal, bindings: &Bindings) -> Option<Atom> {
         values: goal
             .terms
             .iter()
-            .map(|term| match term {
-                Term::Constant(value) => Some(value.clone()),
-                Term::Variable(name) => bindings.get(name).cloned(),
-            })
+            .map(|term| crate::semantics::value(term, bindings))
             .collect::<Option<_>>()?,
     })
 }
@@ -138,10 +125,7 @@ impl Store {
             .map(Vec::as_slice)
             .unwrap_or(&[]);
         for (position, term) in goal.terms.iter().enumerate() {
-            let value = match term {
-                Term::Constant(v) => Some(v),
-                Term::Variable(n) => bindings.get(n),
-            };
+            let value = crate::semantics::value(term, bindings);
             if let Some(value) = value {
                 let candidates = self
                     .positions
@@ -163,13 +147,14 @@ impl Store {
             .steps
             .iter()
             .enumerate()
-            .filter(|(_, s)| {
-                s.justification.ordinary()
-                    && plan.level(&(s.atom.predicate.clone(), s.atom.values.len())) <= level
-            })
+            .filter(|(_, s)| s.justification.ordinary() && plan.step_level(s) <= level)
             .map(|(i, _)| i + 1)
             .collect();
-        self.boundaries.push(Boundary { level, steps });
+        self.boundaries.push(Boundary {
+            level,
+            steps,
+            calls: Vec::new(),
+        });
         Ok(())
     }
     fn boundary(&self, level: usize) -> Option<usize> {
@@ -185,12 +170,28 @@ impl Store {
             .map(|id| self.steps[id - 1].atom.clone())
             .collect()
     }
-    fn materialize(&mut self, evidence: Vec<Evidence>, limit: usize) -> Result<Vec<usize>, Error> {
+    fn materialize(
+        &mut self,
+        evidence: Vec<Evidence>,
+        bindings: &Bindings,
+        limit: usize,
+    ) -> Result<Vec<usize>, Error> {
         evidence
             .into_iter()
             .map(|e| match e {
                 Evidence::Fact(id) => Ok(id),
-                Evidence::Decision(s) => self.insert(s.atom, s.justification, limit),
+                Evidence::Decision(mut s) => {
+                    s.atom.values = s
+                        .atom
+                        .values
+                        .iter()
+                        .map(|v| crate::semantics::resolve(v, bindings))
+                        .collect();
+                    if !s.atom.values.iter().all(Value::ground) {
+                        return Err(Error::new("Built-in evidence remained unbound."));
+                    }
+                    self.insert(s.atom, s.justification, limit)
+                }
             })
             .collect()
     }
@@ -219,6 +220,9 @@ impl Triggers {
         } else if let Some((position, value)) =
             goal.terms.iter().enumerate().rev().find_map(|(i, t)| {
                 if let Term::Constant(v) = t {
+                    if !v.ground() {
+                        return None;
+                    }
                     Some((i, v))
                 } else {
                     None
@@ -317,7 +321,7 @@ impl Join<'_> {
             }
             Literal::Builtin(goal) => {
                 budget.tick()?;
-                if let Some((atom, bindings)) = builtin(goal, &current.bindings) {
+                if let Some((atom, bindings)) = builtin(goal, &current.bindings)? {
                     proceed(
                         bindings,
                         Evidence::Decision(Step {
@@ -328,11 +332,26 @@ impl Join<'_> {
                     )?;
                 }
             }
+            Literal::NotBuiltin(goal) => {
+                let atom = instantiate(goal, &current.bindings)
+                    .ok_or_else(|| Error::new("Negated tests require bound operands."))?;
+                budget.tick()?;
+                if builtin(goal, &current.bindings)?.is_none() {
+                    proceed(
+                        current.bindings.clone(),
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::NotBuiltin,
+                        }),
+                        budget,
+                    )?;
+                }
+            }
             Literal::Not(goal) => {
                 budget.tick()?;
                 let boundary = self
                     .store
-                    .boundary(self.plan.boundary(literal))
+                    .boundary(self.plan.goal_level(&specialize(goal, &current.bindings)))
                     .ok_or_else(|| Error::new("A negative dependency stratum is not complete."))?;
                 let atom = instantiate(goal, &current.bindings)
                     .ok_or_else(|| Error::new("Unbound negative goal."))?;
@@ -354,15 +373,21 @@ impl Join<'_> {
                     .ok_or_else(|| {
                         Error::new("An aggregate dependency stratum is not complete.")
                     })?;
-                if let Some(result) =
-                    aggregate(a, &current.bindings, &self.store.facts(boundary), budget)?
-                {
+                if let Some(result) = aggregate(
+                    a,
+                    &current.bindings,
+                    &crate::semantics::Model::new(&self.store.facts(boundary), budget)?,
+                    budget,
+                )? {
                     let mut bindings = current.bindings.clone();
-                    if bind(&a.result, result, &mut bindings) {
-                        let goal = context_goal(self.program, self.owner, at + 1)
-                            .ok_or_else(|| Error::new("Invalid aggregate source context."))?;
-                        let atom = instantiate(&goal, &bindings)
-                            .ok_or_else(|| Error::new("Unbound aggregate grouping variable."))?;
+                    if bind(&a.result, result.clone(), &mut bindings) {
+                        let atom = crate::proof::aggregate_atom(
+                            self.program,
+                            self.owner,
+                            at + 1,
+                            &current.bindings,
+                            result,
+                        );
                         proceed(
                             bindings,
                             Evidence::Decision(Step {
@@ -446,7 +471,7 @@ fn fire(
     let atom = instantiate(&program.rules[rule].head, &matched.bindings)
         .ok_or_else(|| Error::new("A rule head remained unbound."))?;
     if !store.known.contains_key(&atom) {
-        let premises = store.materialize(matched.evidence, limit)?;
+        let premises = store.materialize(matched.evidence, &matched.bindings, limit)?;
         store.insert(
             atom,
             Justification::Rule {
@@ -461,6 +486,9 @@ fn fire(
 
 pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
     let plan = plan(program)?;
+    if plan.backward.iter().any(|b| *b) {
+        return reason_tabled(program, limits, &plan);
+    }
     let mut store = Store::default();
     let mut budget = Budget {
         used: 0,
@@ -549,12 +577,19 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
             let values: Vec<_> = query
                 .variables
                 .iter()
-                .map(|n| matched.bindings[n].clone())
+                .map(|n| crate::semantics::resolve(&Value::Variable(n.clone()), &matched.bindings))
                 .collect();
             if seen.insert(values.clone()) {
-                let premises = store.materialize(matched.evidence, limits.max_facts)?;
+                let premises =
+                    store.materialize(matched.evidence, &matched.bindings, limits.max_facts)?;
                 result.push(Answer { values, premises });
             }
+        }
+        if query.assertion && result.is_empty() {
+            return Err(Error::new(format!(
+                "Assertion failed: {}",
+                query_text(query)
+            )));
         }
         answers.push(result);
     }
@@ -587,7 +622,26 @@ impl Run {
                 }
             }
         } else {
-            for (index, query) in program.queries.iter().enumerate() {
+            let mut previous = None;
+            for index in 0..=program.queries.len() {
+                for _ in program.followups.iter().filter(|i| **i == index) {
+                    text.push_str("\n?- why.\n");
+                    if let Some(query) = previous {
+                        text.push_str(&self.explanation(program, Some(query)));
+                    } else {
+                        text.push_str("Ask a query before requesting its explanation.\n");
+                    }
+                }
+                let Some(query) = program.queries.get(index) else {
+                    break;
+                };
+                if query.assertion {
+                    text.push_str(&format!(
+                        "check passed: {}\n",
+                        query_text(query).trim_start_matches("?- ")
+                    ));
+                    continue;
+                }
                 if index > 0 {
                     text.push('\n');
                 }
@@ -611,14 +665,35 @@ impl Run {
                         text.push_str(".\n");
                     }
                 }
+                previous = Some(index);
+                if query.explain {
+                    text.push_str(&self.explanation(program, Some(index)));
+                }
             }
         }
         text
     }
     pub fn explain(&self, program: &Program) -> String {
-        let certificate = self.certificate(program);
         let mut text = self.output(program);
-        text.push_str("\nExplanation\n");
+        text.push_str(&self.explanation(program, None));
+        text
+    }
+    fn explanation(&self, program: &Program, query: Option<usize>) -> String {
+        let certificate = if let Some(index) = query {
+            if self.answers[index].is_empty() {
+                return "No successful answer to explain.\n".into();
+            }
+            let mut selected = self.clone();
+            for (i, answers) in selected.answers.iter_mut().enumerate() {
+                if i != index {
+                    answers.clear();
+                }
+            }
+            selected.certificate(program)
+        } else {
+            self.certificate(program)
+        };
+        let mut text = String::from("\nExplanation\n");
         let mut rules = vec![false; program.rules.len()];
         for step in &certificate.steps {
             if let Justification::Rule { rule, .. } = step.justification {
@@ -642,6 +717,7 @@ impl Run {
                         .join(", ")
                 ),
                 Justification::Builtin => "built-in re-decision".into(),
+                Justification::NotBuiltin => "negated built-in re-decision".into(),
                 Justification::Absent { boundary } => format!("absent from boundary {boundary}"),
                 Justification::Aggregate { boundary, .. } => {
                     format!("aggregate over boundary {boundary}")
@@ -662,4 +738,602 @@ impl Run {
     pub fn certificate(&self, program: &Program) -> Certificate {
         Certificate::from_run(program, self)
     }
+}
+
+#[derive(Clone)]
+struct Activation {
+    owner: Owner,
+    position: usize,
+    matched: Match,
+    table: Option<Goal>,
+}
+enum Task {
+    Resume(Activation),
+    Fact(usize),
+    Negative(Activation),
+    Aggregate(Activation),
+}
+struct Tabled<'a> {
+    program: &'a Program,
+    plan: &'a Plan,
+    store: Store,
+    budget: Budget,
+    limits: Limits,
+    queues: std::collections::BTreeMap<usize, std::collections::VecDeque<Task>>,
+    calls: HashSet<Goal>,
+    waiting: Triggers,
+    subscriptions: Vec<Activation>,
+    answers: Vec<Vec<Answer>>,
+}
+pub(crate) fn specialize(goal: &Goal, bindings: &Bindings) -> Goal {
+    Goal {
+        predicate: goal.predicate.clone(),
+        terms: goal
+            .terms
+            .iter()
+            .map(|t| {
+                let v = crate::semantics::resolve(&crate::model::term_value(t), bindings);
+                match v {
+                    Value::Variable(n) => Term::Variable(n),
+                    v => Term::Constant(v),
+                }
+            })
+            .collect(),
+    }
+}
+pub(crate) fn canonical_goal(goal: &Goal) -> Goal {
+    fn rename(v: Value, names: &mut HashMap<String, String>) -> Value {
+        match v {
+            Value::Variable(n) => {
+                let next = format!("_WheyeCall{}", names.len());
+                Value::Variable(names.entry(n).or_insert(next).clone())
+            }
+            Value::Compound(n, a) => {
+                Value::Compound(n, a.into_iter().map(|v| rename(v, names)).collect())
+            }
+            v => v,
+        }
+    }
+    let mut names = HashMap::new();
+    Goal {
+        predicate: goal.predicate.clone(),
+        terms: goal
+            .terms
+            .iter()
+            .map(|t| match rename(crate::model::term_value(t), &mut names) {
+                Value::Variable(n) => Term::Variable(n),
+                v => Term::Constant(v),
+            })
+            .collect(),
+    }
+}
+pub(crate) fn match_call(head: &Goal, call: &Goal) -> Option<Bindings> {
+    if head.predicate != call.predicate || head.terms.len() != call.terms.len() {
+        return None;
+    }
+    // Source and call variables have separate scopes, even if a user chooses
+    // one of the display names used by canonical table variants.
+    let mut prefix = String::from("_WheyeScope");
+    let source = head.variables();
+    while source.iter().any(|n| n.starts_with(&prefix)) {
+        prefix.push('_');
+    }
+    let substitutions: Bindings = call
+        .variables()
+        .into_iter()
+        .enumerate()
+        .map(|(i, n)| (n, Value::Variable(format!("{prefix}{i}"))))
+        .collect();
+    let call = specialize(call, &substitutions);
+    let mut bindings = Bindings::new();
+    for (a, b) in head.terms.iter().zip(&call.terms) {
+        if !crate::semantics::unify(
+            &crate::model::term_value(a),
+            &crate::model::term_value(b),
+            &mut bindings,
+        ) {
+            return None;
+        }
+    }
+    Some(bindings)
+}
+impl Tabled<'_> {
+    fn level(&self, owner: Owner) -> usize {
+        match owner {
+            Owner::Rule(n) => self.plan.rules[n - 1],
+            Owner::Query(_) => self.plan.rules.iter().copied().max().unwrap_or(0) + 1,
+        }
+    }
+    fn push(&mut self, task: Task, level: usize) {
+        self.queues.entry(level).or_default().push_back(task);
+    }
+    fn resume(&mut self, a: Activation) {
+        let level = self.level(a.owner);
+        self.push(Task::Resume(a), level);
+    }
+    fn demand(&mut self, goal: &Goal) -> Result<bool, Error> {
+        let goal = canonical_goal(goal);
+        let rules = self
+            .plan
+            .demands
+            .get(&(goal.predicate.clone(), goal.terms.len()))
+            .cloned()
+            .unwrap_or_default();
+        if rules.is_empty() || !self.calls.insert(goal.clone()) {
+            return Ok(false);
+        }
+        self.budget.tick()?;
+        for index in rules {
+            if let Some(bindings) = match_call(&self.program.rules[index].head, &goal) {
+                self.resume(Activation {
+                    owner: Owner::Rule(index + 1),
+                    position: 0,
+                    matched: Match {
+                        bindings,
+                        evidence: Vec::new(),
+                    },
+                    table: Some(goal.clone()),
+                });
+            }
+        }
+        Ok(true)
+    }
+    fn continue_with(&mut self, mut a: Activation, bindings: Bindings, evidence: Evidence) {
+        a.position += 1;
+        a.matched.bindings = bindings;
+        a.matched.evidence.push(evidence);
+        self.resume(a);
+    }
+    fn complete(&mut self, a: Activation) -> Result<(), Error> {
+        match a.owner {
+            Owner::Rule(n) => {
+                let atom = instantiate(&self.program.rules[n - 1].head, &a.matched.bindings)
+                    .ok_or_else(|| {
+                        Error::new(format!(
+                            "Rule {n}: call inputs do not produce a ground answer."
+                        ))
+                    })?;
+                if let Some(table) = &a.table {
+                    if !match_goal(table, &atom, &mut Bindings::new()) {
+                        return Ok(());
+                    }
+                }
+                if !self.store.known.contains_key(&atom) {
+                    let premises = self.store.materialize(
+                        a.matched.evidence,
+                        &a.matched.bindings,
+                        self.limits.max_facts,
+                    )?;
+                    let id = self.store.insert(
+                        atom,
+                        Justification::Rule { rule: n, premises },
+                        self.limits.max_facts,
+                    )?;
+                    self.push(Task::Fact(id - 1), self.plan.rules[n - 1]);
+                }
+            }
+            Owner::Query(n) => {
+                let query = &self.program.queries[n - 1];
+                let values = query
+                    .variables
+                    .iter()
+                    .map(|name| {
+                        crate::semantics::value(&Term::Variable(name.clone()), &a.matched.bindings)
+                            .ok_or_else(|| {
+                                Error::new(format!(
+                                    "Query {n}: answer variable {name} remained unbound."
+                                ))
+                            })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                if !self.answers[n - 1]
+                    .iter()
+                    .any(|answer| answer.values == values)
+                {
+                    let premises = self.store.materialize(
+                        a.matched.evidence,
+                        &a.matched.bindings,
+                        self.limits.max_facts,
+                    )?;
+                    self.answers[n - 1].push(Answer { values, premises });
+                }
+            }
+        }
+        Ok(())
+    }
+    fn prefix_demands(&mut self, body: &[Literal], initial: &Bindings) -> Result<bool, Error> {
+        let facts: Vec<_> = self
+            .store
+            .steps
+            .iter()
+            .filter(|s| s.justification.ordinary())
+            .map(|s| s.atom.clone())
+            .collect();
+        let model = crate::semantics::Model::new(&facts, &mut self.budget)?;
+        let mut changed = false;
+        for (at, literal) in body.iter().enumerate() {
+            if matches!(
+                literal,
+                Literal::Relation(_) | Literal::Not(_) | Literal::Aggregate(_)
+            ) {
+                let prefixes = if at == 0 {
+                    vec![initial.clone()]
+                } else {
+                    crate::semantics::model_solutions(
+                        &body[..at],
+                        initial.clone(),
+                        &model,
+                        &mut self.budget,
+                    )?
+                };
+                for bindings in prefixes {
+                    match literal {
+                        Literal::Relation(goal) | Literal::Not(goal) => {
+                            changed |= self.demand(&specialize(goal, &bindings))?
+                        }
+                        Literal::Aggregate(a) => {
+                            changed |= self.prefix_demands(&a.body, &bindings)?
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+            }
+        }
+        Ok(changed)
+    }
+    fn step(&mut self, a: Activation) -> Result<(), Error> {
+        let body = crate::proof::body(self.program, a.owner).unwrap();
+        if a.position == body.len() {
+            return self.complete(a);
+        }
+        match &body[a.position] {
+            Literal::Relation(goal) => {
+                let request = specialize(goal, &a.matched.bindings);
+                self.demand(&request)?;
+                let candidates = self.store.candidates(goal, &a.matched.bindings).to_vec();
+                let index = self.subscriptions.len();
+                self.waiting.insert(&request, (index, 0));
+                self.subscriptions.push(a.clone());
+                for fact in candidates {
+                    self.consume(a.clone(), fact)?;
+                }
+            }
+            Literal::Builtin(goal) => {
+                self.budget.tick()?;
+                if let Some((atom, bindings)) = builtin(goal, &a.matched.bindings)? {
+                    self.continue_with(
+                        a,
+                        bindings,
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::Builtin,
+                        }),
+                    );
+                }
+            }
+            Literal::NotBuiltin(goal) => {
+                let atom = instantiate(goal, &a.matched.bindings)
+                    .ok_or_else(|| Error::new("Negated tests require bound operands."))?;
+                self.budget.tick()?;
+                if builtin(goal, &a.matched.bindings)?.is_none() {
+                    let bindings = a.matched.bindings.clone();
+                    self.continue_with(
+                        a,
+                        bindings,
+                        Evidence::Decision(Step {
+                            atom,
+                            justification: Justification::NotBuiltin,
+                        }),
+                    );
+                }
+            }
+            Literal::Not(goal) => {
+                let atom = instantiate(goal, &a.matched.bindings)
+                    .ok_or_else(|| Error::new("Negation requires bound inputs."))?;
+                self.demand(&specialize(goal, &a.matched.bindings))?;
+                let _ = atom;
+                let level = self.level(a.owner);
+                self.push(Task::Negative(a), level);
+            }
+            Literal::Aggregate(_) => {
+                let level = self.level(a.owner);
+                self.push(Task::Aggregate(a), level);
+            }
+            Literal::Fresh(term) => {
+                let Owner::Rule(rule) = a.owner else {
+                    return Err(Error::new("fresh requires a rule context."));
+                };
+                let mut bindings = a.matched.bindings.clone();
+                if bind(
+                    term,
+                    witness(rule, a.position + 1, &bindings),
+                    &mut bindings,
+                ) {
+                    let goal = context_goal(self.program, a.owner, a.position + 1)
+                        .ok_or_else(|| Error::new("Invalid fresh context."))?;
+                    let atom = instantiate(&goal, &bindings)
+                        .ok_or_else(|| Error::new("Unbound fresh context."))?;
+                    let justification = Justification::Fresh {
+                        rule,
+                        position: a.position + 1,
+                    };
+                    self.continue_with(
+                        a,
+                        bindings,
+                        Evidence::Decision(Step {
+                            atom,
+                            justification,
+                        }),
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+    fn consume(&mut self, a: Activation, fact: usize) -> Result<(), Error> {
+        let Literal::Relation(goal) =
+            &crate::proof::body(self.program, a.owner).unwrap()[a.position]
+        else {
+            unreachable!()
+        };
+        self.budget.tick()?;
+        let mut bindings = a.matched.bindings.clone();
+        if match_goal(goal, &self.store.steps[fact].atom, &mut bindings) {
+            self.continue_with(a, bindings, Evidence::Fact(fact + 1));
+        }
+        Ok(())
+    }
+    fn finish_negative(&mut self, a: Activation) -> Result<(), Error> {
+        let literal = &crate::proof::body(self.program, a.owner).unwrap()[a.position];
+        let Literal::Not(goal) = literal else {
+            unreachable!()
+        };
+        let atom = instantiate(goal, &a.matched.bindings)
+            .ok_or_else(|| Error::new("Negation needs bound inputs."))?;
+        if !self.store.known.contains_key(&atom) {
+            let boundary = self.plan.goal_level(&specialize(goal, &a.matched.bindings)) + 1;
+            let bindings = a.matched.bindings.clone();
+            self.continue_with(
+                a,
+                bindings,
+                Evidence::Decision(Step {
+                    atom,
+                    justification: Justification::Absent { boundary },
+                }),
+            );
+        }
+        Ok(())
+    }
+    fn finish_aggregate(&mut self, a: Activation) -> Result<(), Error> {
+        let literal = &crate::proof::body(self.program, a.owner).unwrap()[a.position];
+        let Literal::Aggregate(aggregate) = literal else {
+            unreachable!()
+        };
+        if self.prefix_demands(&aggregate.body, &a.matched.bindings)? {
+            let level = self.level(a.owner);
+            self.push(Task::Aggregate(a), level);
+            return Ok(());
+        }
+        let level = self.plan.boundary(literal);
+        let facts = self
+            .store
+            .steps
+            .iter()
+            .filter(|s| s.justification.ordinary() && self.plan.step_level(s) <= level)
+            .map(|s| s.atom.clone())
+            .collect::<Vec<_>>();
+        if let Some(result) = aggregate_value(
+            aggregate,
+            &a.matched.bindings,
+            &crate::semantics::Model::new(&facts, &mut self.budget)?,
+            &mut self.budget,
+        )? {
+            let mut bindings = a.matched.bindings.clone();
+            if bind(&aggregate.result, result.clone(), &mut bindings) {
+                let atom = crate::proof::aggregate_atom(
+                    self.program,
+                    a.owner,
+                    a.position + 1,
+                    &a.matched.bindings,
+                    result,
+                );
+                let justification = Justification::Aggregate {
+                    owner: a.owner,
+                    position: a.position + 1,
+                    boundary: level + 1,
+                };
+                self.continue_with(
+                    a,
+                    bindings,
+                    Evidence::Decision(Step {
+                        atom,
+                        justification,
+                    }),
+                );
+            }
+        }
+        Ok(())
+    }
+    fn drain(&mut self) -> Result<(), Error> {
+        while let Some(mut entry) = self.queues.first_entry() {
+            let task = entry.get_mut().pop_front().unwrap();
+            if entry.get().is_empty() {
+                entry.remove();
+            }
+            self.budget.tick()?;
+            match task {
+                Task::Resume(a) => self.step(a)?,
+                Task::Negative(a) => self.finish_negative(a)?,
+                Task::Aggregate(a) => self.finish_aggregate(a)?,
+                Task::Fact(id) => {
+                    for (index, _) in self.waiting.candidates(&self.store.steps[id].atom) {
+                        self.consume(self.subscriptions[index].clone(), id)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+use crate::semantics::aggregate as aggregate_value;
+fn reason_tabled(program: &Program, limits: Limits, plan: &Plan) -> Result<Run, Error> {
+    let mut engine = Tabled {
+        program,
+        plan,
+        store: Store::default(),
+        budget: Budget {
+            used: 0,
+            limit: limits.max_matches,
+        },
+        limits,
+        queues: Default::default(),
+        calls: Default::default(),
+        waiting: Default::default(),
+        subscriptions: Vec::new(),
+        answers: vec![Vec::new(); program.queries.len()],
+    };
+    for (i, fact) in program.facts.iter().enumerate() {
+        engine
+            .store
+            .insert(fact.clone(), Justification::Source(i + 1), limits.max_facts)?;
+    }
+    for (i, _) in program.rules.iter().enumerate() {
+        if !plan.backward[i] {
+            engine.resume(Activation {
+                owner: Owner::Rule(i + 1),
+                position: 0,
+                matched: Match {
+                    bindings: Bindings::new(),
+                    evidence: Vec::new(),
+                },
+                table: None,
+            });
+        }
+    }
+    engine.drain()?;
+    for (i, query) in program.queries.iter().enumerate() {
+        engine.resume(Activation {
+            owner: Owner::Query(i + 1),
+            position: 0,
+            matched: Match {
+                bindings: Bindings::new(),
+                evidence: Vec::new(),
+            },
+            table: None,
+        });
+        engine.drain()?;
+        if query.assertion && engine.answers[i].is_empty() {
+            return Err(Error::new(format!(
+                "Assertion failed: {}",
+                query_text(query)
+            )));
+        }
+    }
+    let levels: std::collections::BTreeSet<_> = engine
+        .store
+        .steps
+        .iter()
+        .filter_map(|step| match step.justification {
+            Justification::Absent { boundary } | Justification::Aggregate { boundary, .. } => {
+                Some(boundary - 1)
+            }
+            _ => None,
+        })
+        .collect();
+    for level in levels {
+        engine.store.close(level, plan, &mut engine.budget)?;
+        let boundary = engine.store.boundaries.last_mut().unwrap();
+        boundary.calls = engine
+            .calls
+            .iter()
+            .filter(|g| plan.goal_level(g) <= level)
+            .cloned()
+            .collect();
+        boundary.calls.sort_by_key(ToString::to_string);
+    }
+    for step in &mut engine.store.steps {
+        if let Justification::Absent { boundary } | Justification::Aggregate { boundary, .. } =
+            &mut step.justification
+        {
+            *boundary = engine
+                .store
+                .boundaries
+                .iter()
+                .position(|b| b.level == *boundary - 1)
+                .unwrap()
+                + 1;
+        }
+    }
+    let mut run = Run {
+        steps: engine.store.steps,
+        answers: engine.answers,
+        matches: engine.budget.used,
+        boundaries: engine.store.boundaries,
+    };
+    order_evidence(&mut run)?;
+    Ok(run)
+}
+fn order_evidence(run: &mut Run) -> Result<(), Error> {
+    let count = run.steps.len();
+    let mut incoming = vec![0usize; count];
+    let mut consumers = vec![Vec::new(); count];
+    for (index, step) in run.steps.iter().enumerate() {
+        let mut deps = match &step.justification {
+            Justification::Rule { premises, .. } => premises.clone(),
+            Justification::Absent { boundary } | Justification::Aggregate { boundary, .. } => {
+                run.boundaries[boundary - 1].steps.clone()
+            }
+            _ => Vec::new(),
+        };
+        deps.sort_unstable();
+        deps.dedup();
+        for id in deps {
+            incoming[index] += 1;
+            consumers[id - 1].push(index);
+        }
+    }
+    let mut queue: std::collections::VecDeque<_> = incoming
+        .iter()
+        .enumerate()
+        .filter_map(|(i, n)| (*n == 0).then_some(i))
+        .collect();
+    let mut order = Vec::with_capacity(count);
+    while let Some(index) = queue.pop_front() {
+        order.push(index);
+        for &next in &consumers[index] {
+            incoming[next] -= 1;
+            if incoming[next] == 0 {
+                queue.push_back(next);
+            }
+        }
+    }
+    if order.len() != count {
+        return Err(Error::new("Evidence dependencies contain a cycle."));
+    }
+    let mut names = vec![0; count + 1];
+    for (i, old) in order.iter().enumerate() {
+        names[old + 1] = i + 1;
+    }
+    run.steps = order.into_iter().map(|i| run.steps[i].clone()).collect();
+    for step in &mut run.steps {
+        if let Justification::Rule { premises, .. } = &mut step.justification {
+            for id in premises {
+                *id = names[*id];
+            }
+        }
+    }
+    for boundary in &mut run.boundaries {
+        for id in &mut boundary.steps {
+            *id = names[*id];
+        }
+        boundary.steps.sort_unstable();
+    }
+    for answers in &mut run.answers {
+        for answer in answers {
+            for id in &mut answer.premises {
+                *id = names[*id];
+            }
+        }
+    }
+    Ok(())
 }

@@ -1,0 +1,341 @@
+% Answer
+?- is_a(Who, a2).
+Who = ind.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [is_a(ind, a2)]).
+
+clause(1, is_a(ind, n0), []).
+clause(2, is_a(var('Entity'), a2), [is_a(var('Entity'), n100)]).
+clause(3, is_a(var('Entity'), n1), [is_a(var('Entity'), n0)]).
+clause(6, is_a(var('Entity'), n2), [is_a(var('Entity'), n1)]).
+clause(9, is_a(var('Entity'), n3), [is_a(var('Entity'), n2)]).
+clause(12, is_a(var('Entity'), n4), [is_a(var('Entity'), n3)]).
+clause(15, is_a(var('Entity'), n5), [is_a(var('Entity'), n4)]).
+clause(18, is_a(var('Entity'), n6), [is_a(var('Entity'), n5)]).
+clause(21, is_a(var('Entity'), n7), [is_a(var('Entity'), n6)]).
+clause(24, is_a(var('Entity'), n8), [is_a(var('Entity'), n7)]).
+clause(27, is_a(var('Entity'), n9), [is_a(var('Entity'), n8)]).
+clause(30, is_a(var('Entity'), n10), [is_a(var('Entity'), n9)]).
+clause(33, is_a(var('Entity'), n11), [is_a(var('Entity'), n10)]).
+clause(36, is_a(var('Entity'), n12), [is_a(var('Entity'), n11)]).
+clause(39, is_a(var('Entity'), n13), [is_a(var('Entity'), n12)]).
+clause(42, is_a(var('Entity'), n14), [is_a(var('Entity'), n13)]).
+clause(45, is_a(var('Entity'), n15), [is_a(var('Entity'), n14)]).
+clause(48, is_a(var('Entity'), n16), [is_a(var('Entity'), n15)]).
+clause(51, is_a(var('Entity'), n17), [is_a(var('Entity'), n16)]).
+clause(54, is_a(var('Entity'), n18), [is_a(var('Entity'), n17)]).
+clause(57, is_a(var('Entity'), n19), [is_a(var('Entity'), n18)]).
+clause(60, is_a(var('Entity'), n20), [is_a(var('Entity'), n19)]).
+clause(63, is_a(var('Entity'), n21), [is_a(var('Entity'), n20)]).
+clause(66, is_a(var('Entity'), n22), [is_a(var('Entity'), n21)]).
+clause(69, is_a(var('Entity'), n23), [is_a(var('Entity'), n22)]).
+clause(72, is_a(var('Entity'), n24), [is_a(var('Entity'), n23)]).
+clause(75, is_a(var('Entity'), n25), [is_a(var('Entity'), n24)]).
+clause(78, is_a(var('Entity'), n26), [is_a(var('Entity'), n25)]).
+clause(81, is_a(var('Entity'), n27), [is_a(var('Entity'), n26)]).
+clause(84, is_a(var('Entity'), n28), [is_a(var('Entity'), n27)]).
+clause(87, is_a(var('Entity'), n29), [is_a(var('Entity'), n28)]).
+clause(90, is_a(var('Entity'), n30), [is_a(var('Entity'), n29)]).
+clause(93, is_a(var('Entity'), n31), [is_a(var('Entity'), n30)]).
+clause(96, is_a(var('Entity'), n32), [is_a(var('Entity'), n31)]).
+clause(99, is_a(var('Entity'), n33), [is_a(var('Entity'), n32)]).
+clause(102, is_a(var('Entity'), n34), [is_a(var('Entity'), n33)]).
+clause(105, is_a(var('Entity'), n35), [is_a(var('Entity'), n34)]).
+clause(108, is_a(var('Entity'), n36), [is_a(var('Entity'), n35)]).
+clause(111, is_a(var('Entity'), n37), [is_a(var('Entity'), n36)]).
+clause(114, is_a(var('Entity'), n38), [is_a(var('Entity'), n37)]).
+clause(117, is_a(var('Entity'), n39), [is_a(var('Entity'), n38)]).
+clause(120, is_a(var('Entity'), n40), [is_a(var('Entity'), n39)]).
+clause(123, is_a(var('Entity'), n41), [is_a(var('Entity'), n40)]).
+clause(126, is_a(var('Entity'), n42), [is_a(var('Entity'), n41)]).
+clause(129, is_a(var('Entity'), n43), [is_a(var('Entity'), n42)]).
+clause(132, is_a(var('Entity'), n44), [is_a(var('Entity'), n43)]).
+clause(135, is_a(var('Entity'), n45), [is_a(var('Entity'), n44)]).
+clause(138, is_a(var('Entity'), n46), [is_a(var('Entity'), n45)]).
+clause(141, is_a(var('Entity'), n47), [is_a(var('Entity'), n46)]).
+clause(144, is_a(var('Entity'), n48), [is_a(var('Entity'), n47)]).
+clause(147, is_a(var('Entity'), n49), [is_a(var('Entity'), n48)]).
+clause(150, is_a(var('Entity'), n50), [is_a(var('Entity'), n49)]).
+clause(153, is_a(var('Entity'), n51), [is_a(var('Entity'), n50)]).
+clause(156, is_a(var('Entity'), n52), [is_a(var('Entity'), n51)]).
+clause(159, is_a(var('Entity'), n53), [is_a(var('Entity'), n52)]).
+clause(162, is_a(var('Entity'), n54), [is_a(var('Entity'), n53)]).
+clause(165, is_a(var('Entity'), n55), [is_a(var('Entity'), n54)]).
+clause(168, is_a(var('Entity'), n56), [is_a(var('Entity'), n55)]).
+clause(171, is_a(var('Entity'), n57), [is_a(var('Entity'), n56)]).
+clause(174, is_a(var('Entity'), n58), [is_a(var('Entity'), n57)]).
+clause(177, is_a(var('Entity'), n59), [is_a(var('Entity'), n58)]).
+clause(180, is_a(var('Entity'), n60), [is_a(var('Entity'), n59)]).
+clause(183, is_a(var('Entity'), n61), [is_a(var('Entity'), n60)]).
+clause(186, is_a(var('Entity'), n62), [is_a(var('Entity'), n61)]).
+clause(189, is_a(var('Entity'), n63), [is_a(var('Entity'), n62)]).
+clause(192, is_a(var('Entity'), n64), [is_a(var('Entity'), n63)]).
+clause(195, is_a(var('Entity'), n65), [is_a(var('Entity'), n64)]).
+clause(198, is_a(var('Entity'), n66), [is_a(var('Entity'), n65)]).
+clause(201, is_a(var('Entity'), n67), [is_a(var('Entity'), n66)]).
+clause(204, is_a(var('Entity'), n68), [is_a(var('Entity'), n67)]).
+clause(207, is_a(var('Entity'), n69), [is_a(var('Entity'), n68)]).
+clause(210, is_a(var('Entity'), n70), [is_a(var('Entity'), n69)]).
+clause(213, is_a(var('Entity'), n71), [is_a(var('Entity'), n70)]).
+clause(216, is_a(var('Entity'), n72), [is_a(var('Entity'), n71)]).
+clause(219, is_a(var('Entity'), n73), [is_a(var('Entity'), n72)]).
+clause(222, is_a(var('Entity'), n74), [is_a(var('Entity'), n73)]).
+clause(225, is_a(var('Entity'), n75), [is_a(var('Entity'), n74)]).
+clause(228, is_a(var('Entity'), n76), [is_a(var('Entity'), n75)]).
+clause(231, is_a(var('Entity'), n77), [is_a(var('Entity'), n76)]).
+clause(234, is_a(var('Entity'), n78), [is_a(var('Entity'), n77)]).
+clause(237, is_a(var('Entity'), n79), [is_a(var('Entity'), n78)]).
+clause(240, is_a(var('Entity'), n80), [is_a(var('Entity'), n79)]).
+clause(243, is_a(var('Entity'), n81), [is_a(var('Entity'), n80)]).
+clause(246, is_a(var('Entity'), n82), [is_a(var('Entity'), n81)]).
+clause(249, is_a(var('Entity'), n83), [is_a(var('Entity'), n82)]).
+clause(252, is_a(var('Entity'), n84), [is_a(var('Entity'), n83)]).
+clause(255, is_a(var('Entity'), n85), [is_a(var('Entity'), n84)]).
+clause(258, is_a(var('Entity'), n86), [is_a(var('Entity'), n85)]).
+clause(261, is_a(var('Entity'), n87), [is_a(var('Entity'), n86)]).
+clause(264, is_a(var('Entity'), n88), [is_a(var('Entity'), n87)]).
+clause(267, is_a(var('Entity'), n89), [is_a(var('Entity'), n88)]).
+clause(270, is_a(var('Entity'), n90), [is_a(var('Entity'), n89)]).
+clause(273, is_a(var('Entity'), n91), [is_a(var('Entity'), n90)]).
+clause(276, is_a(var('Entity'), n92), [is_a(var('Entity'), n91)]).
+clause(279, is_a(var('Entity'), n93), [is_a(var('Entity'), n92)]).
+clause(282, is_a(var('Entity'), n94), [is_a(var('Entity'), n93)]).
+clause(285, is_a(var('Entity'), n95), [is_a(var('Entity'), n94)]).
+clause(288, is_a(var('Entity'), n96), [is_a(var('Entity'), n95)]).
+clause(291, is_a(var('Entity'), n97), [is_a(var('Entity'), n96)]).
+clause(294, is_a(var('Entity'), n98), [is_a(var('Entity'), n97)]).
+clause(297, is_a(var('Entity'), n99), [is_a(var('Entity'), n98)]).
+clause(300, is_a(var('Entity'), n100), [is_a(var('Entity'), n99)]).
+
+% step 1
+step(is_a(ind, n0), fact(1), [], []).
+% step 2
+step(is_a(ind, n1), rule(3), ['='('Entity', ind)], [is_a(ind, n0)]).
+% step 3
+step(is_a(ind, n2), rule(6), ['='('Entity', ind)], [is_a(ind, n1)]).
+% step 4
+step(is_a(ind, n3), rule(9), ['='('Entity', ind)], [is_a(ind, n2)]).
+% step 5
+step(is_a(ind, n4), rule(12), ['='('Entity', ind)], [is_a(ind, n3)]).
+% step 6
+step(is_a(ind, n5), rule(15), ['='('Entity', ind)], [is_a(ind, n4)]).
+% step 7
+step(is_a(ind, n6), rule(18), ['='('Entity', ind)], [is_a(ind, n5)]).
+% step 8
+step(is_a(ind, n7), rule(21), ['='('Entity', ind)], [is_a(ind, n6)]).
+% step 9
+step(is_a(ind, n8), rule(24), ['='('Entity', ind)], [is_a(ind, n7)]).
+% step 10
+step(is_a(ind, n9), rule(27), ['='('Entity', ind)], [is_a(ind, n8)]).
+% step 11
+step(is_a(ind, n10), rule(30), ['='('Entity', ind)], [is_a(ind, n9)]).
+% step 12
+step(is_a(ind, n11), rule(33), ['='('Entity', ind)], [is_a(ind, n10)]).
+% step 13
+step(is_a(ind, n12), rule(36), ['='('Entity', ind)], [is_a(ind, n11)]).
+% step 14
+step(is_a(ind, n13), rule(39), ['='('Entity', ind)], [is_a(ind, n12)]).
+% step 15
+step(is_a(ind, n14), rule(42), ['='('Entity', ind)], [is_a(ind, n13)]).
+% step 16
+step(is_a(ind, n15), rule(45), ['='('Entity', ind)], [is_a(ind, n14)]).
+% step 17
+step(is_a(ind, n16), rule(48), ['='('Entity', ind)], [is_a(ind, n15)]).
+% step 18
+step(is_a(ind, n17), rule(51), ['='('Entity', ind)], [is_a(ind, n16)]).
+% step 19
+step(is_a(ind, n18), rule(54), ['='('Entity', ind)], [is_a(ind, n17)]).
+% step 20
+step(is_a(ind, n19), rule(57), ['='('Entity', ind)], [is_a(ind, n18)]).
+% step 21
+step(is_a(ind, n20), rule(60), ['='('Entity', ind)], [is_a(ind, n19)]).
+% step 22
+step(is_a(ind, n21), rule(63), ['='('Entity', ind)], [is_a(ind, n20)]).
+% step 23
+step(is_a(ind, n22), rule(66), ['='('Entity', ind)], [is_a(ind, n21)]).
+% step 24
+step(is_a(ind, n23), rule(69), ['='('Entity', ind)], [is_a(ind, n22)]).
+% step 25
+step(is_a(ind, n24), rule(72), ['='('Entity', ind)], [is_a(ind, n23)]).
+% step 26
+step(is_a(ind, n25), rule(75), ['='('Entity', ind)], [is_a(ind, n24)]).
+% step 27
+step(is_a(ind, n26), rule(78), ['='('Entity', ind)], [is_a(ind, n25)]).
+% step 28
+step(is_a(ind, n27), rule(81), ['='('Entity', ind)], [is_a(ind, n26)]).
+% step 29
+step(is_a(ind, n28), rule(84), ['='('Entity', ind)], [is_a(ind, n27)]).
+% step 30
+step(is_a(ind, n29), rule(87), ['='('Entity', ind)], [is_a(ind, n28)]).
+% step 31
+step(is_a(ind, n30), rule(90), ['='('Entity', ind)], [is_a(ind, n29)]).
+% step 32
+step(is_a(ind, n31), rule(93), ['='('Entity', ind)], [is_a(ind, n30)]).
+% step 33
+step(is_a(ind, n32), rule(96), ['='('Entity', ind)], [is_a(ind, n31)]).
+% step 34
+step(is_a(ind, n33), rule(99), ['='('Entity', ind)], [is_a(ind, n32)]).
+% step 35
+step(is_a(ind, n34), rule(102), ['='('Entity', ind)], [is_a(ind, n33)]).
+% step 36
+step(is_a(ind, n35), rule(105), ['='('Entity', ind)], [is_a(ind, n34)]).
+% step 37
+step(is_a(ind, n36), rule(108), ['='('Entity', ind)], [is_a(ind, n35)]).
+% step 38
+step(is_a(ind, n37), rule(111), ['='('Entity', ind)], [is_a(ind, n36)]).
+% step 39
+step(is_a(ind, n38), rule(114), ['='('Entity', ind)], [is_a(ind, n37)]).
+% step 40
+step(is_a(ind, n39), rule(117), ['='('Entity', ind)], [is_a(ind, n38)]).
+% step 41
+step(is_a(ind, n40), rule(120), ['='('Entity', ind)], [is_a(ind, n39)]).
+% step 42
+step(is_a(ind, n41), rule(123), ['='('Entity', ind)], [is_a(ind, n40)]).
+% step 43
+step(is_a(ind, n42), rule(126), ['='('Entity', ind)], [is_a(ind, n41)]).
+% step 44
+step(is_a(ind, n43), rule(129), ['='('Entity', ind)], [is_a(ind, n42)]).
+% step 45
+step(is_a(ind, n44), rule(132), ['='('Entity', ind)], [is_a(ind, n43)]).
+% step 46
+step(is_a(ind, n45), rule(135), ['='('Entity', ind)], [is_a(ind, n44)]).
+% step 47
+step(is_a(ind, n46), rule(138), ['='('Entity', ind)], [is_a(ind, n45)]).
+% step 48
+step(is_a(ind, n47), rule(141), ['='('Entity', ind)], [is_a(ind, n46)]).
+% step 49
+step(is_a(ind, n48), rule(144), ['='('Entity', ind)], [is_a(ind, n47)]).
+% step 50
+step(is_a(ind, n49), rule(147), ['='('Entity', ind)], [is_a(ind, n48)]).
+% step 51
+step(is_a(ind, n50), rule(150), ['='('Entity', ind)], [is_a(ind, n49)]).
+% step 52
+step(is_a(ind, n51), rule(153), ['='('Entity', ind)], [is_a(ind, n50)]).
+% step 53
+step(is_a(ind, n52), rule(156), ['='('Entity', ind)], [is_a(ind, n51)]).
+% step 54
+step(is_a(ind, n53), rule(159), ['='('Entity', ind)], [is_a(ind, n52)]).
+% step 55
+step(is_a(ind, n54), rule(162), ['='('Entity', ind)], [is_a(ind, n53)]).
+% step 56
+step(is_a(ind, n55), rule(165), ['='('Entity', ind)], [is_a(ind, n54)]).
+% step 57
+step(is_a(ind, n56), rule(168), ['='('Entity', ind)], [is_a(ind, n55)]).
+% step 58
+step(is_a(ind, n57), rule(171), ['='('Entity', ind)], [is_a(ind, n56)]).
+% step 59
+step(is_a(ind, n58), rule(174), ['='('Entity', ind)], [is_a(ind, n57)]).
+% step 60
+step(is_a(ind, n59), rule(177), ['='('Entity', ind)], [is_a(ind, n58)]).
+% step 61
+step(is_a(ind, n60), rule(180), ['='('Entity', ind)], [is_a(ind, n59)]).
+% step 62
+step(is_a(ind, n61), rule(183), ['='('Entity', ind)], [is_a(ind, n60)]).
+% step 63
+step(is_a(ind, n62), rule(186), ['='('Entity', ind)], [is_a(ind, n61)]).
+% step 64
+step(is_a(ind, n63), rule(189), ['='('Entity', ind)], [is_a(ind, n62)]).
+% step 65
+step(is_a(ind, n64), rule(192), ['='('Entity', ind)], [is_a(ind, n63)]).
+% step 66
+step(is_a(ind, n65), rule(195), ['='('Entity', ind)], [is_a(ind, n64)]).
+% step 67
+step(is_a(ind, n66), rule(198), ['='('Entity', ind)], [is_a(ind, n65)]).
+% step 68
+step(is_a(ind, n67), rule(201), ['='('Entity', ind)], [is_a(ind, n66)]).
+% step 69
+step(is_a(ind, n68), rule(204), ['='('Entity', ind)], [is_a(ind, n67)]).
+% step 70
+step(is_a(ind, n69), rule(207), ['='('Entity', ind)], [is_a(ind, n68)]).
+% step 71
+step(is_a(ind, n70), rule(210), ['='('Entity', ind)], [is_a(ind, n69)]).
+% step 72
+step(is_a(ind, n71), rule(213), ['='('Entity', ind)], [is_a(ind, n70)]).
+% step 73
+step(is_a(ind, n72), rule(216), ['='('Entity', ind)], [is_a(ind, n71)]).
+% step 74
+step(is_a(ind, n73), rule(219), ['='('Entity', ind)], [is_a(ind, n72)]).
+% step 75
+step(is_a(ind, n74), rule(222), ['='('Entity', ind)], [is_a(ind, n73)]).
+% step 76
+step(is_a(ind, n75), rule(225), ['='('Entity', ind)], [is_a(ind, n74)]).
+% step 77
+step(is_a(ind, n76), rule(228), ['='('Entity', ind)], [is_a(ind, n75)]).
+% step 78
+step(is_a(ind, n77), rule(231), ['='('Entity', ind)], [is_a(ind, n76)]).
+% step 79
+step(is_a(ind, n78), rule(234), ['='('Entity', ind)], [is_a(ind, n77)]).
+% step 80
+step(is_a(ind, n79), rule(237), ['='('Entity', ind)], [is_a(ind, n78)]).
+% step 81
+step(is_a(ind, n80), rule(240), ['='('Entity', ind)], [is_a(ind, n79)]).
+% step 82
+step(is_a(ind, n81), rule(243), ['='('Entity', ind)], [is_a(ind, n80)]).
+% step 83
+step(is_a(ind, n82), rule(246), ['='('Entity', ind)], [is_a(ind, n81)]).
+% step 84
+step(is_a(ind, n83), rule(249), ['='('Entity', ind)], [is_a(ind, n82)]).
+% step 85
+step(is_a(ind, n84), rule(252), ['='('Entity', ind)], [is_a(ind, n83)]).
+% step 86
+step(is_a(ind, n85), rule(255), ['='('Entity', ind)], [is_a(ind, n84)]).
+% step 87
+step(is_a(ind, n86), rule(258), ['='('Entity', ind)], [is_a(ind, n85)]).
+% step 88
+step(is_a(ind, n87), rule(261), ['='('Entity', ind)], [is_a(ind, n86)]).
+% step 89
+step(is_a(ind, n88), rule(264), ['='('Entity', ind)], [is_a(ind, n87)]).
+% step 90
+step(is_a(ind, n89), rule(267), ['='('Entity', ind)], [is_a(ind, n88)]).
+% step 91
+step(is_a(ind, n90), rule(270), ['='('Entity', ind)], [is_a(ind, n89)]).
+% step 92
+step(is_a(ind, n91), rule(273), ['='('Entity', ind)], [is_a(ind, n90)]).
+% step 93
+step(is_a(ind, n92), rule(276), ['='('Entity', ind)], [is_a(ind, n91)]).
+% step 94
+step(is_a(ind, n93), rule(279), ['='('Entity', ind)], [is_a(ind, n92)]).
+% step 95
+step(is_a(ind, n94), rule(282), ['='('Entity', ind)], [is_a(ind, n93)]).
+% step 96
+step(is_a(ind, n95), rule(285), ['='('Entity', ind)], [is_a(ind, n94)]).
+% step 97
+step(is_a(ind, n96), rule(288), ['='('Entity', ind)], [is_a(ind, n95)]).
+% step 98
+step(is_a(ind, n97), rule(291), ['='('Entity', ind)], [is_a(ind, n96)]).
+% step 99
+step(is_a(ind, n98), rule(294), ['='('Entity', ind)], [is_a(ind, n97)]).
+% step 100
+step(is_a(ind, n99), rule(297), ['='('Entity', ind)], [is_a(ind, n98)]).
+% step 101
+step(is_a(ind, n100), rule(300), ['='('Entity', ind)], [is_a(ind, n99)]).
+% step 102
+step(is_a(ind, a2), rule(2), ['='('Entity', ind)], [is_a(ind, n100)]).
+
+% Check
+check passed: is_a(ind, a2).
+
+check passed: is_a(ind, n100).
+
+check passed: is_a(ind, i100).
+
+check passed: is_a(ind, j100).
+
+check passed: \+ (is_a(ind, n101)).
+
+condition('C1', resolution, ok, 102).
+condition('C2', well_founded, ok, 102).
+condition('C3', justification, ok, 102).
+condition('C4', coverage, ok, 102).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 0).
+condition('C7', relevance, ok, 103).
+steps(102).
+verified(102).
+recomputed(0).
+trusted(0).
+claims(1).
+verdict(checked).

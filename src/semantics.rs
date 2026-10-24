@@ -1,6 +1,6 @@
 use crate::engine::{instantiate, match_goal, Bindings};
 use crate::{Aggregate, AggregateKind, Atom, Error, Goal, Literal, Term, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub(crate) struct Budget {
     pub used: usize,
@@ -19,27 +19,47 @@ impl Budget {
     }
 }
 
-pub(crate) fn value(term: &Term, bindings: &Bindings) -> Option<Value> {
-    match term {
-        Term::Constant(v) => Some(v.clone()),
-        Term::Variable(n) => bindings.get(n).cloned(),
+pub(crate) fn resolve(v: &Value, bindings: &Bindings) -> Value {
+    match v {
+        Value::Variable(n) => bindings
+            .get(n)
+            .map(|v| resolve(v, bindings))
+            .unwrap_or_else(|| v.clone()),
+        Value::Compound(n, a) => {
+            Value::Compound(n.clone(), a.iter().map(|v| resolve(v, bindings)).collect())
+        }
+        v => v.clone(),
     }
 }
-pub(crate) fn bind(term: &Term, value: Value, bindings: &mut Bindings) -> bool {
-    match term {
-        Term::Constant(v) => v == &value,
-        Term::Variable(n) => {
-            if let Some(v) = bindings.get(n) {
-                v == &value
-            } else {
-                bindings.insert(n.clone(), value);
-                true
-            }
-        }
+pub(crate) fn value(term: &Term, bindings: &Bindings) -> Option<Value> {
+    let v = resolve(&crate::model::term_value(term), bindings);
+    v.ground().then_some(v)
+}
+pub(crate) fn unify(a: &Value, b: &Value, bindings: &mut Bindings) -> bool {
+    let a = resolve(a, bindings);
+    let b = resolve(b, bindings);
+    if a == b {
+        return true;
     }
+    match (&a, &b) {
+        (Value::Variable(n), v) | (v, Value::Variable(n)) => {
+            if crate::model::value_variables(v).contains(n) {
+                return false;
+            }
+            bindings.insert(n.clone(), v.clone());
+            true
+        }
+        (Value::Compound(n, a), Value::Compound(m, b)) if n == m && a.len() == b.len() => {
+            a.iter().zip(b).all(|(a, b)| unify(a, b, bindings))
+        }
+        _ => false,
+    }
+}
+pub(crate) fn bind(term: &Term, v: Value, bindings: &mut Bindings) -> bool {
+    unify(&crate::model::term_value(term), &v, bindings)
 }
 
-pub(crate) fn builtin(goal: &Goal, bindings: &Bindings) -> Option<(Atom, Bindings)> {
+fn legacy_builtin(goal: &Goal, bindings: &Bindings) -> Option<(Atom, Bindings)> {
     let inputs = crate::language::builtin_inputs(goal).ok()?;
     let args: Vec<_> = goal.terms[..inputs]
         .iter()
@@ -73,19 +93,285 @@ pub(crate) fn builtin(goal: &Goal, bindings: &Bindings) -> Option<(Atom, Binding
     Some((instantiate(goal, &next)?, next))
 }
 
+fn list(values: Vec<Value>) -> Value {
+    values.into_iter().rev().fold(Value::Nil, |tail, head| {
+        Value::Compound(".".into(), vec![head, tail])
+    })
+}
+fn items(v: &Value) -> Option<Vec<Value>> {
+    let mut result = Vec::new();
+    let mut cursor = v;
+    while let Value::Compound(n, a) = cursor {
+        if n != "." || a.len() != 2 {
+            return None;
+        }
+        result.push(a[0].clone());
+        cursor = &a[1];
+    }
+    (cursor == &Value::Nil).then_some(result)
+}
+pub(crate) fn builtin(goal: &Goal, bindings: &Bindings) -> Result<Option<(Atom, Bindings)>, Error> {
+    use std::cmp::Ordering;
+    if !crate::parser::builtin_name(&goal.predicate, goal.terms.len()) {
+        return Ok(legacy_builtin(goal, bindings));
+    }
+    let args: Vec<_> = goal
+        .terms
+        .iter()
+        .map(|t| resolve(&crate::model::term_value(t), bindings))
+        .collect();
+    let mut next = bindings.clone();
+    let require = |v: &Value| -> Result<(), Error> {
+        if v.ground() {
+            Ok(())
+        } else {
+            Err(Error::new(format!(
+                "{} inputs must be bound by an earlier goal or call.",
+                goal.predicate
+            )))
+        }
+    };
+    let success = match (goal.predicate.as_str(), args.as_slice()) {
+        ("true", []) => true,
+        ("false", []) => false,
+        ("=", [a, b]) => unify(a, b, &mut next),
+        ("\\=", [a, b]) => !unify(a, b, &mut next.clone()),
+        ("is", [a, b]) => {
+            require(b)?;
+            unify(a, &crate::arithmetic::eval(b)?, &mut next)
+        }
+        ("<" | "=<" | ">" | ">=" | "=:=" | "=\\=", [a, b]) => {
+            require(a)?;
+            require(b)?;
+            let order = crate::arithmetic::compare(
+                &crate::arithmetic::eval(a)?,
+                &crate::arithmetic::eval(b)?,
+            )?;
+            match goal.predicate.as_str() {
+                "<" => order == Ordering::Less,
+                "=<" => order != Ordering::Greater,
+                ">" => order == Ordering::Greater,
+                ">=" => order != Ordering::Less,
+                "=:=" => order == Ordering::Equal,
+                _ => order != Ordering::Equal,
+            }
+        }
+        ("@<" | "@=<" | "@>" | "@>=", [a, b]) => {
+            require(a)?;
+            require(b)?;
+            let order = match (a, b) {
+                (Value::Symbol(a), Value::Symbol(b)) | (Value::Text(a), Value::Text(b)) => {
+                    a.encode_utf16().cmp(b.encode_utf16())
+                }
+                _ => {
+                    return Err(Error::new(
+                        "Lexicographic comparisons require two atoms or two strings.",
+                    ))
+                }
+            };
+            match goal.predicate.as_str() {
+                "@<" => order == Ordering::Less,
+                "@=<" => order != Ordering::Greater,
+                "@>" => order == Ordering::Greater,
+                _ => order != Ordering::Less,
+            }
+        }
+        ("contains_text", [a, b]) => {
+            require(a)?;
+            require(b)?;
+            match (a, b) {
+                (Value::Text(a), Value::Text(b)) => a.to_lowercase().contains(&b.to_lowercase()),
+                _ => return Err(Error::new("contains_text requires two strings.")),
+            }
+        }
+        ("string_concat", [a, b, c]) => {
+            require(a)?;
+            require(b)?;
+            match (a, b) {
+                (Value::Text(a), Value::Text(b)) => {
+                    unify(c, &Value::Text(format!("{a}{b}")), &mut next)
+                }
+                _ => return Err(Error::new("string_concat requires two input strings.")),
+            }
+        }
+        ("string_length", [a, b]) => {
+            require(a)?;
+            let Value::Text(a) = a else {
+                return Err(Error::new("string_length requires a string."));
+            };
+            unify(b, &Value::Integer(a.chars().count() as i64), &mut next)
+        }
+        ("atom_codes" | "string_codes", [a, b]) => {
+            let text = match a {
+                Value::Symbol(s) if goal.predicate == "atom_codes" => Some(s),
+                Value::Text(s) if goal.predicate == "string_codes" => Some(s),
+                Value::Variable(_) => None,
+                _ => {
+                    return Err(Error::new(
+                        "The first text conversion argument has the wrong type.",
+                    ))
+                }
+            };
+            if let Some(text) = text {
+                unify(
+                    b,
+                    &list(text.chars().map(|c| Value::Integer(c as i64)).collect()),
+                    &mut next,
+                )
+            } else {
+                require(b)?;
+                let codes = items(b).ok_or_else(|| {
+                    Error::new("Text codes must be a proper list of Unicode scalar values.")
+                })?;
+                let text = codes
+                    .into_iter()
+                    .map(|v| {
+                        if let Value::Integer(n) = v {
+                            u32::try_from(n).ok().and_then(char::from_u32)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Option<String>>()
+                    .ok_or_else(|| {
+                        Error::new("Use valid Unicode scalar values in the codes list.")
+                    })?;
+                let v = if goal.predicate == "atom_codes" {
+                    Value::Symbol(text)
+                } else {
+                    Value::Text(text)
+                };
+                unify(a, &v, &mut next)
+            }
+        }
+        ("=..", [a, b]) => {
+            if !matches!(a, Value::Variable(_)) {
+                let parts = match a {
+                    Value::Compound(n, args) => {
+                        let mut v = vec![Value::Symbol(n.clone())];
+                        v.extend(args.iter().cloned());
+                        v
+                    }
+                    v => vec![v.clone()],
+                };
+                unify(b, &list(parts), &mut next)
+            } else {
+                let parts = items(b)
+                    .filter(|v| !v.is_empty())
+                    .ok_or_else(|| Error::new("=.. requires a nonempty proper list of parts."))?;
+                let v = if parts.len() == 1 {
+                    require(&parts[0])?;
+                    if matches!(parts[0], Value::Compound(_, _)) {
+                        return Err(Error::new(
+                            "A singleton parts list requires an atomic value or [].",
+                        ));
+                    }
+                    parts[0].clone()
+                } else {
+                    let Value::Symbol(name) = &parts[0] else {
+                        return Err(Error::new("A compound functor must be an atom."));
+                    };
+                    Value::Compound(name.clone(), parts[1..].to_vec())
+                };
+                unify(a, &v, &mut next)
+            }
+        }
+        _ => return Err(Error::new("Unsupported built-in call.")),
+    };
+    if !success {
+        return Ok(None);
+    }
+    if args.iter().map(|v| resolve(v, &next)).any(|v| !v.valid()) {
+        return Err(Error::new(
+            "Unification produced an improper list or invalid numeric term.",
+        ));
+    }
+    let values = goal
+        .terms
+        .iter()
+        .map(|t| resolve(&crate::model::term_value(t), &next))
+        .collect();
+    Ok(Some((
+        Atom {
+            predicate: goal.predicate.clone(),
+            values,
+        },
+        next,
+    )))
+}
+
+pub(crate) struct Model<'a> {
+    facts: &'a [Atom],
+    relations: HashMap<(String, usize), Vec<usize>>,
+    positions: HashMap<((String, usize), usize, Value), Vec<usize>>,
+    exact: HashMap<Atom, usize>,
+}
+impl<'a> Model<'a> {
+    pub fn new(facts: &'a [Atom], budget: &mut Budget) -> Result<Self, Error> {
+        let mut model = Self {
+            facts,
+            relations: HashMap::new(),
+            positions: HashMap::new(),
+            exact: HashMap::new(),
+        };
+        for (i, atom) in facts.iter().enumerate() {
+            budget.tick()?;
+            let relation = (atom.predicate.clone(), atom.values.len());
+            model.relations.entry(relation.clone()).or_default().push(i);
+            model.exact.insert(atom.clone(), i);
+            for (at, value) in atom.values.iter().enumerate() {
+                model
+                    .positions
+                    .entry((relation.clone(), at, value.clone()))
+                    .or_default()
+                    .push(i);
+            }
+        }
+        Ok(model)
+    }
+    fn candidates(&self, goal: &Goal, bindings: &Bindings) -> &[usize] {
+        if let Some(atom) = instantiate(goal, bindings) {
+            return self
+                .exact
+                .get(&atom)
+                .map(std::slice::from_ref)
+                .unwrap_or(&[]);
+        }
+        let relation = (goal.predicate.clone(), goal.terms.len());
+        let mut result = self
+            .relations
+            .get(&relation)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        for (at, term) in goal.terms.iter().enumerate() {
+            if let Some(value) = value(term, bindings) {
+                let candidates = self
+                    .positions
+                    .get(&(relation.clone(), at, value))
+                    .map(Vec::as_slice)
+                    .unwrap_or(&[]);
+                if candidates.len() < result.len() {
+                    result = candidates;
+                }
+            }
+        }
+        result
+    }
+}
+
 /// Finite matching over an already supplied model, without adding facts or
 /// searching for their derivations. Used for closure and aggregate re-decision.
 pub(crate) fn model_solutions(
     body: &[Literal],
     initial: Bindings,
-    facts: &[Atom],
+    model: &Model<'_>,
     budget: &mut Budget,
 ) -> Result<Vec<Bindings>, Error> {
     fn visit(
         body: &[Literal],
         at: usize,
         bindings: Bindings,
-        facts: &[Atom],
+        model: &Model<'_>,
         budget: &mut Budget,
         out: &mut Vec<Bindings>,
     ) -> Result<(), Error> {
@@ -95,43 +381,45 @@ pub(crate) fn model_solutions(
         }
         match &body[at] {
             Literal::Relation(goal) => {
-                for atom in facts {
-                    if goal.predicate != atom.predicate || goal.terms.len() != atom.values.len() {
-                        continue;
-                    }
+                for &index in model.candidates(goal, &bindings) {
                     budget.tick()?;
                     let mut next = bindings.clone();
-                    if match_goal(goal, atom, &mut next) {
-                        visit(body, at + 1, next, facts, budget, out)?;
+                    if match_goal(goal, &model.facts[index], &mut next) {
+                        visit(body, at + 1, next, model, budget, out)?;
                     }
                 }
             }
             Literal::Builtin(goal) => {
                 budget.tick()?;
-                if let Some((_, next)) = builtin(goal, &bindings) {
-                    visit(body, at + 1, next, facts, budget, out)?;
+                if let Some((_, next)) = builtin(goal, &bindings)? {
+                    visit(body, at + 1, next, model, budget, out)?;
+                }
+            }
+            Literal::NotBuiltin(goal) => {
+                for term in &goal.terms {
+                    if value(term, &bindings).is_none() {
+                        return Err(Error::new("Negated tests require bound operands."));
+                    }
+                }
+                budget.tick()?;
+                if builtin(goal, &bindings)?.is_none() {
+                    visit(body, at + 1, bindings, model, budget, out)?;
                 }
             }
             Literal::Not(goal) => {
                 let atom = instantiate(goal, &bindings)
                     .ok_or_else(|| Error::new("Unbound negative goal."))?;
-                let mut present = false;
-                for fact in facts {
-                    budget.tick()?;
-                    if fact == &atom {
-                        present = true;
-                        break;
-                    }
-                }
+                budget.tick()?;
+                let present = model.exact.contains_key(&atom);
                 if !present {
-                    visit(body, at + 1, bindings, facts, budget, out)?;
+                    visit(body, at + 1, bindings, model, budget, out)?;
                 }
             }
             Literal::Aggregate(a) => {
-                if let Some(result) = aggregate(a, &bindings, facts, budget)? {
+                if let Some(result) = aggregate(a, &bindings, model, budget)? {
                     let mut next = bindings;
                     if bind(&a.result, result, &mut next) {
-                        visit(body, at + 1, next, facts, budget, out)?;
+                        visit(body, at + 1, next, model, budget, out)?;
                     }
                 }
             }
@@ -142,53 +430,77 @@ pub(crate) fn model_solutions(
         Ok(())
     }
     let mut out = Vec::new();
-    visit(body, 0, initial, facts, budget, &mut out)?;
+    visit(body, 0, initial, model, budget, &mut out)?;
     Ok(out)
 }
 
 pub(crate) fn aggregate(
     a: &Aggregate,
     outer: &Bindings,
-    facts: &[Atom],
+    model: &Model<'_>,
     budget: &mut Budget,
 ) -> Result<Option<Value>, Error> {
-    let mut tuples = BTreeSet::new();
-    for bindings in model_solutions(&a.body, outer.clone(), facts, budget)? {
+    // Distinct producer tuples retain equal projected values from different
+    // subjects, while repeated facts and proof paths contribute only once.
+    let names: BTreeSet<_> = a.body.iter().flat_map(Literal::variables).collect();
+    let mut tuples = BTreeMap::new();
+    for bindings in model_solutions(&a.body, outer.clone(), model, budget)? {
+        budget.tick()?;
+        let key = names
+            .iter()
+            .map(|name| value(&Term::Variable(name.clone()), &bindings))
+            .collect::<Option<Vec<_>>>()
+            .ok_or_else(|| Error::new("Unbound aggregate producer variable."))?;
         let tuple = a
             .template
             .iter()
             .map(|t| value(t, &bindings))
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| Error::new("Unbound aggregate template."))?;
-        tuples.insert(tuple);
+        tuples.insert(key, tuple);
     }
     if a.kind == AggregateKind::Count {
         return Ok(i64::try_from(tuples.len()).ok().map(Value::Integer));
     }
-    let mut numbers = Vec::new();
-    for tuple in tuples {
-        let Value::Integer(n) = tuple[0] else {
-            return Err(Error::new(format!(
-                "{} requires integer values in the first template position.",
-                a.kind
-            )));
+    let mut values = Vec::new();
+    for tuple in tuples.into_values() {
+        let element = if a.kind == AggregateKind::List {
+            tuple[0].clone()
+        } else {
+            crate::arithmetic::eval(&tuple[0])?
         };
-        numbers.push(n);
+        values.push(element);
     }
-    let result = match a.kind {
-        AggregateKind::Sum => Some(
-            numbers
-                .into_iter()
-                .try_fold(0i64, i64::checked_add)
-                .ok_or_else(|| {
-                    Error::new("Aggregate sum exceeds the signed 64-bit integer range.")
-                })?,
-        ),
-        AggregateKind::Min => numbers.into_iter().min(),
-        AggregateKind::Max => numbers.into_iter().max(),
-        AggregateKind::Count => unreachable!(),
+    if a.kind == AggregateKind::List {
+        return Ok(Some(list(values)));
+    }
+    let mut result = if a.kind == AggregateKind::Sum {
+        Some(Value::Integer(0))
+    } else {
+        None
     };
-    Ok(result.map(Value::Integer))
+    for value in values {
+        result = Some(match result {
+            None => value,
+            Some(previous) => match a.kind {
+                AggregateKind::Sum => {
+                    crate::arithmetic::eval(&Value::Compound("+".into(), vec![previous, value]))?
+                }
+                AggregateKind::Min | AggregateKind::Max => {
+                    let order = crate::arithmetic::compare(&previous, &value)?;
+                    if (a.kind == AggregateKind::Min && order.is_gt())
+                        || (a.kind == AggregateKind::Max && order.is_lt())
+                    {
+                        value
+                    } else {
+                        previous
+                    }
+                }
+                _ => unreachable!(),
+            },
+        });
+    }
+    Ok(result)
 }
 
 pub(crate) fn witness(rule: usize, position: usize, bindings: &Bindings) -> Value {

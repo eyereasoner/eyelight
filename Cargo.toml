@@ -1,11 +1,11 @@
 [package]
-name = "whye"
-version = "0.1.12"
+name = "wheye"
+version = "0.1.13"
 edition = "2021"
 authors = ["Jos De Roo"]
 license = "MIT"
 description = "A small relational reasoner with independently checked proof certificates."
-default-run = "whye"
+default-run = "wheye"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -21,6 +21,11 @@ harness = false
 lto = true
 codegen-units = 1
 strip = true
+
+[dependencies]
+num-bigint = "0.5.1"
+num-integer = "0.1.47"
+num-traits = "0.2.19"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]

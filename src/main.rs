@@ -1,11 +1,11 @@
 use std::io::{self, Read};
 use std::process::ExitCode;
-use whye::{check_with_limits, parse, reason, Certificate, Error, Limits, Program, VERSION};
+use wheye::{check_with_limits, parse, reason, Certificate, Error, Limits, Program, VERSION};
 
-const HELP: &str = "whye — a small relational reasoner
+const HELP: &str = "wheye — a small relational reasoner
 
-Usage: whye [OPTIONS] FILE...
-       whye [OPTIONS] -
+Usage: wheye [OPTIONS] FILE...
+       wheye [OPTIONS] -
 
   -e, --explain              Answers with their supporting rules and facts
   -p, --proof                Write a checkable proof certificate
@@ -52,7 +52,7 @@ fn run() -> Result<String, Error> {
                 continue;
             }
             "-h" | "--help" => return Ok(HELP.to_owned()),
-            "-v" | "--version" => return Ok(format!("whye {VERSION}\n")),
+            "-v" | "--version" => return Ok(format!("wheye {VERSION}\n")),
             "-e" | "--explain" => Some("explain"),
             "-p" | "--proof" => Some("proof"),
             "-c" | "--prove-and-check" => Some("checked"),
@@ -141,7 +141,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
-            eprintln!("whye: {error}");
+            eprintln!("wheye: {error}");
             ExitCode::FAILURE
         }
     }

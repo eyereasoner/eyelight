@@ -1,6 +1,6 @@
 use crate::model::term_variables;
-use crate::{Error, Goal, Literal, Program, Term, Value};
-use std::collections::{BTreeSet, HashMap, HashSet};
+use crate::{AggregateKind, Error, Goal, Literal, Program, Term, Value};
+use std::collections::{BTreeSet, HashMap};
 
 pub(crate) type Relation = (String, usize);
 pub(crate) fn relation(goal: &Goal) -> Relation {
@@ -10,17 +10,85 @@ pub(crate) fn relation(goal: &Goal) -> Relation {
 pub(crate) struct Plan {
     pub levels: HashMap<Relation, usize>,
     pub rules: Vec<usize>,
+    pub backward: Vec<bool>,
+    pub demands: HashMap<Relation, Vec<usize>>,
+    heads: Vec<Goal>,
+    producers: HashMap<Relation, Producers>,
+}
+type ProducerSlot = (HashMap<Value, Vec<usize>>, Vec<usize>);
+
+#[derive(Default)]
+struct Producers {
+    all: Vec<usize>,
+    slots: Vec<ProducerSlot>,
+}
+fn atomic(term: &Term) -> Option<&Value> {
+    match term {
+        Term::Constant(v) if !matches!(v, Value::Compound(_, _) | Value::Variable(_)) => Some(v),
+        _ => None,
+    }
+}
+fn candidates(goal: &Goal, heads: &[Goal], index: &HashMap<Relation, Producers>) -> Vec<usize> {
+    let Some(entry) = index.get(&relation(goal)) else {
+        return Vec::new();
+    };
+    let mut selected: Option<(&[usize], &[usize])> = None;
+    let mut size = entry.all.len();
+    for (i, term) in goal.terms.iter().enumerate() {
+        if let Some(value) = atomic(term) {
+            let (values, wildcard) = &entry.slots[i];
+            let matching = values.get(value).map(Vec::as_slice).unwrap_or(&[]);
+            if matching.len() + wildcard.len() < size {
+                size = matching.len() + wildcard.len();
+                selected = Some((matching, wildcard));
+            }
+        }
+    }
+    let mut result = if let Some((matching, wildcard)) = selected {
+        matching.iter().chain(wildcard).copied().collect()
+    } else {
+        entry.all.clone()
+    };
+    result.retain(|id| {
+        !heads[*id]
+            .terms
+            .iter()
+            .zip(&goal.terms)
+            .any(|(a, b)| matches!((atomic(a),atomic(b)),(Some(a),Some(b)) if a!=b))
+    });
+    result
+}
+fn goal_dependencies(literal: &Literal, strict: bool, out: &mut Vec<(Goal, bool)>) {
+    match literal {
+        Literal::Relation(g) => out.push((g.clone(), strict)),
+        Literal::Not(g) => out.push((g.clone(), true)),
+        Literal::Aggregate(a) => {
+            for l in &a.body {
+                goal_dependencies(l, true, out);
+            }
+        }
+        _ => {}
+    }
 }
 impl Plan {
-    pub fn level(&self, relation: &Relation) -> usize {
-        self.levels.get(relation).copied().unwrap_or(0)
+    pub fn goal_level(&self, goal: &Goal) -> usize {
+        candidates(goal, &self.heads, &self.producers)
+            .into_iter()
+            .map(|i| self.rules[i])
+            .max()
+            .unwrap_or(0)
+    }
+    pub fn step_level(&self, step: &crate::Step) -> usize {
+        match step.justification {
+            crate::Justification::Rule { rule, .. } => self.rules[rule - 1],
+            _ => 0,
+        }
     }
     pub fn boundary(&self, literal: &Literal) -> usize {
-        let mut dependencies = Vec::new();
-        dependencies_of(literal, false, &mut dependencies);
-        dependencies
-            .iter()
-            .map(|(r, _)| self.level(r))
+        let mut deps = Vec::new();
+        goal_dependencies(literal, false, &mut deps);
+        deps.iter()
+            .map(|(g, _)| self.goal_level(g))
             .max()
             .unwrap_or(0)
     }
@@ -45,7 +113,12 @@ pub(crate) fn builtin_inputs(goal: &Goal) -> Result<usize, Error> {
 }
 
 fn source_term(term: &Term) -> Result<(), Error> {
-    if matches!(term, Term::Constant(Value::Witness(_))) {
+    if !crate::model::term_value(term).valid() {
+        return Err(Error::new(
+            "Use proper lists and valid finite numeric terms.",
+        ));
+    }
+    if crate::model::term_value(term).has_witness() {
         return Err(Error::new(
             "Witness constants belong to certificates, not source programs.",
         ));
@@ -62,15 +135,49 @@ fn goal_shape(goal: &Goal) -> Result<(), Error> {
     Ok(())
 }
 
+fn literal_shapes(body: &[Literal], fresh: bool, nested: bool) -> Result<(), Error> {
+    if body.len() > 64 {
+        return Err(Error::new("Use at most 64 body goals."));
+    }
+    for (at, literal) in body.iter().enumerate() {
+        match literal {
+            Literal::Relation(g)
+            | Literal::Builtin(g)
+            | Literal::Not(g)
+            | Literal::NotBuiltin(g) => goal_shape(g)?,
+            Literal::Aggregate(a) => {
+                if a.template.len() != usize::from(a.kind != AggregateKind::Count)
+                    || a.body.is_empty()
+                {
+                    return Err(Error::new("Invalid aggregate template or empty producer."));
+                }
+                for term in a.template.iter().chain(std::iter::once(&a.result)) {
+                    source_term(term)?;
+                }
+                literal_shapes(&a.body, false, true)?;
+            }
+            Literal::Fresh(term) => {
+                source_term(term)?;
+                if !fresh || nested || at + 1 != body.len() {
+                    return Err(Error::new(
+                        "fresh is allowed only as the final goal of a forward rule.",
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Left-to-right safety also defines aggregate grouping: an already bound name
-/// is a parameter; new names inside braces have only that aggregate's scope.
+/// is a parameter; new producer names have only that aggregate's scope.
 pub(crate) fn bound_after(
     body: &[Literal],
     mut bound: BTreeSet<String>,
     fresh: bool,
     nested: bool,
 ) -> Result<(BTreeSet<String>, bool), Error> {
-    if body.is_empty() || body.len() > 64 {
+    if body.len() > 64 {
         return Err(Error::new("Use 1 to 64 body goals."));
     }
     let mut generates = false;
@@ -82,6 +189,27 @@ pub(crate) fn bound_after(
             }
             Literal::Builtin(g) => {
                 goal_shape(g)?;
+                if crate::parser::builtin_name(&g.predicate, g.terms.len()) {
+                    let vars = g.variables();
+                    let known = |i: usize| term_variables(&g.terms[i..i + 1]).is_subset(&bound);
+                    let produces = match g.predicate.as_str() {
+                        "is" => known(1),
+                        "=" | "=.." | "atom_codes" | "string_codes" => known(0) || known(1),
+                        "string_concat" => known(0) && known(1),
+                        "string_length" => known(0),
+                        "\\=" | "true" | "false" => true,
+                        _ => vars.is_subset(&bound),
+                    };
+                    if !produces {
+                        return Err(Error::new(format!(
+                            "{} inputs require call bindings.",
+                            g.predicate
+                        )));
+                    }
+                    generates |= !vars.is_subset(&bound);
+                    bound.extend(vars);
+                    continue;
+                }
                 let inputs = builtin_inputs(g)?;
                 if !term_variables(&g.terms[..inputs]).is_subset(&bound) {
                     return Err(Error::new(format!(
@@ -94,7 +222,7 @@ pub(crate) fn bound_after(
                 }
                 bound.extend(g.variables());
             }
-            Literal::Not(g) => {
+            Literal::Not(g) | Literal::NotBuiltin(g) => {
                 goal_shape(g)?;
                 if !g.variables().is_subset(&bound) {
                     return Err(Error::new(
@@ -103,13 +231,11 @@ pub(crate) fn bound_after(
                 }
             }
             Literal::Aggregate(a) => {
-                if nested {
+                let expected = usize::from(a.kind != AggregateKind::Count);
+                if a.template.len() != expected {
                     return Err(Error::new(
-                        "Nested aggregates are not supported; use an intermediate relation.",
+                        "Use count without a value, or sum/min/max with one value.",
                     ));
-                }
-                if a.template.is_empty() || a.template.len() > 64 {
-                    return Err(Error::new("An aggregate needs 1 to 64 template terms."));
                 }
                 for t in a.template.iter().chain(std::iter::once(&a.result)) {
                     source_term(t)?;
@@ -160,44 +286,52 @@ fn dependencies_of(literal: &Literal, strict: bool, output: &mut Vec<(Relation, 
 
 pub(crate) fn plan(program: &Program) -> Result<Plan, Error> {
     let mut levels = HashMap::new();
-    let mut edges = Vec::new();
-    let mut generating = Vec::new();
+
+    let mut backward = Vec::new();
     for atom in &program.facts {
         if atom.values.len() > 64 {
             return Err(Error::new("A relation supports at most 64 arguments."));
         }
-        if atom.values.iter().any(|v| matches!(v, Value::Witness(_))) {
+        if atom.values.iter().any(|v| !v.ground() || !v.valid()) {
+            return Err(Error::new(
+                "Source facts must be ground proper terms with finite numbers.",
+            ));
+        }
+        if crate::parser::builtin_name(&atom.predicate, atom.values.len()) {
+            return Err(Error::new("A fact must name an ordinary predicate."));
+        }
+        if atom.values.iter().any(Value::has_witness) {
             return Err(Error::new("Source facts cannot supply witness identities."));
         }
         levels.insert((atom.predicate.clone(), atom.values.len()), 0);
     }
-    for (i, rule) in program.rules.iter().enumerate() {
+    for rule in &program.rules {
         goal_shape(&rule.head)?;
-        let (bound, generates) = bound_after(&rule.body, BTreeSet::new(), true, false)?;
-        if !rule.head.variables().is_subset(&bound) {
-            return Err(Error::new(format!(
-                "Rule {} has a head variable absent from its bound body.",
-                i + 1
-            )));
+        if crate::parser::builtin_name(&rule.head.predicate, rule.head.terms.len()) {
+            return Err(Error::new("A rule head must name an ordinary predicate."));
         }
-        let head = relation(&rule.head);
-        let minimum = usize::from(rule.body.iter().any(|g| matches!(g, Literal::Aggregate(_))));
-        let level = levels.entry(head.clone()).or_insert(0);
-        *level = (*level).max(minimum);
-        let mut deps = Vec::new();
-        for literal in &rule.body {
-            dependencies_of(literal, false, &mut deps);
-        }
-        for (dependency, strict) in deps {
-            levels.entry(dependency.clone()).or_insert(0);
-            edges.push((head.clone(), dependency, strict));
-        }
-        if generates {
-            generating.push(head);
+        literal_shapes(&rule.body, true, false)?;
+        let forward = bound_after(&rule.body, BTreeSet::new(), true, false)
+            .is_ok_and(|(bound, _)| rule.head.variables().is_subset(&bound));
+        backward.push(
+            !forward
+                || program.tables.contains(&relation(&rule.head))
+                || rule.body.is_empty()
+                || rule.body.iter().any(|l| matches!(l, Literal::Aggregate(_))),
+        );
+        if !forward && rule.body.iter().any(|l| matches!(l, Literal::Fresh(_))) {
+            return Err(Error::new(
+                "fresh needs safe preceding goals and a new final output variable.",
+            ));
         }
     }
     for (i, query) in program.queries.iter().enumerate() {
-        let (bound, _) = bound_after(&query.goals, BTreeSet::new(), false, false)?;
+        literal_shapes(&query.goals, false, false)?;
+        let mut supplied = BTreeSet::new();
+        for literal in &query.goals {
+            supplied.extend(literal.variables());
+        }
+        let (bound, _) = bound_after(&query.goals, supplied, false, false)?;
         let projected: BTreeSet<_> = query.variables.iter().cloned().collect();
         if projected.len() != query.variables.len() || !projected.is_subset(&bound) {
             return Err(Error::new(format!(
@@ -213,50 +347,134 @@ pub(crate) fn plan(program: &Program) -> Result<Plan, Error> {
             }
         }
     }
-    // A strict dependency cycle keeps raising a level. Positive cycles settle
-    // at one level and remain ordinary finite Datalog recursion.
-    let count = levels.len();
-    for pass in 0..=count {
-        let mut changed = false;
-        for (head, dependency, strict) in &edges {
-            let next = levels[dependency] + usize::from(*strict);
-            if levels[head] < next {
-                levels.insert(head.clone(), next);
-                changed = true;
+    let heads: Vec<_> = program.rules.iter().map(|r| r.head.clone()).collect();
+    let mut producers: HashMap<Relation, Producers> = HashMap::new();
+    for (id, head) in heads.iter().enumerate() {
+        let entry = producers.entry(relation(head)).or_default();
+        entry.all.push(id);
+        entry.slots.resize_with(head.terms.len(), Default::default);
+        for (position, term) in head.terms.iter().enumerate() {
+            if let Some(value) = atomic(term) {
+                entry.slots[position]
+                    .0
+                    .entry(value.clone())
+                    .or_default()
+                    .push(id);
+            } else {
+                entry.slots[position].1.push(id);
             }
         }
-        if !changed {
-            break;
+    }
+    let count = heads.len();
+    let mut outgoing = vec![Vec::new(); count];
+    let mut incoming = vec![Vec::new(); count];
+    for (target, rule) in program.rules.iter().enumerate() {
+        let mut deps = Vec::new();
+        for l in &rule.body {
+            goal_dependencies(l, false, &mut deps);
         }
-        if pass == count {
-            return Err(Error::new("Negation and aggregation must be stratified: a dependency cycle crosses a negative or aggregate goal."));
+        for (goal, strict) in deps {
+            for source in candidates(&goal, &heads, &producers) {
+                outgoing[source].push((target, strict));
+                incoming[target].push(source);
+            }
         }
     }
-    for head in generating {
-        let mut pending: Vec<_> = edges
+    let mut visited = vec![false; count];
+    let mut order = Vec::new();
+    for root in 0..count {
+        if visited[root] {
+            continue;
+        }
+        visited[root] = true;
+        let mut stack = vec![(root, 0)];
+        while let Some((id, at)) = stack.last_mut() {
+            if *at == outgoing[*id].len() {
+                order.push(*id);
+                stack.pop();
+            } else {
+                let next = outgoing[*id][*at].0;
+                *at += 1;
+                if !visited[next] {
+                    visited[next] = true;
+                    stack.push((next, 0));
+                }
+            }
+        }
+    }
+    let mut component = vec![usize::MAX; count];
+    let mut components = 0;
+    for root in order.into_iter().rev() {
+        if component[root] != usize::MAX {
+            continue;
+        }
+        component[root] = components;
+        let mut stack = vec![root];
+        while let Some(id) = stack.pop() {
+            for &next in &incoming[id] {
+                if component[next] == usize::MAX {
+                    component[next] = components;
+                    stack.push(next);
+                }
+            }
+        }
+        components += 1;
+    }
+    let mut edges = vec![Vec::new(); components];
+    let mut indegree = vec![0; components];
+    for (source, targets) in outgoing.iter().enumerate() {
+        for &(target, strict) in targets {
+            let (a, b) = (component[source], component[target]);
+            if a == b {
+                if strict {
+                    return Err(Error::new("Negation and aggregation must be stratified: a dependency cycle crosses a negative or aggregate goal."));
+                }
+            } else {
+                edges[a].push((b, strict));
+                indegree[b] += 1;
+            }
+        }
+    }
+    let mut heights = vec![0; components];
+    for (i, r) in program.rules.iter().enumerate() {
+        if r.body
             .iter()
-            .filter(|(h, _, _)| h == &head)
-            .map(|(_, d, _)| d.clone())
-            .collect();
-        let mut seen = HashSet::new();
-        while let Some(current) = pending.pop() {
-            if current == head {
-                return Err(Error::new("Value-producing built-ins and @fresh cannot define recursive relations; use a separate nonrecursive rule."));
-            }
-            if seen.insert(current.clone()) {
-                pending.extend(
-                    edges
-                        .iter()
-                        .filter(|(h, _, _)| h == &current)
-                        .map(|(_, d, _)| d.clone()),
-                );
+            .any(|l| matches!(l, Literal::Aggregate(_) | Literal::Not(_)))
+        {
+            heights[component[i]] = 1;
+        }
+    }
+    let mut queue: std::collections::VecDeque<_> = indegree
+        .iter()
+        .enumerate()
+        .filter_map(|(i, n)| (*n == 0).then_some(i))
+        .collect();
+    while let Some(from) = queue.pop_front() {
+        for &(to, strict) in &edges[from] {
+            heights[to] = heights[to].max(heights[from] + usize::from(strict));
+            indegree[to] -= 1;
+            if indegree[to] == 0 {
+                queue.push_back(to);
             }
         }
     }
-    let rules = program
-        .rules
-        .iter()
-        .map(|r| levels[&relation(&r.head)])
-        .collect();
-    Ok(Plan { levels, rules })
+    let rules: Vec<_> = component.iter().map(|i| heights[*i]).collect();
+    for (i, head) in heads.iter().enumerate() {
+        let level = levels.entry(relation(head)).or_insert(0);
+        *level = (*level).max(rules[i]);
+    }
+    let mut demands: HashMap<Relation, Vec<usize>> = HashMap::new();
+    for (i, rule) in program.rules.iter().enumerate() {
+        if backward[i] {
+            demands.entry(relation(&rule.head)).or_default().push(i);
+        }
+    }
+    Ok(Plan {
+        levels,
+        rules,
+        backward,
+        demands,
+        heads,
+        producers,
+    })
 }

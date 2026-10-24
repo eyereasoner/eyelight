@@ -1,0 +1,35 @@
+% Answer
+?- mortal(Who).
+Who = socrates.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [mortal(socrates)]).
+
+clause(1, human(socrates), []).
+clause(2, mortal(var('Person')), [human(var('Person'))]).
+
+% step 1
+step(human(socrates), fact(1), [], []).
+% step 2
+step(mortal(socrates), rule(2), ['='('Person', socrates)], [human(socrates)]).
+
+% Check
+check passed: mortal(socrates).
+
+check passed: aggregate_all(count, (mortal(Person)), 1).
+
+condition('C1', resolution, ok, 2).
+condition('C2', well_founded, ok, 2).
+condition('C3', justification, ok, 2).
+condition('C4', coverage, ok, 2).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 0).
+condition('C7', relevance, ok, 3).
+steps(2).
+verified(2).
+recomputed(0).
+trusted(0).
+claims(1).
+verdict(checked).

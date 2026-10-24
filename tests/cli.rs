@@ -2,7 +2,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 fn cli(args: &[&str], input: &str) -> std::process::Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_whye"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_wheye"))
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -34,18 +34,18 @@ fn stdin_answers_explanation_and_generated_proof_check() {
     assert!(result.status.success());
     let text = String::from_utf8(result.stdout).unwrap();
     assert!(text.contains("checked: 2 steps, 1 claim"));
-    for condition in whye::Condition::ALL {
+    for condition in wheye::Condition::ALL {
         assert!(text.contains(&format!("{condition}:")));
     }
     assert!(text.contains("C5 re-decision: not applicable"));
 }
 #[test]
 fn saved_proof_from_stdin_is_checked_against_source() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
+    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minimal.pl");
     let result = cli(&["-p", source], "");
     assert!(result.status.success());
     let proof = String::from_utf8(result.stdout).unwrap();
-    assert!(proof.starts_with("whye-proof 1\n"));
+    assert!(proof.starts_with("wheye-proof 1\n"));
     assert!(cli(&["--check-proof", "-", source], &proof)
         .status
         .success());
@@ -55,14 +55,14 @@ fn saved_proof_from_stdin_is_checked_against_source() {
     assert!(result.stdout.is_empty());
     let diagnostic = String::from_utf8(result.stderr).unwrap();
     assert!(diagnostic.contains("[C1 resolution] step 2:"));
-    for condition in whye::Condition::ALL {
+    for condition in wheye::Condition::ALL {
         assert!(diagnostic.contains(&format!("{condition}:")));
     }
 }
 #[test]
 fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
     for (args, input) in [
-        (vec!["-"], "p(X)."),
+        (vec!["-"], "p(."),
         (vec!["--max-facts", "1", "-"], "p(a). q(X) :- p(X)."),
         (vec!["--bogus"], ""),
         (vec!["--check-proof", "-", "-"], ""),
@@ -73,7 +73,7 @@ fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
         assert!(result.stdout.is_empty());
         assert!(String::from_utf8(result.stderr)
             .unwrap()
-            .starts_with("whye: "));
+            .starts_with("wheye: "));
     }
 }
 #[test]
@@ -81,14 +81,14 @@ fn help_version_and_multiple_source_files_work() {
     let help = cli(&[], "");
     assert!(help.status.success());
     let help = String::from_utf8(help.stdout).unwrap();
-    assert!(help.starts_with("whye — a small relational reasoner\n"));
-    assert!(help.contains("Usage: whye [OPTIONS] FILE..."));
+    assert!(help.starts_with("wheye — a small relational reasoner\n"));
+    assert!(help.contains("Usage: wheye [OPTIONS] FILE..."));
     assert!(help.contains("Prolog-style .pl syntax"));
     assert_eq!(
         String::from_utf8(cli(&["--version"], "").stdout).unwrap(),
-        format!("whye {}\n", whye::VERSION)
+        format!("wheye {}\n", wheye::VERSION)
     );
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minimal.pl");
     let result = cli(&[path, "-"], "human(hypatia).");
     assert!(result.status.success());
     assert!(String::from_utf8(result.stdout)
@@ -107,7 +107,7 @@ fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
     );
     let report = String::from_utf8(result.stdout).unwrap();
     assert!(!report.contains("not applicable"));
-    for condition in whye::Condition::ALL {
+    for condition in wheye::Condition::ALL {
         assert!(report.contains(&format!("{condition}:")));
     }
     let result = cli(&["-p", source], "");
@@ -116,7 +116,7 @@ fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
     assert!(cli(&["--check-proof", "-", source], &proof)
         .status
         .success());
-    let forged = proof.replace("ge(15, 10)", "ge(0, 10)");
+    let forged = proof.replace("'>='(15, 10)", "'>='(0, 10)");
     assert_ne!(forged, proof);
     let result = cli(&["--check-proof", "-", source], &forged);
     assert!(!result.status.success());

@@ -1,0 +1,141 @@
+% Answer
+?- finding(Subject, Reason).
+Subject = customer(c2), Reason = empty_email.
+Subject = order(o3), Reason = invalid_amount(-5).
+Subject = order(o3), Reason = duplicate_key(r09, r10).
+Subject = customer(c1), Reason = conflicting_email("ada@example.org", "ada.new@example.org").
+Subject = record(r11), Reason = unsupported_shape(shipment, 1).
+Subject = order(o2), Reason = unknown_customer(c9).
+Subject = customer(c3), Reason = missing_email.
+
+?- audit_summary(Kind, Count).
+Kind = customer_count, Count = 3.
+Kind = finding_count, Count = 7.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(1), [finding(customer(c2), empty_email)]).
+claim(query(1), [finding(order(o3), invalid_amount(-5))]).
+claim(query(1), [finding(order(o3), duplicate_key(r09, r10))]).
+claim(query(1), [finding(customer(c1), conflicting_email("ada@example.org", "ada.new@example.org"))]).
+claim(query(1), [finding(record(r11), unsupported_shape(shipment, 1))]).
+claim(query(1), [finding(order(o2), unknown_customer(c9))]).
+claim(query(1), [finding(customer(c3), missing_email)]).
+
+clause(3, record(r03, customer(c3, "Mira")), []).
+clause(4, record(r04, email(c1, "ada@example.org")), []).
+clause(5, record(r05, email(c1, "ada.new@example.org")), []).
+clause(6, record(r06, email(c2, "")), []).
+clause(8, record(r08, order(o2, c9, 45)), []).
+clause(9, record(r09, order(o3, c2, -5)), []).
+clause(10, record(r10, order(o3, c2, 9)), []).
+clause(11, record(r11, shipment(o1)), []).
+clause(15, length([], 0), []).
+clause(16, length(list([var('$anonymous1')], var('Rest')), var('Count')), [length(var('Rest'), var('Previous')), is(var('Count'), '+'(var('Previous'), 1))]).
+clause(17, customer(var('Id')), [record(var('$anonymous2'), customer(var('Id'), var('$anonymous3')))]).
+clause(19, record_shape(var('Row'), var('Name'), var('Arity')), [record(var('Row'), var('Term')), '=..'(var('Term'), list([var('Name')], var('Arguments'))), length(var('Arguments'), var('Arity'))]).
+clause(20, finding(record(var('Row')), unsupported_shape(var('Name'), var('Arity'))), [record_shape(var('Row'), var('Name'), var('Arity')), '\\+'(allowed_shape(var('Name'), var('Arity')))]).
+clause(21, finding(customer(var('Id')), missing_email), [customer(var('Id')), '\\+'(has_email(var('Id')))]).
+clause(22, finding(customer(var('Id')), empty_email), [record(var('$anonymous6'), email(var('Id'), ""))]).
+clause(23, finding(customer(var('Id')), conflicting_email(var('Left'), var('Right'))), [record(var('Row'), email(var('Id'), var('Left'))), record(var('Other'), email(var('Id'), var('Right'))), '@<'(var('Row'), var('Other')), '\\='(var('Left'), var('Right'))]).
+clause(24, finding(order(var('Id')), unknown_customer(var('Customer'))), [record(var('$anonymous7'), order(var('Id'), var('Customer'), var('$anonymous8'))), '\\+'(customer(var('Customer')))]).
+clause(25, finding(order(var('Id')), invalid_amount(var('Amount'))), [record(var('$anonymous9'), order(var('Id'), var('$anonymous10'), var('Amount'))), '<'(var('Amount'), 0)]).
+clause(26, finding(order(var('Id')), duplicate_key(var('Row'), var('Other'))), [record(var('Row'), order(var('Id'), var('$anonymous11'), var('$anonymous12'))), record(var('Other'), order(var('Id'), var('$anonymous13'), var('$anonymous14'))), '@<'(var('Row'), var('Other'))]).
+
+% step 1
+step(record(r06, email(c2, "")), fact(6), [], []).
+% step 2
+step(finding(customer(c2), empty_email), rule(22), ['='('$anonymous6', r06), '='('Id', c2)], [record(r06, email(c2, ""))]).
+% step 3
+step(record(r09, order(o3, c2, -5)), fact(9), [], []).
+% step 4
+step('<'(-5, 0), builtin, [], []).
+% step 5
+step(finding(order(o3), invalid_amount(-5)), rule(25), ['='('$anonymous9', r09), '='('Id', o3), '='('$anonymous10', c2), '='('Amount', -5)], [record(r09, order(o3, c2, -5)), '<'(-5, 0)]).
+% step 6
+step(record(r10, order(o3, c2, 9)), fact(10), [], []).
+% step 7
+step('@<'(r09, r10), builtin, [], []).
+% step 8
+step(finding(order(o3), duplicate_key(r09, r10)), rule(26), ['='('Row', r09), '='('Id', o3), '='('$anonymous11', c2), '='('$anonymous12', -5), '='('Other', r10), '='('$anonymous13', c2), '='('$anonymous14', 9)], [record(r09, order(o3, c2, -5)), record(r10, order(o3, c2, 9)), '@<'(r09, r10)]).
+% step 9
+step(record(r04, email(c1, "ada@example.org")), fact(4), [], []).
+% step 10
+step(record(r05, email(c1, "ada.new@example.org")), fact(5), [], []).
+% step 11
+step('@<'(r04, r05), builtin, [], []).
+% step 12
+step('\\='("ada@example.org", "ada.new@example.org"), builtin, [], []).
+% step 13
+step(finding(customer(c1), conflicting_email("ada@example.org", "ada.new@example.org")), rule(23), ['='('Row', r04), '='('Id', c1), '='('Left', "ada@example.org"), '='('Other', r05), '='('Right', "ada.new@example.org")], [record(r04, email(c1, "ada@example.org")), record(r05, email(c1, "ada.new@example.org")), '@<'(r04, r05), '\\='("ada@example.org", "ada.new@example.org")]).
+% step 14
+step(record(r11, shipment(o1)), fact(11), [], []).
+% step 15
+step('=..'(shipment(o1), [shipment, o1]), builtin, [], []).
+% step 16
+step(length([], 0), fact(15), [], []).
+% step 17
+step(is(1, '+'(0, 1)), builtin, [], []).
+% step 18
+step(length([o1], 1), rule(16), ['='('$anonymous1', o1), '='('Rest', []), '='('Count', 1), '='('Previous', 0)], [length([], 0), is(1, '+'(0, 1))]).
+% step 19
+step(record_shape(r11, shipment, 1), rule(19), ['='('Row', r11), '='('Term', shipment(o1)), '='('Name', shipment), '='('Arguments', [o1]), '='('Arity', 1)], [record(r11, shipment(o1)), '=..'(shipment(o1), [shipment, o1]), length([o1], 1)]).
+% step 20
+step('\\+'(allowed_shape(shipment, 1)), absent, [], []).
+% step 21
+step(finding(record(r11), unsupported_shape(shipment, 1)), rule(20), ['='('Row', r11), '='('Name', shipment), '='('Arity', 1)], [record_shape(r11, shipment, 1), '\\+'(allowed_shape(shipment, 1))]).
+% step 22
+step(record(r08, order(o2, c9, 45)), fact(8), [], []).
+% step 23
+step('\\+'(customer(c9)), absent, [], []).
+% step 24
+step(finding(order(o2), unknown_customer(c9)), rule(24), ['='('$anonymous7', r08), '='('Id', o2), '='('Customer', c9), '='('$anonymous8', 45)], [record(r08, order(o2, c9, 45)), '\\+'(customer(c9))]).
+% step 25
+step(record(r03, customer(c3, "Mira")), fact(3), [], []).
+% step 26
+step(customer(c3), rule(17), ['='('$anonymous2', r03), '='('Id', c3), '='('$anonymous3', "Mira")], [record(r03, customer(c3, "Mira"))]).
+% step 27
+step('\\+'(has_email(c3)), absent, [], []).
+% step 28
+step(finding(customer(c3), missing_email), rule(21), ['='('Id', c3)], [customer(c3), '\\+'(has_email(c3))]).
+
+% Check
+check passed: finding(customer(c1), conflicting_email("ada@example.org", "ada.new@example.org")).
+
+check passed: finding(customer(c2), empty_email).
+
+check passed: finding(customer(c3), missing_email).
+
+check passed: finding(order(o2), unknown_customer(c9)).
+
+check passed: finding(order(o3), invalid_amount(-5)).
+
+check passed: finding(order(o3), duplicate_key(r09, r10)).
+
+check passed: finding(record(r11), unsupported_shape(shipment, 1)).
+
+check passed: audit_summary(customer_count, 3).
+
+check passed: audit_summary(finding_count, 7).
+
+check passed: \+ (finding(order(o1), invalid_amount(120))).
+
+check passed: \+ (finding(customer(c1), missing_email)).
+
+condition('C1', resolution, ok, 19).
+condition('C2', well_founded, ok, 28).
+condition('C3', justification, ok, 28).
+condition('C4', coverage, ok, 29).
+condition('C5', re_decision, ok, 6).
+condition('C6', boundary_consistency, ok, 3).
+condition('C7', relevance, ok, 35).
+obligation(absent, theory_scoped, '\\+'(allowed_shape(shipment, 1))).
+obligation(absent, theory_scoped, '\\+'(customer(c9))).
+obligation(absent, theory_scoped, '\\+'(has_email(c3))).
+steps(28).
+verified(19).
+recomputed(6).
+trusted(3).
+claims(7).
+verdict(checked_with_obligations).

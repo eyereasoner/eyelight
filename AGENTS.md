@@ -1,12 +1,12 @@
-# Working on whye
+# Working on wheye
 
-Whye is a small Rust relational reasoner with a native CLI and a WebAssembly
+Wheye is a small Rust relational reasoner with a native CLI and a WebAssembly
 playground. Describe implemented behavior and distinguish it from design goals.
 Keep diagnostics specific and user-facing text direct.
 
 ## Repository map
 
-- All Rust files live directly in `src/`: `model.rs` holds values and clauses;
+- All Rust files live directly in `src/`: `model.rs` holds values and clauses; `arithmetic.rs` handles pure numeric evaluation;
   `parser.rs` parses `.pl`; `engine.rs` evaluates; `proof.rs` generates and
   checks certificates. `language.rs` validates modes and strata; `semantics.rs`
   supplies pure built-ins, aggregates, and finite-model matching. `lib.rs` exposes
@@ -25,15 +25,15 @@ Keep diagnostics specific and user-facing text direct.
 
 ## Language and proofs
 
-Read `SPEC.md` before changing language or proof behavior. Whye implements
-Datalog-style rules with stratified negation, set aggregation, explicit `@`
-built-ins, and final-rule `@fresh` witnesses. Ordinary predicate names keep their
-relational meaning. Respect left-to-right safety and aggregate-local scopes.
-Reject negative/aggregate cycles and recursive value-producing rules. Queries
-select output and never become inference evidence.
+Read `SPEC.md` before changing language or proof behavior. Wheye implements a
+Prolog subset with structural terms, lists, exact integers, finite real arithmetic,
+stratified negation, aggregate_all/3, demand-driven tabling, assertions, explanations,
+and final-rule fresh/1 witnesses. Keep pure decisions out of ordinary indexes.
+Unification must perform an occurs check. Do not silently coerce numeric or text
+term types. Queries and assertions select output and never become inference evidence.
 
 Preserve the C1–C9 contract. C5 re-decides built-ins and aggregates. C6 verifies
-complete closed stratum prefixes, including omitted derivable facts; a scan of
+complete closed prefixes and transitive demanded-call graphs, including omitted derivable facts; a scan of
 only the displayed proof facts is insufficient. C8 verifies typed witnesses tied
 to one rule firing. Keep auxiliary decisions out of ordinary relation indexes.
 All nine checks must execute on `examples/orders.pl`. Feature-free programs may
@@ -56,8 +56,8 @@ small-graph oracle test. Keep implementation, specification, and examples consis
 
 ```sh
 cargo build --release --locked
-./target/release/whye examples/socrates.pl
-./target/release/whye --prove-and-check examples/socrates.pl
+./target/release/wheye examples/socrates.pl
+./target/release/wheye --prove-and-check examples/socrates.pl
 ./scripts/test-all
 cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 ./scripts/build-playground
@@ -89,7 +89,7 @@ in `_pages/`. The Pages workflow renders Jekyll into `_site/` and deploys it on
 pushes to `main`. Both output directories are ignored.
 
 Keep documentation links pointed at rendered Pages URLs; code and example links
-can point at GitHub. Preserve the configured base path (normally `/whye/`),
+can point at GitHub. Preserve the configured base path (normally `/wheye/`),
 `/playground/`, and `playground.html`. Run `node tests/pages.mjs` and verify the
 rendered site in a browser after website changes. Version tests require the
 committed Wasm, README, guide, specification, and playground to match

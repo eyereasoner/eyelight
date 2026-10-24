@@ -1,0 +1,59 @@
+% Answer
+?- aggregate_all(count, (is_a(Subject, player)), Result).
+Result = 3.
+
+?- aggregate_all(count, (is_a(Subject, 'team-member')), Result).
+Result = 3.
+
+?- aggregate_all(sum(Value), (score(Subject, Value)), Result).
+Result = 24.
+
+?- aggregate_all(min(Value), (score(Subject, Value)), Result).
+Result = 7.
+
+?- aggregate_all(max(Value), (score(Subject, Value)), Result).
+Result = 10.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(3), [aggregate_all(sum(V0), [score(V1, V0)], 24)]).
+
+clause(4, score(milo, 7), []).
+clause(6, score(rex, 10), []).
+clause(7, score(luna, 7), []).
+
+% step 1
+step(score(milo, 7), fact(4), [], []).
+% step 2
+step(score(luna, 7), fact(7), [], []).
+% step 3
+step(score(rex, 10), fact(6), [], []).
+% step 4
+step(aggregate_all(sum(V0), [score(V1, V0)], 24), collected, [], [[score(milo, 7)], [score(luna, 7)], [score(rex, 10)]]).
+
+% Check
+check passed: aggregate_all(count, (is_a(Subject, player)), 3).
+
+check passed: aggregate_all(count, (is_a(Subject, 'team-member')), 3).
+
+check passed: aggregate_all(sum(Value), (score(Subject, Value)), 24).
+
+check passed: aggregate_all(min(Value), (score(Subject, Value)), 7).
+
+check passed: aggregate_all(max(Value), (score(Subject, Value)), 10).
+
+condition('C1', resolution, ok, 3).
+condition('C2', well_founded, ok, 4).
+condition('C3', justification, ok, 4).
+condition('C4', coverage, ok, 4).
+condition('C5', re_decision, ok, 1).
+condition('C6', boundary_consistency, ok, 1).
+condition('C7', relevance, ok, 5).
+obligation(collected, collection_completeness, aggregate_all(sum(var('V0')), [score(var('V1'), var('V0'))], 24)).
+steps(4).
+verified(3).
+recomputed(1).
+trusted(1).
+claims(1).
+verdict(checked_with_obligations).

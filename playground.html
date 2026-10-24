@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore small logical programs, follow their explanations, and check their proofs with whye.">
-  <title>whye playground</title>
+  <meta name="description" content="Explore small logical programs, follow their explanations, and check their proofs with wheye.">
+  <title>wheye playground</title>
   <link rel="icon" href="assets/eye.png" type="image/png">
   <link rel="stylesheet" href="playground.css">
 </head>
 <body>
   <main>
     <header class="masthead">
-      <a class="brand" href="./" aria-label="whye home"><img src="assets/eye.png" width="64" height="64" alt=""><span class="brand-copy"><span class="brand-name">Whye playground<span class="version" id="version">v0.1.12</span></span></span></a>
+      <a class="brand" href="./" aria-label="wheye home"><img src="assets/eye.png" width="64" height="64" alt=""><span class="brand-copy"><span class="brand-name">Wheye playground<span class="version" id="version">v0.1.13</span></span></span></a>
       <nav class="site-nav" aria-label="Project">
-        <a href="https://eyereasoner.github.io/whye/">Guide</a>
-        <a href="https://eyereasoner.github.io/whye/playground/" aria-current="page">Playground</a>
-        <a href="https://eyereasoner.github.io/whye/SPEC/">Specification</a>
-        <a href="https://github.com/eyereasoner/whye">Repository ↗</a>
+        <a href="https://eyereasoner.github.io/wheye/">Guide</a>
+        <a href="https://eyereasoner.github.io/wheye/playground/" aria-current="page">Playground</a>
+        <a href="https://eyereasoner.github.io/wheye/SPEC/">Specification</a>
+        <a href="https://github.com/eyereasoner/wheye">Repository ↗</a>
       </nav>
     </header>
-    <h1 id="title" class="sr-only">Whye playground</h1>
+    <h1 id="title" class="sr-only">Wheye playground</h1>
     <section class="workspace" aria-label="Reasoning playground">
       <div class="toolbar">
         <div class="actions">
@@ -28,7 +28,99 @@
           <button type="button" id="share" class="share">↗ Share link</button>
         </div>
         <div class="selectors">
-          <label>Explore<select id="example"><option value="">Your program</option><option value="socrates" selected>Socrates</option><option value="paths">Paths &amp; cycles</option><option value="path-discovery">Airport path discovery</option><option value="family">Family connections</option><option value="values">Names, text &amp; numbers</option><option value="rdf">RDF-shaped relations</option><option value="arithmetic">Built-in calculations</option><option value="negation">Stratified negation</option><option value="aggregation">Department budgets</option><option value="witnesses">Fresh tickets</option><option value="orders">Vouchers · all C1–C9</option><option value="deep-taxonomy-10">Taxonomy · 10 levels</option><option value="deep-taxonomy-100">Taxonomy · 100 levels</option><option value="deep-taxonomy-1000">Taxonomy · 1,000 levels</option><option value="deep-taxonomy-10000">Taxonomy · 10,000 levels</option><option value="deep-taxonomy-100000">Taxonomy · 100,000 levels</option></select></label>
+          <label>Explore<select id="example">
+              <option value="socrates">Socrates</option>
+              <option value="abstract-interpretation">Abstract interpretation</option>
+              <option value="access-control-policy">Access control policy</option>
+              <option value="ackermann">Ackermann</option>
+              <option value="age">Age</option>
+              <option value="aggregation">Aggregation</option>
+              <option value="animals">Animals</option>
+              <option value="arithmetic">Arithmetic</option>
+              <option value="battery-dispatch">Battery dispatch</option>
+              <option value="bayes-diagnosis">Bayes diagnosis</option>
+              <option value="beam-deflection">Beam deflection</option>
+              <option value="binomial-vandermonde">Binomial vandermonde</option>
+              <option value="braking-distance">Braking distance</option>
+              <option value="buck-converter-design">Buck converter design</option>
+              <option value="collatz">Collatz</option>
+              <option value="complex">Complex</option>
+              <option value="control-system">Control system</option>
+              <option value="critical-path-schedule">Critical path schedule</option>
+              <option value="data-quality-audit">Data quality audit</option>
+              <option value="deep-taxonomy-10">Deep taxonomy 10</option>
+              <option value="deep-taxonomy-100">Deep taxonomy 100</option>
+              <option value="deep-taxonomy-1000">Deep taxonomy 1000</option>
+              <option value="deep-taxonomy-10000">Deep taxonomy 10000</option>
+              <option value="deep-taxonomy-100000">Deep taxonomy 100000</option>
+              <option value="delfour">Delfour</option>
+              <option value="dijkstra">Dijkstra</option>
+              <option value="dog-license">Dog license</option>
+              <option value="easter">Easter</option>
+              <option value="electrical-rc-filter">Electrical rc filter</option>
+              <option value="explainable-ev-depot-configuration">Explainable ev depot configuration</option>
+              <option value="expression-eval">Expression eval</option>
+              <option value="family">Family</option>
+              <option value="family-cousins">Family cousins</option>
+              <option value="fft8-numeric">Fft8 numeric</option>
+              <option value="fibonacci">Fibonacci</option>
+              <option value="field-nitrogen-balance">Field nitrogen balance</option>
+              <option value="flute-puzzle">Flute puzzle</option>
+              <option value="french-cities">French cities</option>
+              <option value="friends">Friends</option>
+              <option value="good-cobbler">Good cobbler</option>
+              <option value="gps">Gps</option>
+              <option value="gray-code-counter">Gray code counter</option>
+              <option value="hamming-code">Hamming code</option>
+              <option value="hanoi">Hanoi</option>
+              <option value="interval-relations">Interval relations</option>
+              <option value="inventory">Inventory</option>
+              <option value="job-shop-scheduling">Job shop scheduling</option>
+              <option value="knapsack-optimization">Knapsack optimization</option>
+              <option value="lagrange-cosets">Lagrange cosets</option>
+              <option value="least-squares-regression">Least squares regression</option>
+              <option value="list-collection">List collection</option>
+              <option value="lists">Lists</option>
+              <option value="matrix-multiplication">Matrix multiplication</option>
+              <option value="modular-exponentiation">Modular exponentiation</option>
+              <option value="negation">Negation</option>
+              <option value="newton-raphson">Newton raphson</option>
+              <option value="observability-log-correlation">Observability log correlation</option>
+              <option value="orbital-transfer-design">Orbital transfer design</option>
+              <option value="orders">Orders</option>
+              <option value="padovan">Padovan</option>
+              <option value="paraconsistent-animals">Paraconsistent animals</option>
+              <option value="path-discovery">Path discovery</option>
+              <option value="paths">Paths</option>
+              <option value="peano">Peano</option>
+              <option value="peasant">Peasant</option>
+              <option value="pell-equation">Pell equation</option>
+              <option value="permissions">Permissions</option>
+              <option value="policy-risk">Policy risk</option>
+              <option value="polynomial">Polynomial</option>
+              <option value="queens">Queens</option>
+              <option value="radioactive-decay">Radioactive decay</option>
+              <option value="rdf">Rdf</option>
+              <option value="research-portal">Research portal</option>
+              <option value="sbom-vulnerability-response">Sbom vulnerability response</option>
+              <option value="schema-inference">Schema inference</option>
+              <option value="service-outage-recovery">Service outage recovery</option>
+              <option value="shortest-path">Shortest path</option>
+              <option value="sieve">Sieve</option>
+              <option value="state-transitions">State transitions</option>
+              <option value="statistics-summary">Statistics summary</option>
+              <option value="symbolic-derivative">Symbolic derivative</option>
+              <option value="term-structure">Term structure</option>
+              <option value="text-processing">Text processing</option>
+              <option value="turing">Turing</option>
+              <option value="type-inference">Type inference</option>
+              <option value="unification">Unification</option>
+              <option value="values">Values</option>
+              <option value="vector-similarity">Vector similarity</option>
+              <option value="weighted-interval-scheduling">Weighted interval scheduling</option>
+              <option value="wind-turbine">Wind turbine</option>
+              <option value="witnesses">Witnesses</option>
+            </select></label>
           <label>Show<select id="mode"><option value="answers">Answers</option><option value="explain">Explanation</option><option value="proof">Proof certificate</option><option value="checked">Generate &amp; check proof</option><option value="check">Check saved proof</option></select></label>
         </div>
       </div>
@@ -56,7 +148,7 @@ Press Run to find out who is mortal.</pre>
       <section class="panel saved-proof" id="saved-proof-panel" hidden aria-labelledby="proof-heading">
         <div class="panel-heading"><h2 id="proof-heading"><span class="dot coral"></span>Proof to check</h2><span>Keep its matching program above</span></div>
         <label class="sr-only" for="saved-proof">Saved proof certificate</label>
-        <textarea id="saved-proof" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Paste a whye-proof 1 certificate here."></textarea>
+        <textarea id="saved-proof" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Paste a wheye-proof 1 certificate here."></textarea>
       </section>
     </section>
     <section class="notes" aria-label="How it works">
@@ -64,7 +156,7 @@ Press Run to find out who is mortal.</pre>
       <article><span class="number">02</span><h2>Ask what follows.</h2><p>Questions select answers. Repeated facts and paths produce one answer per distinct binding.</p></article>
       <article><span class="number">03</span><h2>See the evidence.</h2><p>Explanations show the route. Checking verifies each claim, including built-ins and closed-world tests. Source facts are assumed; answer completeness is not checked.</p></article>
     </section>
-    <footer><span>whye · version 0.1.12</span><span>Runs in your browser. Your program stays on your device unless you share it.</span></footer>
+    <footer><span>wheye · version 0.1.13</span><span>Runs in your browser. Your program stays on your device unless you share it.</span></footer>
   </main>
   <script type="module" src="playground.js"></script>
 </body>

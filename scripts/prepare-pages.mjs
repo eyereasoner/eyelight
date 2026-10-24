@@ -3,9 +3,9 @@ import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const publicSite = 'https://eyereasoner.github.io/whye/';
+const publicSite = 'https://eyereasoner.github.io/wheye/';
 
-export async function preparePages(destination, basePath = '/whye') {
+export async function preparePages(destination, basePath = '/wheye') {
   if (!/^(?:\/[A-Za-z0-9._-]+)*\/*$/.test(basePath)) {
     throw new Error('Pages base path must be empty or a slash-prefixed URL path.');
   }
@@ -36,12 +36,12 @@ export async function preparePages(destination, basePath = '/whye') {
   await write('SPEC/index.md', document(spec));
   await cp(resolve(root, 'scripts/pages-layout.html'), resolve(destination, '_layouts/default.html'));
   await write('_config.yml', JSON.stringify({
-    title: 'whye', baseurl: basePath, markdown: 'kramdown',
+    title: 'wheye', baseurl: basePath, markdown: 'kramdown',
     kramdown: { input: 'GFM', auto_ids: true },
   }, null, 2) + '\n');
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  await preparePages(resolve(root, '_pages'), process.env.PAGES_BASE_PATH ?? '/whye');
+  await preparePages(resolve(root, '_pages'), process.env.PAGES_BASE_PATH ?? '/wheye');
   console.log('Website prepared in _pages. Render with Jekyll to produce _site.');
 }

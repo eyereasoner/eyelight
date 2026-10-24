@@ -1,10 +1,10 @@
-# <img src="assets/eye.png" alt="" width="48" height="48" align="middle"> whye
+# <img src="assets/eye.png" alt="" width="48" height="48" align="middle"> wheye
 
-A small Rust relational reasoner with explanations and independently checked proofs.
+A Rust Prolog subset with tabled recursion, explanations, and independently checked C1–C9 proofs.
 
-**Version 0.1.12**
+**Version 0.1.13**
 
-- Try programs in your browser: [Playground](https://eyereasoner.github.io/whye/playground/).
-- Learn how to use whye: [Guide](https://eyereasoner.github.io/whye/).
-- Read the language and proof contract: [Specification](https://eyereasoner.github.io/whye/SPEC/).
-- Explore runnable programs: [Examples](https://github.com/eyereasoner/whye/tree/main/examples/).
+- Try programs in your browser: [Playground](https://eyereasoner.github.io/wheye/playground/).
+- Learn how to use wheye: [Guide](https://eyereasoner.github.io/wheye/).
+- Read the language and proof contract: [Specification](https://eyereasoner.github.io/wheye/SPEC/).
+- Explore runnable programs: [Examples](https://github.com/eyereasoner/wheye/tree/main/examples/).

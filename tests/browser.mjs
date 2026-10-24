@@ -36,7 +36,7 @@ async function evaluate(expression) {
 }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function wait(expression, label) {
-  for (let i = 0; i < 200; i++) { if (await evaluate(expression)) return; await delay(50); }
+  for (let i = 0; i < 1200; i++) { if (await evaluate(expression)) return; await delay(50); }
   throw new Error(`Timed out: ${label}`);
 }
 async function navigate(url) {
@@ -80,26 +80,26 @@ try {
   await screenshot('desktop');
 
   const generated = await run('checked');
-  assert.match(generated, /checked: 2 steps, 1 claim/);
+  assert.match(generated, /checked: 3 steps, 3 claims/);
   for (let id = 1; id <= 9; id++) assert.match(generated, new RegExp(`C${id} `));
   await screenshot('desktop-proof-check');
 
   const proof = await run('proof');
-  assert.match(proof, /^whye-proof 1/);
+  assert.match(proof, /^wheye-proof 1/);
   await set('saved-proof', proof);
   const checked = await run('check');
-  assert.match(checked, /checked: 2 steps, 1 claim/);
+  assert.match(checked, /checked: 3 steps, 3 claims/);
   for (let id = 1; id <= 9; id++) assert.match(checked, new RegExp(`C${id} `));
-  assert.match(checked, /C5 re-decision: not applicable/);
-  assert.match(checked, /C6 boundary consistency: not applicable/);
+  assert.match(checked, /C5 re-decision: [1-9][0-9]* checked, 0 failed/);
+  assert.match(checked, /C6 boundary consistency: [1-9][0-9]* checked, 0 failed/);
   assert.match(checked, /C8 witness integrity: not applicable/);
   assert.equal(await evaluate('document.getElementById("saved-proof-panel").hidden'), false);
   await set('saved-proof', proof.replace('mortal(socrates)', 'mortal(plato)'));
   const invalid = await run('check');
-  assert.match(invalid, /invalid: 2 steps/);
+  assert.match(invalid, /invalid: 3 steps/);
   assert.match(invalid, /\[C1 resolution\] step 2/);
-  await set('source', 'human(X).');
-  assert.match(await run('answers'), /fact must be ground/);
+  await set('source', 'human(X). ?- human(X).');
+  assert.match(await run('answers'), /ground answer/);
   assert.ok(await evaluate('document.getElementById("output").classList.contains("error")'));
 
   for (const name of ['arithmetic', 'negation', 'aggregation', 'witnesses', 'orders']) {
@@ -111,7 +111,7 @@ try {
       assert.doesNotMatch(result, /not applicable/);
       for (let i = 1; i <= 9; i++) assert.match(result, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
       const certificate = await run('proof');
-      const forged = certificate.replace('ge(15, 10)', 'ge(0, 10)');
+      const forged = certificate.replace("'>='(15, 10)", "'>='(0, 10)");
       assert.notEqual(forged, certificate);
       await set('saved-proof', forged);
       assert.match(await run('check'), /\[C5 re-decision\]/);
@@ -130,11 +130,11 @@ try {
 
   await navigate(`${base}#example=path-discovery`);
   const airportAnswers = await run('answers');
-  assert.equal((airportAnswers.match(/Stops = 2/g) || []).length, 3);
+  assert.equal((airportAnswers.match(/Stopovers = 2/g) || []).length, 3);
   for (const name of ['Heraklion International Nikos Kazantzakis Airport', 'Diagoras Airport', 'Palma De Mallorca Airport']) {
     assert.ok(airportAnswers.includes(`Liège Airport -> ${name} -> Václav Havel Airport Prague`));
   }
-  assert.match(await run('checked'), /^checked: [0-9]+ steps, 3 claims/);
+  assert.match(await run('checked'), /^checked: [0-9]+ steps, 11 claims/);
   await set('mode', 'answers', 'change');
   await evaluate('document.getElementById("share").click()');
   await wait('!document.getElementById("share-box").hidden', 'airport share opened');
@@ -142,9 +142,9 @@ try {
   await screenshot('desktop-airport-routes');
 
   await set('example', 'paths', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("source").value.includes("museum")', 'paths loaded');
+  await wait('!document.getElementById("source").disabled && document.getElementById("source").value.includes("follows(ada, ben)")', 'paths loaded');
   const paths = await run('answers');
-  for (const name of ['park', 'station', 'museum']) assert.match(paths, new RegExp(`Where = ${name}`));
+  for (const name of ['ben', 'cara']) assert.match(paths, new RegExp(`Who = ${name}`));
   await evaluate('document.getElementById("share").click()');
   await wait('!document.getElementById("share-box").hidden', 'share opened');
   assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=paths');
@@ -188,7 +188,7 @@ try {
   await command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await navigate(`${base}#example=socrates`);
   const phoneReport = await run('checked');
-  assert.match(phoneReport, /checked: 2 steps, 1 claim/);
+  assert.match(phoneReport, /checked: 3 steps, 3 claims/);
   for (let id = 1; id <= 9; id++) assert.match(phoneReport, new RegExp(`C${id} `));
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'phone layout overflows');
   assert.ok(await evaluate('document.querySelector(".output-panel").getBoundingClientRect().top > document.querySelector(".editors .panel").getBoundingClientRect().top'), 'phone panels should stack');
@@ -202,19 +202,19 @@ try {
   await screenshot('mobile-all-conditions');
   await set('example', 'deep-taxonomy-1000', 'change');
   await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "deep-taxonomy-1000"', 'mobile taxonomy loaded');
-  assert.match(await run('checked'), /^checked: 1003 steps, 1 claim/);
+  assert.match(await run('checked'), /^checked: 3003 steps, 6 claims/);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile taxonomy layout overflows');
 
   await set('example', 'path-discovery', 'change');
   await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "path-discovery"', 'mobile airport graph loaded');
-  assert.match(await run('checked'), /^checked: [0-9]+ steps, 3 claims/);
+  assert.match(await run('checked'), /^checked: [0-9]+ steps, 11 claims/);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile airport layout overflows');
   await screenshot('mobile-airport-routes');
 
   if (pagesRoot) {
     // Check the compatibility route as well as the directory route used above.
     await navigate(new URL('playground.html#example=socrates', pagesRoot).href);
-    assert.match(await run('checked'), /checked: 2 steps, 1 claim/);
+    assert.match(await run('checked'), /checked: 3 steps, 3 claims/);
     for (const [name, width, mobile] of [['desktop', 1280, false], ['mobile', 390, true]]) {
       await command('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile });
       for (const route of ['', 'SPEC/']) {

@@ -8,12 +8,12 @@ import { preparePages } from '../scripts/prepare-pages.mjs';
 const root = new URL('../', import.meta.url);
 
 test('website stages rendered documentation and every playground dependency', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'whye-pages-'));
+  const directory = await mkdtemp(join(tmpdir(), 'wheye-pages-'));
   try {
     await preparePages(directory);
     for (const file of ['index.md', 'SPEC/index.md', 'playground.html', 'playground/index.html',
       'playground.css', 'playground.js', 'playground-worker.js', 'assets/eye.png', 'assets/docs.css',
-      'pkg/whye.js', 'pkg/whye_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
+      'pkg/wheye.js', 'pkg/wheye_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
       'examples/values.pl', 'examples/rdf.pl', 'examples/arithmetic.pl', 'examples/negation.pl',
       'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE.md', '_layouts/default.html']) {
       assert.ok((await stat(join(directory, file))).isFile(), file);
@@ -28,15 +28,15 @@ test('website stages rendered documentation and every playground dependency', as
       assert.doesNotMatch(document, /\]\([^)]*\.md(?:#|\))/);
     }
     const guide = await readFile(join(directory, 'index.md'), 'utf8');
-    assert.match(guide, /^title: "Whye guide"$/m);
+    assert.match(guide, /^title: "Wheye guide"$/m);
     assert.match(guide, /^## Run your first program$/m);
-    assert.match(guide, /\]\(\/whye\/SPEC\/#8-verification\)/);
-    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Whye specification"$/m);
+    assert.match(guide, /\]\(\/wheye\/SPEC\/#8-verification\)/);
+    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Wheye specification"$/m);
     const playground = await readFile(join(directory, 'playground/index.html'), 'utf8');
     assert.match(playground, /<base href="\.\.\/">/);
-    assert.match(playground, /href="\/whye\/SPEC\/"/);
+    assert.match(playground, /href="\/wheye\/SPEC\/"/);
     assert.doesNotMatch(playground, /href="[^"]*\.md(?:#|")/);
-    assert.deepEqual(await readFile(join(directory, 'pkg/whye_bg.wasm')), await readFile(new URL('pkg/whye_bg.wasm', root)));
+    assert.deepEqual(await readFile(join(directory, 'pkg/wheye_bg.wasm')), await readFile(new URL('pkg/wheye_bg.wasm', root)));
     for (const directoryName of ['src', 'target', '.github']) {
       await assert.rejects(stat(join(directory, directoryName)), { code: 'ENOENT' });
     }
@@ -44,15 +44,15 @@ test('website stages rendered documentation and every playground dependency', as
 });
 
 test('documentation and playground links honor root and nested Pages prefixes', async () => {
-  for (const base of ['', '/preview/whye/']) {
-    const directory = await mkdtemp(join(tmpdir(), 'whye-prefix-'));
+  for (const base of ['', '/preview/wheye/']) {
+    const directory = await mkdtemp(join(tmpdir(), 'wheye-prefix-'));
     try {
       await preparePages(directory, base);
       const normalized = base.replace(/\/+$/, '');
       assert.equal(JSON.parse(await readFile(join(directory, '_config.yml'), 'utf8')).baseurl, normalized);
       for (const file of ['index.md', 'SPEC/index.md', 'playground.html']) {
         const text = await readFile(join(directory, file), 'utf8');
-        assert.doesNotMatch(text, /https:\/\/eyereasoner.github.io\/whye\//);
+        assert.doesNotMatch(text, /https:\/\/eyereasoner.github.io\/wheye\//);
       }
       assert.ok((await readFile(join(directory, 'playground.html'), 'utf8')).includes(`href="${normalized}/SPEC/"`));
     } finally { await rm(directory, { recursive: true, force: true }); }
@@ -60,8 +60,8 @@ test('documentation and playground links honor root and nested Pages prefixes', 
 });
 
 test('committed browser package matches Cargo and performs C1–C9 checking', async () => {
-  const { initSync, runProgram, version } = await import('../pkg/whye.js');
-  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
+  const { initSync, runProgram, version } = await import('../pkg/wheye.js');
+  initSync({ module: await readFile(new URL('pkg/wheye_bg.wasm', root)) });
   const cargo = await readFile(new URL('Cargo.toml', root), 'utf8');
   const expectedVersion = /^version\s*=\s*"([^"]+)"/m.exec(cargo)[1];
   assert.equal(version(), expectedVersion);
@@ -73,17 +73,17 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   assert.ok(guide.includes(`Version **${expectedVersion}**`));
   assert.ok(spec.includes(`Version **${expectedVersion}**`));
   assert.ok(playground.includes(`id="version">v${expectedVersion}</span>`));
-  assert.ok(playground.includes(`whye · version ${expectedVersion}</span>`));
+  assert.ok(playground.includes(`wheye · version ${expectedVersion}</span>`));
   const source = await readFile(new URL('examples/socrates.pl', root), 'utf8');
   const report = runProgram(source, 'checked', '');
-  assert.match(report, /^checked: 2 steps, 1 claim/);
+  assert.match(report, /^checked: 3 steps, 3 claims/);
   for (let condition = 1; condition <= 9; condition++) assert.match(report, new RegExp(`C${condition} `));
 });
 
 
 test('browser engine checks all nine conditions on the voucher example', async () => {
-  const { initSync, runProgram } = await import('../pkg/whye.js');
-  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/wheye.js');
+  initSync({ module: await readFile(new URL('pkg/wheye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/orders.pl', root), 'utf8');
   const proof = runProgram(source, 'proof', '');
   assert.match(proof, /boundary 1 level 0/);
@@ -91,13 +91,13 @@ test('browser engine checks all nine conditions on the voucher example', async (
   assert.match(report, /^checked:/);
   assert.doesNotMatch(report, /not applicable/);
   for (let i = 1; i <= 9; i++) assert.match(report, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
-  assert.throws(() => runProgram(source, 'check', proof.replace('ge(15, 10)', 'ge(0, 10)')));
+  assert.throws(() => runProgram(source, 'check', proof.replace("'>='(15, 10)", "'>='(0, 10)")));
 });
 
 
 test('browser engine checks the 100,000-level taxonomy within default limits', async () => {
-  const { initSync, runProgram } = await import('../pkg/whye.js');
-  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/wheye.js');
+  initSync({ module: await readFile(new URL('pkg/wheye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/deep-taxonomy-100000.pl', root), 'utf8');
   assert.equal(runProgram(source, 'answers', ''), '?- test(Result).\nResult = true.\n');
   const report = runProgram(source, 'checked', '');
@@ -108,16 +108,16 @@ test('browser engine checks the 100,000-level taxonomy within default limits', a
 
 
 test('browser engine discovers and checks three routes across the full airport graph', async () => {
-  const { initSync, runProgram } = await import('../pkg/whye.js');
-  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/wheye.js');
+  initSync({ module: await readFile(new URL('pkg/wheye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/path-discovery.pl', root), 'utf8');
   const answers = runProgram(source, 'answers', '');
-  assert.equal((answers.match(/Stops = 2/g) || []).length, 3);
+  assert.equal((answers.match(/Stopovers = 2/g) || []).length, 3);
   for (const name of ['Heraklion International Nikos Kazantzakis Airport', 'Diagoras Airport', 'Palma De Mallorca Airport']) {
     assert.ok(answers.includes(`Liège Airport -> ${name} -> Václav Havel Airport Prague`));
   }
   const proof = runProgram(source, 'proof', '');
   const report = runProgram(source, 'check', proof);
-  assert.match(report, /^checked: [0-9]+ steps, 3 claims/);
+  assert.match(report, /^checked: [0-9]+ steps, 11 claims/);
   assert.match(report, /C5 re-decision: [1-9][0-9]* checked, 0 failed/);
 });

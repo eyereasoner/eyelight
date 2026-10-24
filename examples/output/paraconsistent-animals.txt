@@ -1,0 +1,96 @@
+% Answer
+?- flies_safely(Animal, Status).
+Animal = tweety, Status = undecided.
+Animal = mythic, Status = undecided.
+Animal = falco, Status = true.
+Animal = opus, Status = false.
+Animal = batsy, Status = true.
+
+?- wings_safely(Animal, Status).
+Animal = batsy, Status = undecided.
+Animal = tweety, Status = true.
+Animal = falco, Status = true.
+Animal = mythic, Status = true.
+Animal = nemo, Status = false.
+
+?- needs_review(Animal, Property).
+Animal = tweety, Property = flies.
+Animal = mythic, Property = flies.
+Animal = batsy, Property = wings.
+
+?- moves_by(Animal, Mode).
+Animal = tweety, Mode = unknown.
+Animal = mythic, Mode = unknown.
+Animal = falco, Mode = flying.
+Animal = opus, Mode = walking.
+Animal = batsy, Mode = flying.
+
+% Reason
+certificate(eyeon, 1).
+
+claim(query(3), [wings_safely(batsy, undecided)]).
+
+clause(5, mammal(batsy), []).
+clause(6, bat(batsy), []).
+clause(13, wings(var('X'), false), [mammal(var('X'))]).
+clause(15, wings(var('X'), true), [bat(var('X'))]).
+clause(22, wing_status(var('X'), both), [wings(var('X'), true), wings(var('X'), false)]).
+clause(34, wings_safely(var('X'), undecided), [wing_status(var('X'), both)]).
+
+% step 1
+step(bat(batsy), fact(6), [], []).
+% step 2
+step(wings(batsy, true), rule(15), ['='('X', batsy)], [bat(batsy)]).
+% step 3
+step(mammal(batsy), fact(5), [], []).
+% step 4
+step(wings(batsy, false), rule(13), ['='('X', batsy)], [mammal(batsy)]).
+% step 5
+step(wing_status(batsy, both), rule(22), ['='('X', batsy)], [wings(batsy, true), wings(batsy, false)]).
+% step 6
+step(wings_safely(batsy, undecided), rule(34), ['='('X', batsy)], [wing_status(batsy, both)]).
+
+% Check
+check passed: flies_safely(tweety, undecided).
+
+check passed: flies_safely(falco, true).
+
+check passed: flies_safely(opus, false).
+
+check passed: flies_safely(mythic, undecided).
+
+check passed: wings_safely(batsy, undecided).
+
+check passed: wings_safely(nemo, false).
+
+check passed: needs_review(tweety, flies).
+
+check passed: needs_review(mythic, flies).
+
+check passed: needs_review(batsy, wings).
+
+check passed: aggregate_all(count, (needs_review(Animal, Property)), 3).
+
+check passed: moves_by(tweety, unknown).
+
+check passed: moves_by(falco, flying).
+
+check passed: moves_by(opus, walking).
+
+check passed: \+ (flies_safely(tweety, true)).
+
+check passed: \+ (flies_safely(tweety, false)).
+
+condition('C1', resolution, ok, 6).
+condition('C2', well_founded, ok, 6).
+condition('C3', justification, ok, 6).
+condition('C4', coverage, ok, 6).
+condition('C5', re_decision, ok, 0).
+condition('C6', boundary_consistency, ok, 0).
+condition('C7', relevance, ok, 7).
+steps(6).
+verified(6).
+recomputed(0).
+trusted(0).
+claims(1).
+verdict(checked).

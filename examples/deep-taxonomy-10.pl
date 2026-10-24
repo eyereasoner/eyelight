@@ -1,47 +1,82 @@
-% Following a classification chain 10 levels deep
+% Follow a chain of 10 classification steps from n0 through n10. The
+% individual ind starts with label n0 and acquires the next n label plus two
+% side labels, i and j, at each step. The final n label implies a2.
 %
-% One individual starts in class n000000. Each level adds its next class
-% and two side labels. Reaching n000010 produces a final true answer.
-% This example exercises deep forward reasoning and a checkable proof chain.
+% The query asks which individual has label a2, and the explanation traces
+% the supporting chain. Longer versions produce larger proofs.
 
-% Starting classification
-isa(ind, n000000).
+is_a(ind, n0).
 
-% Completion
-test(true) :- isa(ind, a2).
-isa(X, a2) :- isa(X, n000010).
+is_a(Entity, a2) :-
+    is_a(Entity, n10).
+is_a(Entity, n1) :-
+    is_a(Entity, n0).
+is_a(Entity, i1) :-
+    is_a(Entity, n0).
+is_a(Entity, j1) :-
+    is_a(Entity, n0).
+is_a(Entity, n2) :-
+    is_a(Entity, n1).
+is_a(Entity, i2) :-
+    is_a(Entity, n1).
+is_a(Entity, j2) :-
+    is_a(Entity, n1).
+is_a(Entity, n3) :-
+    is_a(Entity, n2).
+is_a(Entity, i3) :-
+    is_a(Entity, n2).
+is_a(Entity, j3) :-
+    is_a(Entity, n2).
+is_a(Entity, n4) :-
+    is_a(Entity, n3).
+is_a(Entity, i4) :-
+    is_a(Entity, n3).
+is_a(Entity, j4) :-
+    is_a(Entity, n3).
+is_a(Entity, n5) :-
+    is_a(Entity, n4).
+is_a(Entity, i5) :-
+    is_a(Entity, n4).
+is_a(Entity, j5) :-
+    is_a(Entity, n4).
+is_a(Entity, n6) :-
+    is_a(Entity, n5).
+is_a(Entity, i6) :-
+    is_a(Entity, n5).
+is_a(Entity, j6) :-
+    is_a(Entity, n5).
+is_a(Entity, n7) :-
+    is_a(Entity, n6).
+is_a(Entity, i7) :-
+    is_a(Entity, n6).
+is_a(Entity, j7) :-
+    is_a(Entity, n6).
+is_a(Entity, n8) :-
+    is_a(Entity, n7).
+is_a(Entity, i8) :-
+    is_a(Entity, n7).
+is_a(Entity, j8) :-
+    is_a(Entity, n7).
+is_a(Entity, n9) :-
+    is_a(Entity, n8).
+is_a(Entity, i9) :-
+    is_a(Entity, n8).
+is_a(Entity, j9) :-
+    is_a(Entity, n8).
+is_a(Entity, n10) :-
+    is_a(Entity, n9).
+is_a(Entity, i10) :-
+    is_a(Entity, n9).
+is_a(Entity, j10) :-
+    is_a(Entity, n9).
 
-% Classification levels
-isa(X, n000001) :- isa(X, n000000).
-isa(X, i000001) :- isa(X, n000000).
-isa(X, j000001) :- isa(X, n000000).
-isa(X, n000002) :- isa(X, n000001).
-isa(X, i000002) :- isa(X, n000001).
-isa(X, j000002) :- isa(X, n000001).
-isa(X, n000003) :- isa(X, n000002).
-isa(X, i000003) :- isa(X, n000002).
-isa(X, j000003) :- isa(X, n000002).
-isa(X, n000004) :- isa(X, n000003).
-isa(X, i000004) :- isa(X, n000003).
-isa(X, j000004) :- isa(X, n000003).
-isa(X, n000005) :- isa(X, n000004).
-isa(X, i000005) :- isa(X, n000004).
-isa(X, j000005) :- isa(X, n000004).
-isa(X, n000006) :- isa(X, n000005).
-isa(X, i000006) :- isa(X, n000005).
-isa(X, j000006) :- isa(X, n000005).
-isa(X, n000007) :- isa(X, n000006).
-isa(X, i000007) :- isa(X, n000006).
-isa(X, j000007) :- isa(X, n000006).
-isa(X, n000008) :- isa(X, n000007).
-isa(X, i000008) :- isa(X, n000007).
-isa(X, j000008) :- isa(X, n000007).
-isa(X, n000009) :- isa(X, n000008).
-isa(X, i000009) :- isa(X, n000008).
-isa(X, j000009) :- isa(X, n000008).
-isa(X, n000010) :- isa(X, n000009).
-isa(X, i000010) :- isa(X, n000009).
-isa(X, j000010) :- isa(X, n000009).
+% Answer and Reason
+?- is_a(Who, a2).
+?- why.
 
-% Query
-?- test(Result).
+% Check
+:- assertion((is_a(ind, a2))).
+:- assertion((is_a(ind, n10))).
+:- assertion((is_a(ind, i10))).
+:- assertion((is_a(ind, j10))).
+:- assertion((\+ (is_a(ind, n11)))).
