@@ -44,13 +44,13 @@ receipt(Record, Receipt) :-
 ?- receipt(Record, Receipt).
 
 % Check
-:- assertion(accepted(temperature(room, 21))).
-:- assertion(accepted(location(sensor, north, 3))).
-:- assertion(rejected(location(sensor, north), location, 2)).
-:- assertion(rejected(unexpected(on), unexpected, 1)).
-:- assertion(aggregate_all(count, accepted(Record), 2)).
-:- assertion(aggregate_all(count, rejected(Record, Name, Arity), 2)).
-:- assertion(receipt(temperature(room, 21), accepted_record(temperature, [room, 21]))).
-:- assertion(([a, b] =.. ['.', a, [b]])).
-:- assertion((List =.. ['.', a, [b]], List = [a, b])).
-:- assertion((Term =.. [reading, Value], Value = 42, Term = reading(42))).
+?- check(accepted(temperature(room, 21))).
+?- check(accepted(location(sensor, north, 3))).
+?- check(rejected(location(sensor, north), location, 2)).
+?- check(rejected(unexpected(on), unexpected, 1)).
+?- check(aggregate_all(count, accepted(Record), 2)).
+?- check(aggregate_all(count, rejected(Record, Name, Arity), 2)).
+?- check(receipt(temperature(room, 21), accepted_record(temperature, [room, 21]))).
+?- check(([a, b] =.. ['.', a, [b]])).
+?- check((List =.. ['.', a, [b]], List = [a, b])).
+?- check((Term =.. [reading, Value], Value = 42, Term = reading(42))).

@@ -65,11 +65,11 @@ length([_ | Rest], Count) :-
 ?- why.
 
 % Check
-:- assertion(count(scores, 8)).
-:- assertion(mean(scores, 5.0)).
-:- assertion(populationVariance(scores, 4.0)).
-:- assertion(populationStddev(scores, 2.0)).
-:- assertion((sample(scores, Values), sum(Values, 40.0))).
-:- assertion((sample(scores, Values), squared_error_sum(Values, 5.0, 32.0))).
-:- assertion(sum([], 0.0)).
-:- assertion(length([], 0)).
+?- check(count(scores, 8)).
+?- check(mean(scores, 5.0)).
+?- check(populationVariance(scores, 4.0)).
+?- check(populationStddev(scores, 2.0)).
+?- check((sample(scores, Values), sum(Values, 40.0))).
+?- check((sample(scores, Values), squared_error_sum(Values, 5.0, 32.0))).
+?- check(sum([], 0.0)).
+?- check(length([], 0)).

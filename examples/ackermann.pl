@@ -58,15 +58,15 @@ ackermann([Level, Count, Base], Result) :-
 ?- why.
 
 % Check
-:- assertion((ackermann([0, 0], 1))).
-:- assertion((ackermann([0, 6], 7))).
-:- assertion((ackermann([1, 2], 4))).
-:- assertion((ackermann([1, 7], 9))).
-:- assertion((ackermann([2, 2], 7))).
-:- assertion((ackermann([2, 9], 21))).
-:- assertion((ackermann([3, 4], 125))).
-:- assertion((_Calc1 is ((2 ^ 1003) - 3), ackermann([3, 1000], _Calc1))).
-:- assertion((ackermann([4, 0], 13))).
-:- assertion((ackermann([4, 1], 65533))).
-:- assertion((_Calc1 is ((2 ^ 65536) - 3), ackermann([4, 2], _Calc1))).
-:- assertion((ackermann([5, 0], 65533))).
+?- check((ackermann([0, 0], 1))).
+?- check((ackermann([0, 6], 7))).
+?- check((ackermann([1, 2], 4))).
+?- check((ackermann([1, 7], 9))).
+?- check((ackermann([2, 2], 7))).
+?- check((ackermann([2, 9], 21))).
+?- check((ackermann([3, 4], 125))).
+?- check((_Calc1 is ((2 ^ 1003) - 3), ackermann([3, 1000], _Calc1))).
+?- check((ackermann([4, 0], 13))).
+?- check((ackermann([4, 1], 65533))).
+?- check((_Calc1 is ((2 ^ 65536) - 3), ackermann([4, 2], _Calc1))).
+?- check((ackermann([5, 0], 65533))).

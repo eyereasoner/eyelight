@@ -236,8 +236,8 @@ is_a('i-to-i', 'checked-identity') :-
 ?- why.
 
 % Check
-:- assertion((is_a('sqrt-minus-one', 'checked-square-root'))).
-:- assertion((is_a('e-to-i-pi', 'checked-identity'))).
-:- assertion((is_a('i-to-i', 'checked-identity'))).
-:- assertion((is_a('asin-result', 'checked-inverse'))).
-:- assertion((is_a('acos-result', 'checked-inverse'))).
+?- check((is_a('sqrt-minus-one', 'checked-square-root'))).
+?- check((is_a('e-to-i-pi', 'checked-identity'))).
+?- check((is_a('i-to-i', 'checked-identity'))).
+?- check((is_a('asin-result', 'checked-inverse'))).
+?- check((is_a('acos-result', 'checked-inverse'))).

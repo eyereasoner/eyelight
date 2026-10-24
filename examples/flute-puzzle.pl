@@ -38,8 +38,8 @@ uniq_people(A, B, C) :-
 ?- why.
 
 % Check
-:- assertion(solution(sandy)).
-:- assertion(\+ solution(chris)).
-:- assertion(\+ solution(pat)).
-:- assertion(aggregate_all(count, solution(Flute), 1)).
-:- assertion(aggregate_all(count, uniq_people(A, B, C), 6)).
+?- check(solution(sandy)).
+?- check(\+ solution(chris)).
+?- check(\+ solution(pat)).
+?- check(aggregate_all(count, solution(Flute), 1)).
+?- check(aggregate_all(count, uniq_people(A, B, C), 6)).

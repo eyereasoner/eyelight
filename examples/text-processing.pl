@@ -47,13 +47,13 @@ label_text(Name, Text) :-
 ?- string_codes("café 😀", Codes).
 
 % Check
-:- assertion(sensor_record(sensor_0042, 42)).
-:- assertion(label_text(sensor, "café 😀")).
-:- assertion(string_codes("café 😀", [99, 97, 102, 233, 32, 128512])).
-:- assertion(unsigned_decimal("900719925474099312345", 900719925474099312345)).
-:- assertion(unsigned_decimal("0", 0)).
-:- assertion(\+ unsigned_decimal("", 0)).
-:- assertion(\+ unsigned_decimal("4x", 4)).
-:- assertion(\+ unsigned_decimal("-42", -42)).
-:- assertion(atom_codes('', [])).
-:- assertion(string_codes("", [])).
+?- check(sensor_record(sensor_0042, 42)).
+?- check(label_text(sensor, "café 😀")).
+?- check(string_codes("café 😀", [99, 97, 102, 233, 32, 128512])).
+?- check(unsigned_decimal("900719925474099312345", 900719925474099312345)).
+?- check(unsigned_decimal("0", 0)).
+?- check(\+ unsigned_decimal("", 0)).
+?- check(\+ unsigned_decimal("4x", 4)).
+?- check(\+ unsigned_decimal("-42", -42)).
+?- check(atom_codes('', [])).
+?- check(string_codes("", [])).

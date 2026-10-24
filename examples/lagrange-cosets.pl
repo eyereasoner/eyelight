@@ -51,14 +51,14 @@ lagrange(Order, SubgroupOrder, Index) :-
 ?- normality_counterexample(Permutation, Member).
 
 % Check
-:- assertion(lagrange(6, 2, 3)).
-:- assertion(aggregate_all(count, product(P, Q, R), 36)).
-:- assertion(aggregate_all(count, inverse(P, Q), 6)).
-:- assertion(aggregate_all(count, covered(P), 6)).
-:- assertion(aggregate_all(count, left_coset(P, Member), 6)).
-:- assertion(\+ cosets_overlap).
-:- assertion(\+ associativity_failure).
-:- assertion(\+ identity_failure).
-:- assertion(\+ subgroup_closure_failure).
-:- assertion(normality_counterexample(c123, t13)).
-:- assertion(product(c123, c132, e)).
+?- check(lagrange(6, 2, 3)).
+?- check(aggregate_all(count, product(P, Q, R), 36)).
+?- check(aggregate_all(count, inverse(P, Q), 6)).
+?- check(aggregate_all(count, covered(P), 6)).
+?- check(aggregate_all(count, left_coset(P, Member), 6)).
+?- check(\+ cosets_overlap).
+?- check(\+ associativity_failure).
+?- check(\+ identity_failure).
+?- check(\+ subgroup_closure_failure).
+?- check(normality_counterexample(c123, t13)).
+?- check(product(c123, c132, e)).

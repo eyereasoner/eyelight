@@ -40,8 +40,8 @@ balance(N, Amount) :-
 ?- why.
 
 % Check
-:- assertion(balance(0, 100)).
-:- assertion(balance(1, 125)).
-:- assertion(balance(2, 85)).
-:- assertion(balance(3, 65)).
-:- assertion(aggregate_all(count, balance(4, Amount), 0)).
+?- check(balance(0, 100)).
+?- check(balance(1, 125)).
+?- check(balance(2, 85)).
+?- check(balance(3, 65)).
+?- check(aggregate_all(count, balance(4, Amount), 0)).

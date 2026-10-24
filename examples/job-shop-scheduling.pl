@@ -56,7 +56,7 @@ job_shop_answer(feasible_schedule_count, Count) :- aggregate_all(count, feasible
 ?- why(job_shop_answer(best_makespan, Makespan)).
 
 % Check
-:- assertion(job_shop_answer(best_makespan, 9)).
-:- assertion(job_shop_answer(feasible_schedule_count, 35)).
-:- assertion(aggregate_all(count, best_schedule(Time, Schedule), 11)).
-:- assertion(aggregate_all(count, best_schedule(8, Schedule), 0)).
+?- check(job_shop_answer(best_makespan, 9)).
+?- check(job_shop_answer(feasible_schedule_count, 35)).
+?- check(aggregate_all(count, best_schedule(Time, Schedule), 11)).
+?- check(aggregate_all(count, best_schedule(8, Schedule), 0)).

@@ -40,13 +40,13 @@ cousin(X, Y) :-
 ?- branch(judy, Branch).
 
 % Check
-:- assertion(cousin(dave, frank)).
-:- assertion(cousin(frank, dave)).
-:- assertion(cousin(heidi, judy)).
-:- assertion(cousin(judy, heidi)).
-:- assertion(\+ cousin(dave, eve)).
-:- assertion(\+ cousin(dave, judy)).
-:- assertion(\+ cousin(dave, dave)).
-:- assertion(generation(heidi, 3)).
-:- assertion(branch(judy, c)).
-:- assertion(aggregate_all(count, cousin(X, Y), 12)).
+?- check(cousin(dave, frank)).
+?- check(cousin(frank, dave)).
+?- check(cousin(heidi, judy)).
+?- check(cousin(judy, heidi)).
+?- check(\+ cousin(dave, eve)).
+?- check(\+ cousin(dave, judy)).
+?- check(\+ cousin(dave, dave)).
+?- check(generation(heidi, 3)).
+?- check(branch(judy, c)).
+?- check(aggregate_all(count, cousin(X, Y), 12)).

@@ -6,6 +6,7 @@ fn output(source: &str) -> String {
     reason(&program, Limits::default())
         .unwrap()
         .output(&program)
+        .unwrap()
 }
 
 #[test]
@@ -38,7 +39,7 @@ fn all_examples_produce_answers_and_check() {
 fn socrates_has_one_exact_answer() {
     assert_eq!(
         output(include_str!("fixtures/minimal.pl")),
-        "Who = socrates.\n"
+        "?- mortal(Who).\nWho = socrates.\n"
     );
 }
 
@@ -75,7 +76,7 @@ fn recursion_cycles_and_rule_order_preserve_reachability() {
 fn joins_require_consistent_bindings_and_keep_anonymous_variables_fresh() {
     assert_eq!(
         output("p(a,b). p(c,c). ?- p(X,X). ?- p(_, _). ?- p(a,X), p(X,Y)."),
-        "X = c.\n\ntrue.\n\nfalse.\n"
+        "?- p(X, X).\nX = c.\n\n?- p(_, _).\ntrue.\n\n?- p(a, X), p(X, Y).\nfalse.\n"
     );
 }
 
@@ -105,14 +106,17 @@ fn duplicate_facts_and_derivations_do_not_duplicate_answers() {
 fn relation_arity_and_value_types_are_distinct() {
     assert_eq!(
         output("p. p(1). p('1'). p(\"1\"). ?- p(X). ?- p."),
-        "X = 1.\nX = '1'.\nX = \"1\".\n\ntrue.\n"
+        "?- p(X).\nX = 1.\nX = '1'.\nX = \"1\".\n\n?- p.\ntrue.\n"
     );
 }
 
 #[test]
 fn zero_arity_rules_and_queries() {
-    assert_eq!(output("ready. done :- ready. ?- done."), "true.\n");
-    assert_eq!(output("?- ready."), "false.\n");
+    assert_eq!(
+        output("ready. done :- ready. ?- done."),
+        "?- done.\ntrue.\n"
+    );
+    assert_eq!(output("?- ready."), "?- ready.\nfalse.\n");
 }
 
 #[test]

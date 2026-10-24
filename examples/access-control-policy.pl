@@ -54,10 +54,10 @@ accepted(Policy) :-
 ?- pass('PolicyX', Test).
 
 % Check
-:- assertion(accepted('PolicyX')).
-:- assertion(pass('PolicyX', allOfTest)).
-:- assertion(pass('PolicyX', anyOfTest)).
-:- assertion(pass('PolicyX', noneOfTest)).
-:- assertion(aggregate_all(count, pass('PolicyX', Test), 3)).
-:- assertion(\+ missing_all('PolicyX')).
-:- assertion(\+ matched_none('PolicyX')).
+?- check(accepted('PolicyX')).
+?- check(pass('PolicyX', allOfTest)).
+?- check(pass('PolicyX', anyOfTest)).
+?- check(pass('PolicyX', noneOfTest)).
+?- check(aggregate_all(count, pass('PolicyX', Test), 3)).
+?- check(\+ missing_all('PolicyX')).
+?- check(\+ matched_none('PolicyX')).

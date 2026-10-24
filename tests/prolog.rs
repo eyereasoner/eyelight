@@ -13,7 +13,7 @@ fn checked(source: &str) -> (wheye::Program, wheye::Run, Certificate) {
 }
 
 #[test]
-fn every_packaged_program_runs_assertions_and_checks_its_certificate() {
+fn every_packaged_program_runs_goal_checks_and_checks_its_certificate() {
     let mut paths: Vec<_> = fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/examples"))
         .unwrap()
         .map(|entry| entry.unwrap().path())
@@ -30,11 +30,15 @@ fn every_packaged_program_runs_assertions_and_checks_its_certificate() {
         let report =
             check(&program, &certificate).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
         assert!(report.valid(), "{}: {report}", path.display());
-        assert!(program
-            .queries
-            .iter()
-            .enumerate()
-            .all(|(i, q)| !q.assertion || !run.answers[i].is_empty()));
+        for request in &program.requests {
+            if let wheye::Request::Result(i) = request {
+                assert!(
+                    !run.answers[*i].is_empty(),
+                    "{}: a bundled check failed",
+                    path.display()
+                );
+            }
+        }
     }
 }
 

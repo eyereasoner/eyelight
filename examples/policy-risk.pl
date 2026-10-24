@@ -49,10 +49,10 @@ report(Rank, Clause, Score, Severity, Why, Fix) :-
 ?- why.
 
 % Check
-:- assertion(report(1, c1, 100, high, no_removal_safeguards, add_notice_and_inform)).
-:- assertion(report(2, c3, 97, high, sharing_without_consent, require_consent)).
-:- assertion(report(3, c2, 85, high, short_notice(3, 14), increase_notice(14))).
-:- assertion(report(4, c4, 70, moderate, export_prohibited, permit_export)).
-:- assertion(aggregate_all(count, report(Rank, Clause, Score, Severity, Why, Fix), 4)).
-:- assertion(aggregate_all(count, score(c5, Score), 0)).
-:- assertion(aggregate_all(count, score(c6, Score), 0)).
+?- check(report(1, c1, 100, high, no_removal_safeguards, add_notice_and_inform)).
+?- check(report(2, c3, 97, high, sharing_without_consent, require_consent)).
+?- check(report(3, c2, 85, high, short_notice(3, 14), increase_notice(14))).
+?- check(report(4, c4, 70, moderate, export_prohibited, permit_export)).
+?- check(aggregate_all(count, report(Rank, Clause, Score, Severity, Why, Fix), 4)).
+?- check(aggregate_all(count, score(c5, Score), 0)).
+?- check(aggregate_all(count, score(c6, Score), 0)).

@@ -32,9 +32,9 @@ is_a(Player, 'eager-player') :-
 ?- aggregate_all(count, is_a(Subject, 'ready-player'), Result).
 
 % Check
-:- assertion((is_a(milo, 'ready-player'))).
-:- assertion((is_a(rex, 'ready-player'))).
-:- assertion((\+ (is_a(luna, 'ready-player')))).
-:- assertion((needs(luna, rest))).
-:- assertion((\+ (needs(milo, rest)))).
-:- assertion((aggregate_all(count, is_a(Subject, 'ready-player'), 2))).
+?- check((is_a(milo, 'ready-player'))).
+?- check((is_a(rex, 'ready-player'))).
+?- check((\+ (is_a(luna, 'ready-player')))).
+?- check((needs(luna, rest))).
+?- check((\+ (needs(milo, rest)))).
+?- check((aggregate_all(count, is_a(Subject, 'ready-player'), 2))).

@@ -33,12 +33,12 @@ requires(Owner, dog_license) :-
 ?- why.
 
 % Check
-:- assertion(dog_count(alice, 5)).
-:- assertion(dog_count(bob, 2)).
-:- assertion(dog_count(carol, 4)).
-:- assertion(dog_count(dana, 0)).
-:- assertion(requires(alice, dog_license)).
-:- assertion(\+ requires(bob, dog_license)).
-:- assertion(\+ requires(carol, dog_license)).
-:- assertion(\+ requires(dana, dog_license)).
-:- assertion(aggregate_all(count, requires(Owner, dog_license), 1)).
+?- check(dog_count(alice, 5)).
+?- check(dog_count(bob, 2)).
+?- check(dog_count(carol, 4)).
+?- check(dog_count(dana, 0)).
+?- check(requires(alice, dog_license)).
+?- check(\+ requires(bob, dog_license)).
+?- check(\+ requires(carol, dog_license)).
+?- check(\+ requires(dana, dog_license)).
+?- check(aggregate_all(count, requires(Owner, dog_license), 1)).

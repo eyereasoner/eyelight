@@ -28,8 +28,8 @@ pow_mod(Base, Exponent, Modulus, Result) :-
 ?- pow_mod(12345678901234567890, 12345, 1000000007, Result).
 
 % Check
-:- assertion(pow_mod(7, 560, 561, 1)).
-:- assertion(pow_mod(2, 1000, 1009, 942)).
-:- assertion(pow_mod(99, 0, 1, 0)).
-:- assertion(pow_mod(-2, 5, 7, 3)).
-:- assertion(aggregate_all(count, pow_mod(2, -1, 7, _), 0)).
+?- check(pow_mod(7, 560, 561, 1)).
+?- check(pow_mod(2, 1000, 1009, 942)).
+?- check(pow_mod(99, 0, 1, 0)).
+?- check(pow_mod(-2, 5, 7, 3)).
+?- check(aggregate_all(count, pow_mod(2, -1, 7, _), 0)).

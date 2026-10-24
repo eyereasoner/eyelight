@@ -33,7 +33,7 @@ fit(Name, Slope, Intercept, R2) :-
 ?- why.
 
 % Check
-:- assertion((fit(demo, Slope, Intercept, R2), abs(Slope-0.8) < 1.0e-12, abs(Intercept-1.5) < 1.0e-12, abs(R2-0.64) < 1.0e-12)).
-:- assertion(regression([point(0, 3), point(1, 1), point(2, -1)], -2.0, 3.0, 1.0)).
-:- assertion(aggregate_all(count, regression([point(1, 2), point(1, 3)], _, _, _), 0)).
-:- assertion(aggregate_all(count, regression([point(0, 2), point(1, 2)], _, _, _), 0)).
+?- check((fit(demo, Slope, Intercept, R2), abs(Slope-0.8) < 1.0e-12, abs(Intercept-1.5) < 1.0e-12, abs(R2-0.64) < 1.0e-12)).
+?- check(regression([point(0, 3), point(1, 1), point(2, -1)], -2.0, 3.0, 1.0)).
+?- check(aggregate_all(count, regression([point(1, 2), point(1, 3)], _, _, _), 0)).
+?- check(aggregate_all(count, regression([point(0, 2), point(1, 2)], _, _, _), 0)).

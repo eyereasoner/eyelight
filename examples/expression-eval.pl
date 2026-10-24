@@ -36,8 +36,8 @@ result(Name, Value) :-
 ?- why.
 
 % Check
-:- assertion(result(example, 12)).
-:- assertion(value(product, 6)).
-:- assertion(value(difference, 6)).
-:- assertion(value(total, 12)).
-:- assertion(aggregate_all(count, value(Node, Value), 7)).
+?- check(result(example, 12)).
+?- check(value(product, 6)).
+?- check(value(difference, 6)).
+?- check(value(total, 12)).
+?- check(aggregate_all(count, value(Node, Value), 7)).

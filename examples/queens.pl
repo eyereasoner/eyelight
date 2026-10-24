@@ -28,13 +28,13 @@ safe(Column, [Other|Rest], Distance) :-
 ?- aggregate_all(count, queens(8, Columns), Count).
 
 % Check
-:- assertion(queens(0, [])).
-:- assertion(queens(1, [1])).
-:- assertion(queens(4, [2, 4, 1, 3])).
-:- assertion(queens(4, [3, 1, 4, 2])).
-:- assertion(aggregate_all(count, queens(2, Columns), 0)).
-:- assertion(aggregate_all(count, queens(3, Columns), 0)).
-:- assertion(aggregate_all(count, queens(4, Columns), 2)).
-:- assertion(aggregate_all(count, queens(8, Columns), 92)).
-:- assertion(\+ queens(-1, [])).
-:- assertion(\+ queens(4, [1, 2, 3, 4])).
+?- check(queens(0, [])).
+?- check(queens(1, [1])).
+?- check(queens(4, [2, 4, 1, 3])).
+?- check(queens(4, [3, 1, 4, 2])).
+?- check(aggregate_all(count, queens(2, Columns), 0)).
+?- check(aggregate_all(count, queens(3, Columns), 0)).
+?- check(aggregate_all(count, queens(4, Columns), 2)).
+?- check(aggregate_all(count, queens(8, Columns), 92)).
+?- check(\+ queens(-1, [])).
+?- check(\+ queens(4, [1, 2, 3, 4])).

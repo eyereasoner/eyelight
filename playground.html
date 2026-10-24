@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore small logical programs, follow their explanations, and check their proofs with wheye.">
+  <meta name="description" content="Explore logical programs, get answers, and check proof certificates with wheye.">
   <title>wheye playground</title>
   <link rel="icon" href="assets/eye.png" type="image/png">
   <link rel="stylesheet" href="playground.css">
@@ -11,7 +11,7 @@
 <body>
   <main>
     <header class="masthead">
-      <a class="brand" href="./" aria-label="wheye home"><img src="assets/eye.png" width="64" height="64" alt=""><span class="brand-copy"><span class="brand-name">Wheye playground<span class="version" id="version">v0.1.14</span></span></span></a>
+      <a class="brand" href="./" aria-label="wheye home"><img src="assets/eye.png" width="64" height="64" alt=""><span class="brand-copy"><span class="brand-name">Wheye playground<span class="version" id="version">v0.1.15</span></span></span></a>
       <nav class="site-nav" aria-label="Project">
         <a href="https://eyereasoner.github.io/wheye/">Guide</a>
         <a href="https://eyereasoner.github.io/wheye/playground/" aria-current="page">Playground</a>
@@ -121,7 +121,6 @@
               <option value="wind-turbine">Wind turbine</option>
               <option value="witnesses">Witnesses</option>
             </select></label>
-          <label>Show<select id="mode"><option value="answers">Answers</option><option value="proof">Proof</option><option value="checked">Generate &amp; check proof</option><option value="check">Check saved proof</option></select></label>
         </div>
       </div>
       <div id="share-box" class="share-box" hidden><label for="share-url">Your share link</label><input id="share-url" readonly><button type="button" id="close-share" aria-label="Close share link">×</button></div>
@@ -145,18 +144,13 @@ Press Run to find out who is mortal.</pre>
           <p class="panel-hint" id="status" role="status" aria-live="polite">Ready when you are.</p>
         </section>
       </div>
-      <section class="panel saved-proof" id="saved-proof-panel" hidden aria-labelledby="proof-heading">
-        <div class="panel-heading"><h2 id="proof-heading"><span class="dot coral"></span>Proof to check</h2><span>Keep its matching program above</span></div>
-        <label class="sr-only" for="saved-proof">Saved proof</label>
-        <textarea id="saved-proof" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Paste a proof here."></textarea>
-      </section>
     </section>
     <section class="notes" aria-label="How it works">
       <article><span class="number">01</span><h2>Say what you know.</h2><p>A fact names a relationship. A rule connects it to something that follows.</p></article>
       <article><span class="number">02</span><h2>Ask what follows.</h2><p>Questions select answers. Repeated facts and paths produce one answer per distinct binding.</p></article>
-      <article><span class="number">03</span><h2>See the evidence.</h2><p>Proofs show why each answer follows. Checking verifies each claim, including built-ins and closed-world tests. Source facts are assumed; answer completeness is not checked.</p></article>
+      <article><span class="number">03</span><h2>See the evidence.</h2><p>Use <code>?- why.</code> for the proof certificate and <code>?- check.</code> to verify C1–C9. Use <code>?- check(Goal).</code> for a true or false result.</p></article>
     </section>
-    <footer><span>wheye · version 0.1.14</span><span>Runs in your browser. Your program stays on your device unless you share it.</span></footer>
+    <footer><span>wheye · version 0.1.15</span><span>Runs in your browser. Your program stays on your device unless you share it.</span></footer>
   </main>
   <script type="module" src="playground.js"></script>
 </body>

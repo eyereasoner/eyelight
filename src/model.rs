@@ -299,7 +299,15 @@ impl fmt::Display for Rule {
 pub struct Query {
     pub goals: Vec<Literal>,
     pub variables: Vec<String>,
-    pub assertion: bool,
+}
+
+/// Output requests, in source order. Query indexes are zero-based.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Request {
+    Answer(usize),
+    Proof,
+    Check,
+    Result(usize),
 }
 
 /// Merge parsed documents with `extend`; variable scopes are local to clauses.
@@ -309,12 +317,20 @@ pub struct Program {
     pub rules: Vec<Rule>,
     pub queries: Vec<Query>,
     pub tables: BTreeSet<(String, usize)>,
+    pub requests: Vec<Request>,
 }
 
 impl Program {
     pub fn extend(&mut self, other: Self) {
         self.facts.extend(other.facts);
         self.rules.extend(other.rules);
+        let offset = self.queries.len();
+        self.requests
+            .extend(other.requests.into_iter().map(|request| match request {
+                Request::Answer(i) => Request::Answer(i + offset),
+                Request::Result(i) => Request::Result(i + offset),
+                other => other,
+            }));
         self.queries.extend(other.queries);
         self.tables.extend(other.tables);
     }

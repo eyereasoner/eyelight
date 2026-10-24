@@ -36,11 +36,11 @@ binomial_answer(row_12_sum, Sum) :- aggregate_all(sum(C), (between(0, 12, K), ch
 ?- why(vandermonde(12, 10, 8, Sum)).
 
 % Check
-:- assertion(choose(0, 0, 1)).
-:- assertion(choose(24, 12, 2704156)).
-:- assertion(choose(100, 50, 100891344545564193334812497256)).
-:- assertion(vandermonde(12, 10, 8, 319770)).
-:- assertion(binomial_answer(row_12_sum, 4096)).
-:- assertion(symmetric(100, 37)).
-:- assertion(\+ choose(5, 6, 0)).
-:- assertion(\+ choose(5, -1, 0)).
+?- check(choose(0, 0, 1)).
+?- check(choose(24, 12, 2704156)).
+?- check(choose(100, 50, 100891344545564193334812497256)).
+?- check(vandermonde(12, 10, 8, 319770)).
+?- check(binomial_answer(row_12_sum, 4096)).
+?- check(symmetric(100, 37)).
+?- check(\+ choose(5, 6, 0)).
+?- check(\+ choose(5, -1, 0)).

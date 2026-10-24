@@ -20,5 +20,5 @@ decay(Sample, HalfLives, Remaining, Decayed) :-
 ?- why.
 
 % Check
-:- assertion(decay(demo, 2.0, 20.0, 60.0)).
-:- assertion((sample(demo, Initial, _, _), decay(demo, _, Remaining, Decayed), Remaining+Decayed =:= Initial)).
+?- check(decay(demo, 2.0, 20.0, 60.0)).
+?- check((sample(demo, Initial, _, _), decay(demo, _, Remaining, Decayed), Remaining+Decayed =:= Initial)).

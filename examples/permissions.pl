@@ -28,12 +28,12 @@ allowed(User, Action) :-
 ?- why.
 
 % Check
-:- assertion(allowed(alice, read)).
-:- assertion(allowed(alice, write)).
-:- assertion(allowed(bob, read)).
-:- assertion(\+ allowed(bob, write)).
-:- assertion(candidate(carol, read)).
-:- assertion(candidate(carol, write)).
-:- assertion(\+ allowed(carol, read)).
-:- assertion(\+ allowed(carol, write)).
-:- assertion(aggregate_all(count, allowed(User, Action), 3)).
+?- check(allowed(alice, read)).
+?- check(allowed(alice, write)).
+?- check(allowed(bob, read)).
+?- check(\+ allowed(bob, write)).
+?- check(candidate(carol, read)).
+?- check(candidate(carol, write)).
+?- check(\+ allowed(carol, read)).
+?- check(\+ allowed(carol, write)).
+?- check(aggregate_all(count, allowed(User, Action), 3)).

@@ -1,6 +1,6 @@
 # Wheye specification
 
-Version **0.1.14**. Implemented Prolog subset and independently checked proof
+Version **0.1.15**. Implemented Prolog subset and independently checked proof
 certificate contract. This specification does not claim full ISO Prolog conformance.
 
 Uppercase MUST, MUST NOT, SHOULD, and MAY express requirement levels under
@@ -17,22 +17,23 @@ human(socrates).
 mortal(Person) :- human(Person).
 ?- mortal(Who).
 ?- why.
-:- assertion(mortal(socrates)).
+?- check.
+?- check(mortal(socrates)).
 :- table fibonacci/2.
 ```
 
 The entire source MUST be parsed before evaluation. Queries MAY use later facts
 and clauses. Multiple input files are parsed separately and merged in order;
-variable scopes remain local to clauses and requests. Queries and assertions
-MUST select answers and MUST NOT become inference evidence. Only `table` and
-`assertion` directives are supported. `why/0`, `why/1`, and `assertion/1` have
+variable scopes remain local to clauses and requests. Queries and goal checks
+MUST select output and MUST NOT become inference evidence. Only `table`
+directives are supported. `why/0`, `why/1`, `check/0`, and `check/1` have
 the top-level meanings given below.
 
 ## 2. Names and Values
 
 Names are case-sensitive. Unquoted atoms match `[a-z][A-Za-z0-9_]*`.
 Variables match `[A-Z_][A-Za-z0-9_]*`. A variable's scope is one clause, query,
-or assertion. Repeating a variable name MUST require the same term. Every `_`
+or goal check. Repeating a variable name MUST require the same term. Every `_`
 MUST be a fresh variable. Names beginning with `_` MUST remain shared when
 repeated, but MUST be omitted from displayed query bindings.
 
@@ -105,7 +106,7 @@ ground; calls that leave output variables unresolved MUST raise an error.
 ### 4.1 Built-ins and Arithmetic
 
 The following builtin predicates MAY appear in clause bodies, queries, and
-assertions. Inputs described as bound MUST have their required values when the
+goal checks. Inputs described as bound MUST have their required values when the
 goal is reached. These predicates MUST NOT be redefined by facts or clauses.
 
 | Predicate | Syntax and behavior |
@@ -152,9 +153,10 @@ they are not additional ordinary predicates:
 | Form | Context and meaning |
 | --- | --- |
 | `\+ Goal` | Negation of one goal, with the completion and binding requirements in Section 4.2. |
-| `?- why.` | Explain the preceding ordinary query's answers (Section 6). |
-| `?- why(Goal).` | Query and explain `Goal`, which may be a conjunction (Section 6). |
-| `:- assertion(Goal).` | Require a successful solution of `Goal` (Section 6). |
+| `?- why.` | Print the preceding ordinary query's proof certificate (Section 6). |
+| `?- why(Goal).` | Query and print the proof of `Goal`, which may be a conjunction (Section 6). |
+| `?- check.` | Independently verify the preceding ordinary query's certificate under C1–C9. |
+| `?- check(Goal).` | Print `true.` if `Goal` has a solution, otherwise `false.`. |
 | `:- table Name/Arity, ... .` | Declare ordinary predicates demand-driven and tabled (Section 4.2). |
 
 Conjunction with `,` and parenthesized goal groups are supported syntax.
@@ -291,7 +293,7 @@ Conjunctions share bindings and process goals from left to right.
 ?- aggregate_all(list(result(Person, Value)), score(Person, Value), Results).
 ```
 
-`aggregate_all/3` MAY appear in a body, query, or assertion. Its goal MAY be a
+`aggregate_all/3` MAY appear in a body, query, or goal check. Its goal MAY be a
 parenthesized conjunction. It MUST complete all matching producer work before
 aggregating, including demand-driven definitions. A bound result constrains the
 computed answer. Existing outer bindings MAY constrain the producer call;
@@ -391,21 +393,26 @@ omitted from display. Aggregate producer variables are local and do not escape.
 Successful requests without displayed variables print `true.`; unsuccessful
 queries print `false.`, which is not a certificate of absence.
 
-Default output MUST contain only answer bindings, `true.`, or `false.`, with
-blank lines between queries. It MUST NOT print query headings or automatic
-proofs. `?- why.` is accepted as a compatibility marker without output;
-`?- why(Goal).` is accepted as a query for Goal without changing the output mode.
+Each request MUST print its `?- ... .` line before its result, with normalized
+term formatting and blank lines between requests. Output follows source order:
 
-`:- assertion(Goal).` requires at least one successful solution. Assertions run
-in source order and MAY request demand-driven computation. A failing assertion
-MUST return an error. Successful assertions MUST stay silent and MUST NOT be
-exported as answer claims. They never add facts. Without queries, ordinary output
-lists newly derived ordinary facts, excluding source facts and auxiliary evidence.
+- `?- Goal.` MUST print all answers to that ordinary query.
+- `?- why.` MUST print a readable proof certificate for the most recent ordinary query.
+- `?- check.` MUST independently verify that query's certificate and print C1–C9.
+- `?- check(Goal).` MUST print `true.` if the goal has any solution, otherwise
+  `false.`, without printing variable bindings or failing the run.
 
-There MUST be one readable, checkable proof format, selected by `-p` or `--proof`.
-There is no separate explanation option. Requesting a proof MUST NOT
-prepend answers or append a second explanation. The playground presents one
-Proof choice. The guide defines the CLI flags for proof generation and checking.
+A goal check MUST NOT replace the preceding ordinary query for `why` or `check`.
+Both bare requests MUST report an error if no ordinary query precedes them,
+including across merged files. `?- why(Goal).` is shorthand for an ordinary
+query followed by `?- why.`. Requests MUST NOT become inference evidence.
+Only table directives are supported; `:- assertion(Goal).` MUST be rejected.
+Without queries or requests, output lists newly derived ordinary facts,
+excluding source facts and auxiliary evidence.
+
+There MUST be one readable, checkable proof format, beginning `wheye-proof 1`.
+The CLI supports only `-h` (help) and `-v` (version); source requests select
+output in both the CLI and playground. There is no separate output selector.
 
 ## 7. Proof Certificates
 
@@ -492,8 +499,10 @@ no queries, `derived STEP` instead claims a new rule conclusion. A queried progr
 NOT use `derived` claims. Query answers are selections, never inference steps or premise
 providers. Query-owned aggregate evidence MUST NOT satisfy a rule-owned aggregate goal.
 
-The generator selects ordinary query answers, omitting successful assertion
-claims, and keeps their transitive dependencies, and complete
+For a source `why` or bare `check` request, the generator selects the preceding
+ordinary query's answers, excluding goal-check queries. The library
+`Run::certificate` selects all ordinary queries. The generator keeps their
+transitive dependencies and complete
 boundaries they require, then renumbers them. It marks dependencies iteratively and
 scans retained IDs in order, so a deep proof chain does not require recursive traversal
 or sorting. Boundaries can make proofs considerably larger than proofs of positive rules
@@ -554,7 +563,7 @@ expose applicability and attempted/failed counts; failures expose their location
 The checker MUST NOT call the evaluator or repair a missing model. It shares term
 representation, matching primitives, and pure built-in/aggregate semantics with the
 evaluator; it is not a separately implemented arithmetic or term system. Source
-assertions remain assumptions. Acceptance establishes support for recorded claims,
+facts and rules remain assumptions. Acceptance establishes support for recorded claims,
 including explicit closed-world tests within certified strata. It does not establish
 answer completeness, source authenticity, or external-world truth. An empty certificate
 passes with zero claims and establishes nothing further.
@@ -570,7 +579,7 @@ promise termination for arbitrary arithmetic or term generation.
 
 ## 10. Security Considerations
 
-Source assertions are assumptions. Certificate acceptance establishes recorded
+Source facts and rules are assumptions. Certificate acceptance establishes recorded
 claims relative to those assumptions; it does not authenticate inputs, establish
 external-world truth, or guarantee answer completeness. An empty certificate
 establishes no claims. Applications MUST inspect `Report::valid()` or use
@@ -580,4 +589,4 @@ returned inside an otherwise successful checker result.
 `check_with_limits` bounds evidence and finite-model work. Limits do not bound
 whole-process memory or elapsed time. Host applications MAY impose process,
 time, and memory limits or terminate the playground worker. Share links contain
-readable program and proof text; opening them does not automatically run it.
+readable program text; opening them does not automatically run it.

@@ -31,7 +31,7 @@ in_range(Low, High, N) :-
 ?- why.
 
 % Check
-:- assertion(trajectory(1, [1])).
-:- assertion(trajectory(6, [6, 3, 10, 5, 16, 8, 4, 2, 1])).
-:- assertion(trajectory(20, [20, 10, 5, 16, 8, 4, 2, 1])).
-:- assertion(aggregate_all(count, (in_range(1, 20, N), trajectory(N, Values)), 20)).
+?- check(trajectory(1, [1])).
+?- check(trajectory(6, [6, 3, 10, 5, 16, 8, 4, 2, 1])).
+?- check(trajectory(20, [20, 10, 5, 16, 8, 4, 2, 1])).
+?- check(aggregate_all(count, (in_range(1, 20, N), trajectory(N, Values)), 20)).

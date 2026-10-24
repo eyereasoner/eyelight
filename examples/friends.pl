@@ -16,6 +16,6 @@ is_a(Person, friend) :-
 ?- why((is_a(milo, friend))).
 
 % Check
-:- assertion((is_a(milo, friend))).
-:- assertion((aggregate_all(count, is_a(Subject, friend), 1))).
-:- assertion((\+ (is_a(luna, friend)))).
+?- check((is_a(milo, friend))).
+?- check((aggregate_all(count, is_a(Subject, friend), 1))).
+?- check((\+ (is_a(luna, friend)))).

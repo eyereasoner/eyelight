@@ -285,6 +285,13 @@ fn dependencies_of(literal: &Literal, strict: bool, output: &mut Vec<(Relation, 
 }
 
 pub(crate) fn plan(program: &Program) -> Result<Plan, Error> {
+    for request in &program.requests {
+        if let crate::Request::Answer(i) | crate::Request::Result(i) = request {
+            if *i >= program.queries.len() {
+                return Err(Error::new("Output request refers to an unknown query."));
+            }
+        }
+    }
     let mut levels = HashMap::new();
 
     let mut backward = Vec::new();

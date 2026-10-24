@@ -80,17 +80,17 @@ circumference(Circle, _Calc1) :-
 ?- why.
 
 % Check
-:- assertion((absolute(magnitude, 9007199254740993))).
-:- assertion((result(division, [-2, -3, -1, 2]))).
-:- assertion((_Calc1 is (((-7 // 3) * 3) + (-7 rem 3)), _Calc1 =:= -7)).
-:- assertion((_Calc1 is (((-7 div 3) * 3) + (-7 mod 3)), _Calc1 =:= -7)).
-:- assertion((result(rounding, [-3, -2, -3, -2, -2.0, -0.5]))).
-:- assertion((_Calc1 is round(-1.5), _Calc1 =:= -2)).
-:- assertion((result(extrema, [1e+21, 1000000000000000000001]))).
-:- assertion((result(gcd, 6))).
-:- assertion((result(bits, [4, 15, 11, -14, 104, 1]))).
-:- assertion((_Calc1 is (1 << 100), _Calc1 =:= 1267650600228229401496703205376)).
-:- assertion((_Calc1 is pi, _Calc1 > 3)).
-:- assertion((_Calc1 is e, _Calc1 < 3)).
-:- assertion((circumference(circle, 18.84955592153876))).
-:- assertion((_Calc1 is abs((tan(atan(1)) - 1)), _Calc1 =< 1e-12)).
+?- check((absolute(magnitude, 9007199254740993))).
+?- check((result(division, [-2, -3, -1, 2]))).
+?- check((_Calc1 is (((-7 // 3) * 3) + (-7 rem 3)), _Calc1 =:= -7)).
+?- check((_Calc1 is (((-7 div 3) * 3) + (-7 mod 3)), _Calc1 =:= -7)).
+?- check((result(rounding, [-3, -2, -3, -2, -2.0, -0.5]))).
+?- check((_Calc1 is round(-1.5), _Calc1 =:= -2)).
+?- check((result(extrema, [1e+21, 1000000000000000000001]))).
+?- check((result(gcd, 6))).
+?- check((result(bits, [4, 15, 11, -14, 104, 1]))).
+?- check((_Calc1 is (1 << 100), _Calc1 =:= 1267650600228229401496703205376)).
+?- check((_Calc1 is pi, _Calc1 > 3)).
+?- check((_Calc1 is e, _Calc1 < 3)).
+?- check((circumference(circle, 18.84955592153876))).
+?- check((_Calc1 is abs((tan(atan(1)) - 1)), _Calc1 =< 1e-12)).

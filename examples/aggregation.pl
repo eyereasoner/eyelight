@@ -23,8 +23,8 @@ is_a(Player, 'team-member') :-
 ?- aggregate_all(max(Value), score(Subject, Value), Result).
 
 % Check
-:- assertion((aggregate_all(count, is_a(Subject, player), 3))).
-:- assertion((aggregate_all(count, is_a(Subject, 'team-member'), 3))).
-:- assertion((aggregate_all(sum(Value), score(Subject, Value), 24))).
-:- assertion((aggregate_all(min(Value), score(Subject, Value), 7))).
-:- assertion((aggregate_all(max(Value), score(Subject, Value), 10))).
+?- check((aggregate_all(count, is_a(Subject, player), 3))).
+?- check((aggregate_all(count, is_a(Subject, 'team-member'), 3))).
+?- check((aggregate_all(sum(Value), score(Subject, Value), 24))).
+?- check((aggregate_all(min(Value), score(Subject, Value), 7))).
+?- check((aggregate_all(max(Value), score(Subject, Value), 10))).

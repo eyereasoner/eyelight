@@ -27,10 +27,10 @@ Keep diagnostics specific and user-facing text direct.
 
 Read `SPEC.md` before changing language or proof behavior. Wheye implements a
 Prolog subset with structural terms, lists, exact integers, finite real arithmetic,
-stratified negation, aggregate_all/3, demand-driven tabling, assertions, explanations,
+stratified negation, aggregate_all/3, demand-driven tabling, source-selected goal checks, proof certificates,
 and final-rule fresh/1 witnesses. Keep pure decisions out of ordinary indexes.
 Unification must perform an occurs check. Do not silently coerce numeric or text
-term types. Queries and assertions select output and never become inference evidence.
+term types. Queries and goal checks select output and never become inference evidence.
 
 Preserve the C1–C9 contract. C5 re-decides built-ins and aggregates. C6 verifies
 complete closed prefixes and transitive demanded-call graphs, including omitted derivable facts; a scan of
@@ -40,7 +40,7 @@ All nine checks must execute on `examples/orders.pl`. Feature-free programs may
 report the corresponding conditions not applicable.
 
 The checker must not call the evaluator or fill gaps in a supplied boundary.
-Source assertions are assumed; acceptance establishes recorded claims, not
+Source facts and rules are assumed; acceptance establishes recorded claims, not
 answer completeness or external-world truth. `Ok(report)` can contain semantic
 failures: library callers must inspect `Report::valid()` or use `require_valid()`.
 `check_with_limits` bounds evidence size and finite-model matching work.
@@ -57,7 +57,7 @@ small-graph oracle test. Keep implementation, specification, and examples consis
 ```sh
 cargo build --release --locked
 ./target/release/wheye examples/socrates.pl
-./target/release/wheye --prove-and-check examples/socrates.pl
+./target/release/wheye examples/orders.pl
 ./scripts/test-all
 cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 ./scripts/build-playground

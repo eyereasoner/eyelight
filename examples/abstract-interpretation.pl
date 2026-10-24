@@ -67,13 +67,13 @@ nonzero_divisor(Program, Point) :- reachable_division(Program, Point), \+ zero_p
 ?- why.
 
 % Check
-:- assertion(abs_warning(countdown, possible_division_by_zero(divide))).
-:- assertion(abs_state(countdown, loop_head, zero)).
-:- assertion(abs_state(countdown, loop_head, pos)).
-:- assertion(\+ abs_state(countdown, loop_head, neg)).
-:- assertion(abs_state(countdown, divide, zero)).
-:- assertion(abs_state(guarded, divide, pos)).
-:- assertion(nonzero_divisor(guarded, divide)).
-:- assertion(\+ nonzero_divisor(countdown, divide)).
-:- assertion(\+ abs_warning(guarded, possible_division_by_zero(divide))).
-:- assertion(aggregate_all(count, abs_warning(Program, Warning), 1)).
+?- check(abs_warning(countdown, possible_division_by_zero(divide))).
+?- check(abs_state(countdown, loop_head, zero)).
+?- check(abs_state(countdown, loop_head, pos)).
+?- check(\+ abs_state(countdown, loop_head, neg)).
+?- check(abs_state(countdown, divide, zero)).
+?- check(abs_state(guarded, divide, pos)).
+?- check(nonzero_divisor(guarded, divide)).
+?- check(\+ nonzero_divisor(countdown, divide)).
+?- check(\+ abs_warning(guarded, possible_division_by_zero(divide))).
+?- check(aggregate_all(count, abs_warning(Program, Warning), 1)).

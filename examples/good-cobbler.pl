@@ -19,12 +19,12 @@ classified_as(Person, Trade) :-
 ?- why.
 
 % Check
-:- assertion(good_at(joe, cobbler)).
-:- assertion(good_at(jane, carpenter)).
-:- assertion(classified_as(joe, cobbler)).
-:- assertion(classified_as(jane, carpenter)).
-:- assertion(\+ good_at(joe, carpenter)).
-:- assertion(\+ good_at(sam, cobbler)).
-:- assertion(\+ classified_as(sam, cobbler)).
-:- assertion(aggregate_all(count, good_at(Person, Trade), 2)).
-:- assertion(aggregate_all(count, classified_as(Person, Trade), 2)).
+?- check(good_at(joe, cobbler)).
+?- check(good_at(jane, carpenter)).
+?- check(classified_as(joe, cobbler)).
+?- check(classified_as(jane, carpenter)).
+?- check(\+ good_at(joe, carpenter)).
+?- check(\+ good_at(sam, cobbler)).
+?- check(\+ classified_as(sam, cobbler)).
+?- check(aggregate_all(count, good_at(Person, Trade), 2)).
+?- check(aggregate_all(count, classified_as(Person, Trade), 2)).

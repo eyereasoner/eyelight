@@ -203,8 +203,8 @@ scope(Case, [Device, Event]) :-
 ?- is_a(delfour, 'checked-case').
 
 % Check
-:- assertion((outcome(delfour, "Allowed"))).
-:- assertion((note(delfour, "High sugar"))).
-:- assertion(('alternative-name'(delfour, "Low-Sugar Tea Biscuits"))).
-:- assertion((aggregate_all(count, is_a(Subject, 'passed-check'), 10))).
-:- assertion((is_a(delfour, 'checked-case'))).
+?- check((outcome(delfour, "Allowed"))).
+?- check((note(delfour, "High sugar"))).
+?- check(('alternative-name'(delfour, "Low-Sugar Tea Biscuits"))).
+?- check((aggregate_all(count, is_a(Subject, 'passed-check'), 10))).
+?- check((is_a(delfour, 'checked-case'))).

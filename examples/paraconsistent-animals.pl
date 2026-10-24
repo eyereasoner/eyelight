@@ -67,18 +67,18 @@ migrates(X, undecided) :- flight_status(X, both).
 ?- moves_by(Animal, Mode).
 
 % Check
-:- assertion(flies_safely(tweety, undecided)).
-:- assertion(flies_safely(falco, true)).
-:- assertion(flies_safely(opus, false)).
-:- assertion(flies_safely(mythic, undecided)).
-:- assertion(wings_safely(batsy, undecided)).
-:- assertion(wings_safely(nemo, false)).
-:- assertion(needs_review(tweety, flies)).
-:- assertion(needs_review(mythic, flies)).
-:- assertion(needs_review(batsy, wings)).
-:- assertion(aggregate_all(count, needs_review(Animal, Property), 3)).
-:- assertion(moves_by(tweety, unknown)).
-:- assertion(moves_by(falco, flying)).
-:- assertion(moves_by(opus, walking)).
-:- assertion(\+ flies_safely(tweety, true)).
-:- assertion(\+ flies_safely(tweety, false)).
+?- check(flies_safely(tweety, undecided)).
+?- check(flies_safely(falco, true)).
+?- check(flies_safely(opus, false)).
+?- check(flies_safely(mythic, undecided)).
+?- check(wings_safely(batsy, undecided)).
+?- check(wings_safely(nemo, false)).
+?- check(needs_review(tweety, flies)).
+?- check(needs_review(mythic, flies)).
+?- check(needs_review(batsy, wings)).
+?- check(aggregate_all(count, needs_review(Animal, Property), 3)).
+?- check(moves_by(tweety, unknown)).
+?- check(moves_by(falco, flying)).
+?- check(moves_by(opus, walking)).
+?- check(\+ flies_safely(tweety, true)).
+?- check(\+ flies_safely(tweety, false)).

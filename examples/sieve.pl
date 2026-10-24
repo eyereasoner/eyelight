@@ -36,9 +36,9 @@ remove(P, [I | Is], [I | Rest]) :-
 ?- why.
 
 % Check
-:- assertion(primes(1, [])).
-:- assertion(primes(2, [2])).
-:- assertion(primes(10, [2, 3, 5, 7])).
-:- assertion(primes(100,
+?- check(primes(1, [])).
+?- check(primes(2, [2])).
+?- check(primes(10, [2, 3, 5, 7])).
+?- check(primes(100,
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43,
      47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97])).

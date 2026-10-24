@@ -33,10 +33,10 @@ easter(Year, Date) :-
 ?- why(easter(2026, [4, 5])).
 
 % Check
-:- assertion(easter(2021, [4, 4])).
-:- assertion(easter(2024, [3, 31])).
-:- assertion(easter(2025, [4, 20])).
-:- assertion(easter(2026, [4, 5])).
-:- assertion(aggregate_all(count, easter(Year, Date), 30)).
-:- assertion(aggregate_all(count, easter(2020, Date), 0)).
-:- assertion(aggregate_all(count, easter(2051, Date), 0)).
+?- check(easter(2021, [4, 4])).
+?- check(easter(2024, [3, 31])).
+?- check(easter(2025, [4, 20])).
+?- check(easter(2026, [4, 5])).
+?- check(aggregate_all(count, easter(Year, Date), 30)).
+?- check(aggregate_all(count, easter(2020, Date), 0)).
+?- check(aggregate_all(count, easter(2051, Date), 0)).

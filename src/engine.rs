@@ -585,12 +585,6 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
                 result.push(Answer { values, premises });
             }
         }
-        if query.assertion && result.is_empty() {
-            return Err(Error::new(format!(
-                "Assertion failed: {}",
-                query_text(query)
-            )));
-        }
         answers.push(result);
     }
     Ok(Run {
@@ -600,63 +594,113 @@ pub fn reason(program: &Program, limits: Limits) -> Result<Run, Error> {
         boundaries: store.boundaries,
     })
 }
-pub(crate) fn query_text(query: &crate::Query) -> String {
-    format!(
-        "?- {}.",
-        query
-            .goals
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(", ")
-    )
-}
-
 impl Run {
-    pub fn output(&self, program: &Program) -> String {
-        let mut text = String::new();
-        if program.queries.is_empty() {
-            for step in &self.steps {
-                if matches!(step.justification, Justification::Rule { .. }) {
-                    text.push_str(&format!("{}.\n", step.atom));
-                }
-            }
-        } else {
-            let mut displayed = false;
-            for (index, query) in program.queries.iter().enumerate() {
-                if query.assertion {
-                    continue;
-                }
-                if displayed {
-                    text.push('\n');
-                }
-                displayed = true;
-                if self.answers[index].is_empty() {
-                    text.push_str("false.\n");
-                }
-                for answer in &self.answers[index] {
-                    if query.variables.is_empty() {
-                        text.push_str("true.\n");
-                    } else {
-                        text.push_str(
-                            &query
-                                .variables
-                                .iter()
-                                .zip(&answer.values)
-                                .map(|(name, value)| format!("{name} = {value}"))
-                                .collect::<Vec<_>>()
-                                .join(", "),
-                        );
-                        text.push_str(".\n");
-                    }
-                }
+    fn query_output(&self, program: &Program, index: usize) -> String {
+        let query = &program.queries[index];
+        let mut text = format!(
+            "?- {}.\n",
+            query
+                .goals
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        if self.answers[index].is_empty() {
+            text.push_str("false.\n");
+        }
+        for answer in &self.answers[index] {
+            if query.variables.is_empty() {
+                text.push_str("true.\n");
+            } else {
+                text.push_str(
+                    &query
+                        .variables
+                        .iter()
+                        .zip(&answer.values)
+                        .map(|(name, value)| format!("{name} = {value}"))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                );
+                text.push_str(".\n");
             }
         }
         text
     }
+    pub fn output(&self, program: &Program) -> Result<String, Error> {
+        self.output_with_limits(program, Limits::default())
+    }
+    pub(crate) fn output_with_limits(
+        &self,
+        program: &Program,
+        limits: Limits,
+    ) -> Result<String, Error> {
+        if program.requests.is_empty() {
+            return Ok(if program.queries.is_empty() {
+                self.steps
+                    .iter()
+                    .filter(|step| matches!(step.justification, Justification::Rule { .. }))
+                    .map(|step| format!("{}.\n", step.atom))
+                    .collect()
+            } else {
+                (0..program.queries.len())
+                    .map(|i| self.query_output(program, i))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            });
+        }
+        let mut previous = None;
+        let mut blocks = Vec::new();
+        for request in &program.requests {
+            match *request {
+                crate::Request::Answer(index) => {
+                    previous = Some(index);
+                    blocks.push(self.query_output(program, index));
+                }
+                crate::Request::Result(index) => {
+                    let mut goals = program.queries[index]
+                        .goals
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    if program.queries[index].goals.len() > 1 {
+                        goals = format!("({goals})");
+                    }
+                    let result = if self.answers[index].is_empty() {
+                        "false"
+                    } else {
+                        "true"
+                    };
+                    blocks.push(format!("?- check({goals}).\n{result}.\n"));
+                }
+                crate::Request::Proof | crate::Request::Check => {
+                    let index = previous.ok_or_else(|| {
+                        Error::new("why and check need a preceding ordinary query.")
+                    })?;
+                    let certificate = Certificate::from_run_for(program, self, Some(index));
+                    if matches!(request, crate::Request::Proof) {
+                        blocks.push(format!(
+                            "?- why.\n{}",
+                            Self::format_proof(program, &certificate)
+                        ));
+                    } else {
+                        blocks.push(format!(
+                            "?- check.\n{}",
+                            crate::check_with_limits(program, &certificate, limits)?
+                                .require_valid()?
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(blocks.join("\n"))
+    }
     /// The single, readable proof format, accepted by `Certificate::parse`.
     pub fn proof(&self, program: &Program) -> String {
-        let certificate = self.certificate(program);
+        Self::format_proof(program, &self.certificate(program))
+    }
+    fn format_proof(program: &Program, certificate: &Certificate) -> String {
         let mut used = vec![false; program.rules.len()];
         for step in &certificate.steps {
             if let Justification::Rule { rule, .. } = step.justification {
@@ -1149,7 +1193,7 @@ fn reason_tabled(program: &Program, limits: Limits, plan: &Plan) -> Result<Run, 
         }
     }
     engine.drain()?;
-    for (i, query) in program.queries.iter().enumerate() {
+    for (i, _) in program.queries.iter().enumerate() {
         engine.resume(Activation {
             owner: Owner::Query(i + 1),
             position: 0,
@@ -1160,12 +1204,6 @@ fn reason_tabled(program: &Program, limits: Limits, plan: &Plan) -> Result<Run, 
             table: None,
         });
         engine.drain()?;
-        if query.assertion && engine.answers[i].is_empty() {
-            return Err(Error::new(format!(
-                "Assertion failed: {}",
-                query_text(query)
-            )));
-        }
     }
     let levels: std::collections::BTreeSet<_> = engine
         .store

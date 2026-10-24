@@ -60015,8 +60015,8 @@ is_a(Entity, j10000) :-
 ?- why.
 
 % Check
-:- assertion((is_a(ind, a2))).
-:- assertion((is_a(ind, n10000))).
-:- assertion((is_a(ind, i10000))).
-:- assertion((is_a(ind, j10000))).
-:- assertion((\+ (is_a(ind, n10001)))).
+?- check((is_a(ind, a2))).
+?- check((is_a(ind, n10000))).
+?- check((is_a(ind, i10000))).
+?- check((is_a(ind, j10000))).
+?- check((\+ (is_a(ind, n10001)))).

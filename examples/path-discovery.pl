@@ -45031,11 +45031,11 @@ flight(res_airport_999, res_airport_900).
 ?- why.
 
 % Check
-:- assertion(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Heraklion International Nikos Kazantzakis Airport -> Václav Havel Airport Prague')).
-:- assertion(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Diagoras Airport -> Václav Havel Airport Prague')).
-:- assertion(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Palma De Mallorca Airport -> Václav Havel Airport Prague')).
-:- assertion(aggregate_all(count, airport(Id, Label), 7698)).
-:- assertion(aggregate_all(count, flight(From, To), 37274)).
-:- assertion(aggregate_all(count, airroute(From, To, Stops, Route), 3)).
-:- assertion(\+ route_between('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 1, 'Ostend-Bruges International Airport -> Liège Airport -> Diagoras Airport -> Václav Havel Airport Prague')).
-:- assertion(route_between('Ostend-Bruges International Airport', 'Ostend-Bruges International Airport', 0, 'Ostend-Bruges International Airport')).
+?- check(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Heraklion International Nikos Kazantzakis Airport -> Václav Havel Airport Prague')).
+?- check(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Diagoras Airport -> Václav Havel Airport Prague')).
+?- check(airroute('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, 'Ostend-Bruges International Airport -> Liège Airport -> Palma De Mallorca Airport -> Václav Havel Airport Prague')).
+?- check(aggregate_all(count, airport(Id, Label), 7698)).
+?- check(aggregate_all(count, flight(From, To), 37274)).
+?- check(aggregate_all(count, airroute(From, To, Stops, Route), 3)).
+?- check(\+ route_between('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 1, 'Ostend-Bruges International Airport -> Liège Airport -> Diagoras Airport -> Václav Havel Airport Prague')).
+?- check(route_between('Ostend-Bruges International Airport', 'Ostend-Bruges International Airport', 0, 'Ostend-Bruges International Airport')).

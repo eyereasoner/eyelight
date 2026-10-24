@@ -22,10 +22,10 @@ moves(N, From, To, Spare, Moves) :-
 ?- why.
 
 % Check
-:- assertion(moves(1, left, right, center, [move(left, right)])).
-:- assertion(moves(2, left, right, center,
+?- check(moves(1, left, right, center, [move(left, right)])).
+?- check(moves(2, left, right, center,
     [move(left, center), move(left, right), move(center, right)])).
-:- assertion(moves(3, left, right, center,
+?- check(moves(3, left, right, center,
     [move(left, right), move(left, center), move(right, center),
      move(left, right), move(center, left), move(center, right),
      move(left, right)])).

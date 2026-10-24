@@ -23,6 +23,6 @@ within_limit(Beam) :-
 ?- within_limit(Beam).
 
 % Check
-:- assertion(deflection_mm(demo, 3.90625)).
-:- assertion(within_limit(demo)).
-:- assertion((deflection_mm(demo, Delta), beam(demo, F, L, E, I, _), abs(Delta*3*E*I-1000*F*L**3) < 1.0e-6)).
+?- check(deflection_mm(demo, 3.90625)).
+?- check(within_limit(demo)).
+?- check((deflection_mm(demo, Delta), beam(demo, F, L, E, I, _), abs(Delta*3*E*I-1000*F*L**3) < 1.0e-6)).

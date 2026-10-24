@@ -278,15 +278,6 @@ pre {
 .error {
   color:#a82418
 }
-.saved-proof {
-  border-top:1px solid var(--line)
-}
-.saved-proof textarea {
-  min-height:190px
-}
-.saved-proof .panel-heading>span {
-  font-size:11px
-}
 .share-box {
   display:flex;
   gap:10px;
@@ -453,11 +444,6 @@ footer {
   footer {
     flex-direction:column;
     gap:8px
-  }
-  .saved-proof .panel-heading {
-    align-items:start;
-    flex-direction:column;
-    gap:6px
   }
 }
 @media(prefers-reduced-motion:reduce) {

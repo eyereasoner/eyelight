@@ -30,11 +30,11 @@ shortest(X, Y, Cost) :-
 ?- why.
 
 % Check
-:- assertion(path(a, d, 7)).
-:- assertion(path(a, d, 10)).
-:- assertion(path(a, d, 6)).
-:- assertion(aggregate_all(count, path(a, d, Cost), 3)).
-:- assertion(shortest(a, d, 6)).
-:- assertion(shortest(a, b, 3)).
-:- assertion(\+ shortest(a, d, 7)).
-:- assertion(\+ shortest(a, d, 10)).
+?- check(path(a, d, 7)).
+?- check(path(a, d, 10)).
+?- check(path(a, d, 6)).
+?- check(aggregate_all(count, path(a, d, Cost), 3)).
+?- check(shortest(a, d, 6)).
+?- check(shortest(a, b, 3)).
+?- check(\+ shortest(a, d, 7)).
+?- check(\+ shortest(a, d, 10)).

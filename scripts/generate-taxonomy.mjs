@@ -28,11 +28,11 @@ is_a(Entity, a2) :-
 ?- why.
 
 % Check
-:- assertion((is_a(ind, a2))).
-:- assertion((is_a(ind, n${depth}))).
-:- assertion((is_a(ind, i${depth}))).
-:- assertion((is_a(ind, j${depth}))).
-:- assertion((\\+ (is_a(ind, n${depth + 1})))).
+?- check((is_a(ind, a2))).
+?- check((is_a(ind, n${depth}))).
+?- check((is_a(ind, i${depth}))).
+?- check((is_a(ind, j${depth}))).
+?- check((\\+ (is_a(ind, n${depth + 1})))).
 `);
     return lines.join('');
   }

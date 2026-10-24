@@ -44,10 +44,10 @@ pell_answer(y_sum_1_to_8, Sum) :-
 ?- why(pell(8, X, Y)).
 
 % Check
-:- assertion(pell(0, 1, 0)).
-:- assertion(pell(5, 3363, 2378)).
-:- assertion(pell(8, 665857, 470832)).
-:- assertion(pell(50, 94741125149636933417873079920900017937, 66992092050551637663438906713182313772)).
-:- assertion(pell_holds(50, true)).
-:- assertion(\+ pell(-1, 1, 0)).
-:- assertion(aggregate_all(count, (between(0, 12, N), pell_holds(N, true)), 13)).
+?- check(pell(0, 1, 0)).
+?- check(pell(5, 3363, 2378)).
+?- check(pell(8, 665857, 470832)).
+?- check(pell(50, 94741125149636933417873079920900017937, 66992092050551637663438906713182313772)).
+?- check(pell_holds(50, true)).
+?- check(\+ pell(-1, 1, 0)).
+?- check(aggregate_all(count, (between(0, 12, N), pell_holds(N, true)), 13)).

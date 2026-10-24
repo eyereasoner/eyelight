@@ -43,13 +43,13 @@ type(O, Class) :-
 ?- why.
 
 % Check
-:- assertion(subclass(cat, animal)).
-:- assertion(subproperty(parent_of, connected_to)).
-:- assertion(type(koko, mammal)).
-:- assertion(type(koko, animal)).
-:- assertion(type(alice, person)).
-:- assertion(type(bob, person)).
-:- assertion(triple(alice, related_to, bob)).
-:- assertion(triple(alice, connected_to, bob)).
-:- assertion(aggregate_all(count, triple(Subject, Property, Object), 3)).
-:- assertion(aggregate_all(count, type(Who, Class), 5)).
+?- check(subclass(cat, animal)).
+?- check(subproperty(parent_of, connected_to)).
+?- check(type(koko, mammal)).
+?- check(type(koko, animal)).
+?- check(type(alice, person)).
+?- check(type(bob, person)).
+?- check(triple(alice, related_to, bob)).
+?- check(triple(alice, connected_to, bob)).
+?- check(aggregate_all(count, triple(Subject, Property, Object), 3)).
+?- check(aggregate_all(count, type(Who, Class), 5)).

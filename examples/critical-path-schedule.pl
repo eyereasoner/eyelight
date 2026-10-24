@@ -63,11 +63,11 @@ critical_path_answer(schedule, task(Task, Start, Finish)) :-
 ?- why(earliest_start(integration, Start)).
 
 % Check
-:- assertion(project_finish(23)).
-:- assertion(earliest_start(integration, 15)).
-:- assertion(finish_time(launch, 23)).
-:- assertion(critical_predecessor(integration, backend)).
-:- assertion(critical_task(database)).
-:- assertion(\+ critical_task(frontend)).
-:- assertion(aggregate_all(count, critical_task(Task), 7)).
-:- assertion(aggregate_all(count, critical_path_answer(schedule, Schedule), 11)).
+?- check(project_finish(23)).
+?- check(earliest_start(integration, 15)).
+?- check(finish_time(launch, 23)).
+?- check(critical_predecessor(integration, backend)).
+?- check(critical_task(database)).
+?- check(\+ critical_task(frontend)).
+?- check(aggregate_all(count, critical_task(Task), 7)).
+?- check(aggregate_all(count, critical_path_answer(schedule, Schedule), 11)).

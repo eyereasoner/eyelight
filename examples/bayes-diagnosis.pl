@@ -132,6 +132,6 @@ is_a(Case, 'normalized-case') :-
 ?- why.
 
 % Check
-:- assertion((aggregate_all(count, is_a(Subject, 'invalid-probability'), 0))).
-:- assertion((is_a(case, 'normalizable-case'))).
-:- assertion((is_a(case, 'normalized-case'))).
+?- check((aggregate_all(count, is_a(Subject, 'invalid-probability'), 0))).
+?- check((is_a(case, 'normalizable-case'))).
+?- check((is_a(case, 'normalized-case'))).

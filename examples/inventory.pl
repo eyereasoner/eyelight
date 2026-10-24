@@ -17,8 +17,8 @@ invoice(Total) :- aggregate_all(sum(Amount), line_total(Name, Amount), Total).
 ?- line_total(Item, Amount).
 
 % Check
-:- assertion(line_total(apple, 6)).
-:- assertion(line_total(pear, 12)).
-:- assertion(line_total(plum, 10)).
-:- assertion(invoice(28)).
-:- assertion(aggregate_all(count, line_total(Item, Amount), 3)).
+?- check(line_total(apple, 6)).
+?- check(line_total(pear, 12)).
+?- check(line_total(plum, 10)).
+?- check(invoice(28)).
+?- check(aggregate_all(count, line_total(Item, Amount), 3)).

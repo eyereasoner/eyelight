@@ -595,7 +595,7 @@ impl Parser {
         }
         Ok(goals)
     }
-    fn request(&mut self, program: &mut Program, assertion: bool) -> Result<(), Error> {
+    fn request(&mut self, program: &mut Program) -> Result<(), Error> {
         let goals = self.goals()?;
         let mut variables = Vec::new();
         for goal in &goals {
@@ -616,11 +616,7 @@ impl Parser {
                 }
             }
         }
-        program.queries.push(Query {
-            goals,
-            variables,
-            assertion,
-        });
+        program.queries.push(Query { goals, variables });
         Ok(())
     }
     fn program(&mut self) -> Result<Program, Error> {
@@ -629,11 +625,25 @@ impl Parser {
             if self.take("?-") {
                 if self.take("why") {
                     if self.take("(") {
-                        self.request(&mut program, false)?;
+                        let index = program.queries.len();
+                        self.request(&mut program)?;
                         self.expect(")")?;
+                        program.requests.push(crate::Request::Answer(index));
+                    }
+                    program.requests.push(crate::Request::Proof);
+                } else if self.take("check") {
+                    if self.take("(") {
+                        let index = program.queries.len();
+                        self.request(&mut program)?;
+                        self.expect(")")?;
+                        program.requests.push(crate::Request::Result(index));
+                    } else {
+                        program.requests.push(crate::Request::Check);
                     }
                 } else {
-                    self.request(&mut program, false)?;
+                    let index = program.queries.len();
+                    self.request(&mut program)?;
+                    program.requests.push(crate::Request::Answer(index));
                 }
             } else if self.take(":-") {
                 if self.take("table") {
@@ -658,12 +668,8 @@ impl Parser {
                             break;
                         }
                     }
-                } else if self.take("assertion") {
-                    self.expect("(")?;
-                    self.request(&mut program, true)?;
-                    self.expect(")")?;
                 } else {
-                    return Err(self.error("Supported directives are table and assertion."));
+                    return Err(self.error("Only table directives are supported."));
                 }
             } else {
                 let value = self.expression(0)?;
@@ -671,7 +677,7 @@ impl Parser {
                 if builtin_name(&head.predicate, head.terms.len())
                     || matches!(
                         head.predicate.as_str(),
-                        "aggregate_all" | "fresh" | "why" | "assertion"
+                        "aggregate_all" | "fresh" | "why" | "check"
                     )
                 {
                     return Err(self.error("A fact or rule must name an ordinary predicate."));

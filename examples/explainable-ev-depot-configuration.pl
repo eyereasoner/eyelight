@@ -56,11 +56,11 @@ power_upgrade(Site, Product, ExtraKw) :-
 ?- why.
 
 % Check
-:- assertion(recommendation(depot_a, fleet22)).
-:- assertion(blocker(depot_a, rapid50, insufficient_site_power(60, 80))).
-:- assertion(blocker(depot_a, budget11, insufficient_charge_rate(11, 22))).
-:- assertion(blocker(depot_a, legacy22, connector_mismatch(type2, ccs2))).
-:- assertion(power_upgrade(depot_a, rapid50, 20)).
-:- assertion(\+ power_upgrade(depot_a, budget11, 0)).
-:- assertion(aggregate_all(count, compatible(Site, Product), 1)).
-:- assertion(aggregate_all(count, blocker(Site, Product, Reason), 3)).
+?- check(recommendation(depot_a, fleet22)).
+?- check(blocker(depot_a, rapid50, insufficient_site_power(60, 80))).
+?- check(blocker(depot_a, budget11, insufficient_charge_rate(11, 22))).
+?- check(blocker(depot_a, legacy22, connector_mismatch(type2, ccs2))).
+?- check(power_upgrade(depot_a, rapid50, 20)).
+?- check(\+ power_upgrade(depot_a, budget11, 0)).
+?- check(aggregate_all(count, compatible(Site, Product), 1)).
+?- check(aggregate_all(count, blocker(Site, Product, Reason), 3)).

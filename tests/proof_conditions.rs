@@ -1,6 +1,6 @@
 use wheye::{
-    check, execute, parse, reason, Certificate, Claim, Condition, Justification, Limits,
-    ProofLocation, Report, Step,
+    check, parse, reason, Certificate, Claim, Condition, Justification, Limits, ProofLocation,
+    Report, Step,
 };
 
 const SOCRATES: &str = include_str!("fixtures/minimal.pl");
@@ -155,7 +155,9 @@ fn inapplicable_conditions_do_not_admit_unsupported_proof_justifications() {
             format!("wheye-proof 1\nstep 1 {justification} : mortal(socrates).\nanswer 1 [1]\n");
         let error = Certificate::parse(&text).unwrap_err().to_string();
         assert!(error.contains("[C3 justification]"), "{error}");
-        assert!(execute(SOCRATES, "check", &text, Limits::default()).is_err());
+        assert!(Certificate::parse(&text)
+            .and_then(|c| check(&parse(SOCRATES).unwrap(), &c)?.require_valid())
+            .is_err());
     }
     for source in ["p().", "p :- @eq(a,a).", "p :- \\+ q. q :- p."] {
         assert!(parse(source).is_err());
@@ -169,7 +171,7 @@ fn all_independent_failures_are_reported_and_rechecking_is_repeatable() {
     let report = check(&p, &c).unwrap();
     assert_eq!(report.condition(Condition::C1).failed, 2);
     assert_eq!(check(&p, &c).unwrap(), report);
-    assert!(execute(SOCRATES, "check", &c.to_string(), Limits::default()).is_err());
+    assert!(check(&p, &c).unwrap().require_valid().is_err());
 }
 
 #[test]

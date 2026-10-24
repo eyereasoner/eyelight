@@ -26,7 +26,8 @@ mod wasm;
 
 pub use engine::{reason, Answer, Limits, Run};
 pub use model::{
-    Aggregate, AggregateKind, Atom, Error, Goal, Literal, Program, Query, Rule, Term, Value,
+    Aggregate, AggregateKind, Atom, Error, Goal, Literal, Program, Query, Request, Rule, Term,
+    Value,
 };
 pub use parser::{parse, parse_atom};
 pub use proof::{
@@ -37,28 +38,7 @@ pub use proof::{
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Run the same small interface in the CLI and browser.
-pub fn execute(
-    source: &str,
-    mode: &str,
-    saved_proof: &str,
-    limits: Limits,
-) -> Result<String, Error> {
+pub fn execute(source: &str, limits: Limits) -> Result<String, Error> {
     let program = parse(source)?;
-    if mode == "check" {
-        let certificate = Certificate::parse(saved_proof)?;
-        return Ok(check_with_limits(&program, &certificate, limits)?
-            .require_valid()?
-            .to_string());
-    }
-    let run = reason(&program, limits)?;
-    match mode {
-        "answers" => Ok(run.output(&program)),
-        "proof" => Ok(run.proof(&program)),
-        "checked" => Ok(
-            check_with_limits(&program, &run.certificate(&program), limits)?
-                .require_valid()?
-                .to_string(),
-        ),
-        _ => Err(Error::new(format!("Unknown mode {mode:?}."))),
-    }
+    reason(&program, limits)?.output_with_limits(&program, limits)
 }

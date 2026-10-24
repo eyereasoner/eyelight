@@ -1,5 +1,4 @@
 const $ = id => document.getElementById(id);
-const modes = new Set(['answers', 'proof', 'checked', 'check']);
 const examples = new Set(['abstract-interpretation', 'access-control-policy', 'ackermann', 'age', 'aggregation', 'animals', 'arithmetic', 'battery-dispatch', 'bayes-diagnosis', 'beam-deflection', 'binomial-vandermonde', 'braking-distance', 'buck-converter-design', 'collatz', 'complex', 'control-system', 'critical-path-schedule', 'data-quality-audit', 'deep-taxonomy-10', 'deep-taxonomy-100', 'deep-taxonomy-1000', 'deep-taxonomy-10000', 'deep-taxonomy-100000', 'delfour', 'dijkstra', 'dog-license', 'easter', 'electrical-rc-filter', 'explainable-ev-depot-configuration', 'expression-eval', 'family', 'family-cousins', 'fft8-numeric', 'fibonacci', 'field-nitrogen-balance', 'flute-puzzle', 'french-cities', 'friends', 'good-cobbler', 'gps', 'gray-code-counter', 'hamming-code', 'hanoi', 'interval-relations', 'inventory', 'job-shop-scheduling', 'knapsack-optimization', 'lagrange-cosets', 'least-squares-regression', 'list-collection', 'lists', 'matrix-multiplication', 'modular-exponentiation', 'negation', 'newton-raphson', 'observability-log-correlation', 'orbital-transfer-design', 'orders', 'padovan', 'paraconsistent-animals', 'path-discovery', 'paths', 'peano', 'peasant', 'pell-equation', 'permissions', 'policy-risk', 'polynomial', 'queens', 'radioactive-decay', 'rdf', 'research-portal', 'sbom-vulnerability-response', 'schema-inference', 'service-outage-recovery', 'shortest-path', 'sieve', 'socrates', 'state-transitions', 'statistics-summary', 'symbolic-derivative', 'term-structure', 'text-processing', 'turing', 'type-inference', 'unification', 'values', 'vector-similarity', 'weighted-interval-scheduling', 'wind-turbine', 'witnesses']);
 const storageKey = 'wheye.playground.v1';
 let worker = null;
@@ -21,7 +20,7 @@ function working(value) {
   $('stop').disabled = !value;
 }
 function snapshot() {
-  return { source: $('source').value, mode: $('mode').value, proof: $('saved-proof').value };
+  return { source: $('source').value };
 }
 function save() {
   clearTimeout(saveTimer);
@@ -29,17 +28,10 @@ function save() {
     try { localStorage.setItem(storageKey, JSON.stringify(snapshot())); } catch { /* Storage can be unavailable. */ }
   }, 200);
 }
-function syncMode() {
-  $('saved-proof-panel').hidden = $('mode').value !== 'check';
-}
 function restore(state) {
   if (typeof state?.source !== 'string') return false;
   $('source').value = state.source;
-  const mode = state.mode === 'explain' ? 'proof' : state.mode;
-  $('mode').value = modes.has(mode) ? mode : 'answers';
-  $('saved-proof').value = typeof state.proof === 'string' ? state.proof : '';
   $('example').value = '';
-  syncMode();
   return true;
 }
 function ensureWorker() {
@@ -104,8 +96,6 @@ $('run').addEventListener('click', async () => {
 });
 $('stop').addEventListener('click', stop);
 $('source').addEventListener('input', () => { $('example').value = ''; save(); });
-$('saved-proof').addEventListener('input', save);
-$('mode').addEventListener('change', () => { syncMode(); save(); });
 $('source').addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); if (!busy) $('run').click(); }
 });
@@ -117,7 +107,7 @@ async function loadExample(name) {
     const response = await fetch(new URL(`./examples/${name}.pl`, import.meta.url));
     if (!response.ok) throw new Error(`Cannot load example ${name}: HTTP ${response.status}.`);
     const source = await response.text();
-    restore({ source, mode: 'answers', proof: '' });
+    restore({ source });
     exampleSource = { name, source };
     $('example').value = name;
     status('Example loaded. Press Run.');
@@ -136,12 +126,10 @@ $('share').addEventListener('click', async () => {
   const state = snapshot();
   const url = new URL(location.href);
   const params = new URLSearchParams();
-  if (exampleSource && state.source === exampleSource.source && state.mode === 'answers' && !state.proof) {
+  if (exampleSource && state.source === exampleSource.source) {
     params.set('example', exampleSource.name);
   } else {
     params.set('code', state.source);
-    params.set('mode', state.mode);
-    if (state.proof) params.set('proof', state.proof);
   }
   url.hash = params.toString();
   $('share-url').value = url.href;
@@ -156,7 +144,7 @@ async function initialise() {
   $('output').textContent = 'Your first answer is one click away.\n\nPress Run to follow your facts and rules.';
   try {
     const params = new URLSearchParams(location.hash.slice(1));
-    if (params.has('code')) restore({ source: params.get('code'), mode: params.get('mode'), proof: params.get('proof') });
+    if (params.has('code')) restore({ source: params.get('code') });
     else if (params.has('example')) {
       if (!examples.has(params.get('example'))) throw new Error('Unknown shared example. Choose an example above.');
       await loadExample(params.get('example'));
@@ -165,7 +153,6 @@ async function initialise() {
       try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch { /* No usable autosave. */ }
       if (!restore(saved)) await loadExample('socrates');
     }
-    syncMode();
     status('Ready when you are.');
     // Loading shared state never executes it automatically.
   } catch (error) { status(error.message, true); }

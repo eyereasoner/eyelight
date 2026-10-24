@@ -78,20 +78,20 @@ relation(J, finished_by, I) :-
 ?- why(relation(a, overlaps, d)).
 
 % Check
-:- assertion(relation(a, before, b)).
-:- assertion(relation(b, after, a)).
-:- assertion(relation(a, meets, c)).
-:- assertion(relation(c, met_by, a)).
-:- assertion(relation(a, overlaps, d)).
-:- assertion(relation(d, overlapped_by, a)).
-:- assertion(relation(f, starts, a)).
-:- assertion(relation(a, started_by, f)).
-:- assertion(relation(a, during, h)).
-:- assertion(relation(h, contains, a)).
-:- assertion(relation(g, finishes, a)).
-:- assertion(relation(a, finished_by, g)).
-:- assertion(relation(a, equals, e)).
-:- assertion(interval(i, 960, 1080)).
-:- assertion(interval(j, 900, 960)).
-:- assertion(aggregate_all(count, interval(I, S, E), 10)).
-:- assertion(aggregate_all(count, relation(I, Relation, J), 100)).
+?- check(relation(a, before, b)).
+?- check(relation(b, after, a)).
+?- check(relation(a, meets, c)).
+?- check(relation(c, met_by, a)).
+?- check(relation(a, overlaps, d)).
+?- check(relation(d, overlapped_by, a)).
+?- check(relation(f, starts, a)).
+?- check(relation(a, started_by, f)).
+?- check(relation(a, during, h)).
+?- check(relation(h, contains, a)).
+?- check(relation(g, finishes, a)).
+?- check(relation(a, finished_by, g)).
+?- check(relation(a, equals, e)).
+?- check(interval(i, 960, 1080)).
+?- check(interval(j, 900, 960)).
+?- check(aggregate_all(count, interval(I, S, E), 10)).
+?- check(aggregate_all(count, relation(I, Relation, J), 100)).

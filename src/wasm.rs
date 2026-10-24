@@ -6,7 +6,7 @@ pub fn version() -> String {
 }
 
 #[wasm_bindgen(js_name = runProgram)]
-pub fn run_program(source: &str, mode: &str, proof: &str) -> Result<String, JsValue> {
-    crate::execute(source, mode, proof, crate::Limits::default())
+pub fn run_program(source: &str) -> Result<String, JsValue> {
+    crate::execute(source, crate::Limits::default())
         .map_err(|error| JsValue::from_str(&error.to_string()))
 }

@@ -77,12 +77,12 @@ dispatch_plan(Plan, Cost) :- initial_charge_kwh(Charge), optimal_from(1, Charge,
 ?- why.
 
 % Check
-:- assertion(dispatch_plan([dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28)).
-:- assertion(best_cost(1, 2, value(28))).
-:- assertion(aggregate_all(count, dispatch_plan(Plan, Cost), 1)).
-:- assertion(transition(2, 3, -2, feasible(1, 1, 8))).
-:- assertion(transition(3, 1, 2, feasible(3, 0, 0))).
-:- assertion(best_cost(5, 1, infeasible)).
-:- assertion(best_cost(5, 2, value(0))).
-:- assertion(transition(1, 2, 2, infeasible)).
-:- assertion(transition(3, 1, 0, infeasible)).
+?- check(dispatch_plan([dispatch(1, 1, 3, 3), dispatch(2, -2, 1, 1), dispatch(3, 2, 0, 3), dispatch(4, -1, 2, 2)], 28)).
+?- check(best_cost(1, 2, value(28))).
+?- check(aggregate_all(count, dispatch_plan(Plan, Cost), 1)).
+?- check(transition(2, 3, -2, feasible(1, 1, 8))).
+?- check(transition(3, 1, 2, feasible(3, 0, 0))).
+?- check(best_cost(5, 1, infeasible)).
+?- check(best_cost(5, 2, value(0))).
+?- check(transition(1, 2, 2, infeasible)).
+?- check(transition(3, 1, 0, infeasible)).

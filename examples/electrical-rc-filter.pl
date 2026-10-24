@@ -23,6 +23,6 @@ cutoff_hz(Filter, Rounded) :-
 ?- response(Filter, Tau, _).
 
 % Check
-:- assertion(response(filter1, 0.01, _)).
-:- assertion((response(filter1, Tau, F), abs(2*pi*Tau*F-1) < 1.0e-12)).
-:- assertion((response(filter1, _, F), F > 15.91, F < 15.92)).
+?- check(response(filter1, 0.01, _)).
+?- check((response(filter1, Tau, F), abs(2*pi*Tau*F-1) < 1.0e-12)).
+?- check((response(filter1, _, F), F > 15.91, F < 15.92)).

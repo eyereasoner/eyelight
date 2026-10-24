@@ -32,8 +32,8 @@ factorial(s(N), F) :-
 ?- why.
 
 % Check
-:- assertion(aggregate_all(count, add(A, B, s(s(s(zero)))), 4)).
-:- assertion(add(s(zero), s(s(zero)), s(s(s(zero))))).
-:- assertion(multiply(s(zero), s(s(zero)), s(s(zero)))).
-:- assertion(factorial(zero, s(zero))).
-:- assertion(factorial(s(s(s(zero))), s(s(s(s(s(s(zero)))))))).
+?- check(aggregate_all(count, add(A, B, s(s(s(zero)))), 4)).
+?- check(add(s(zero), s(s(zero)), s(s(s(zero))))).
+?- check(multiply(s(zero), s(s(zero)), s(s(zero)))).
+?- check(factorial(zero, s(zero))).
+?- check(factorial(s(s(s(zero))), s(s(s(s(s(s(zero)))))))).

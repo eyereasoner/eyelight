@@ -352,21 +352,21 @@ is_a(Process, 'conflicting-process') :-
 ?- why.
 
 % Check
-:- assertion((aggregate_all(count, is_a(Subject, 'assessed-session'), 22))).
-:- assertion((aggregate_all(count, is_a(Subject, 'planned-breach'), 6))).
-:- assertion((aggregate_all(count, is_a(Subject, 'planned-deletion'), 3))).
-:- assertion((aggregate_all(count, is_a(Subject, 'changed-outcome'), 5))).
-:- assertion((aggregate_all(count, is_a(Subject, 'conflicting-process'), 1))).
-:- assertion(('policy-result'(r1, [permit, research]))).
-:- assertion((assessment([baseline, r1], [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]]))).
-:- assertion((assessment(['omnibus-proposal', r1], [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]]))).
-:- assertion((assessment(['omnibus-proposal', r7], [['deny-device', 'refused-by-signal'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88b(1)-(2)"]]))).
-:- assertion((assessment(['omnibus-proposal', r8], [['deny-device', 'do-not-ask-again'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]))).
-:- assertion((assessment(['omnibus-proposal', r9], [['await-device-consent', research], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]))).
-:- assertion(('policy-result'(r3, [deny, ['prohibited-by', 'no-marketing']]))).
-:- assertion(('policy-result'(r4, [deny, ['not-permitted', [[unmet, 'consent-given', 'consent-status', 'consent-withdrawn', equal, 'consent-given']]]]))).
-:- assertion(('policy-result'(r5, [deny, ['not-permitted', [[unmet, pseudonymised, 'technical-measure', encryption, equal, pseudonymisation], [unmet, 'before-2027', date, 20270301, 'less-than', 20270101]]]]))).
-:- assertion(('policy-result'(r6, [deny, ['prohibited-by', 'no-transfer-us']]))).
-:- assertion(('policy-conflict'(r6, ['resolved-by', prohibit, 'no-transfer-us', [overrides, research]]))).
-:- assertion(('policy-result'(r11, [deny, 'no-matching-permission']))).
-:- assertion((\+ ('planned-duty'([baseline, r1], [delete, ['within-days', 90]])))).
+?- check((aggregate_all(count, is_a(Subject, 'assessed-session'), 22))).
+?- check((aggregate_all(count, is_a(Subject, 'planned-breach'), 6))).
+?- check((aggregate_all(count, is_a(Subject, 'planned-deletion'), 3))).
+?- check((aggregate_all(count, is_a(Subject, 'changed-outcome'), 5))).
+?- check((aggregate_all(count, is_a(Subject, 'conflicting-process'), 1))).
+?- check(('policy-result'(r1, [permit, research]))).
+?- check((assessment([baseline, r1], [['await-device-consent', research], [policy, "ePrivacy Art. 5(3)"]]))).
+?- check((assessment(['omnibus-proposal', r1], [[permit, research], [policy, "GDPR Art. 88a(3)(c)"]]))).
+?- check((assessment(['omnibus-proposal', r7], [['deny-device', 'refused-by-signal'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88b(1)-(2)"]]))).
+?- check((assessment(['omnibus-proposal', r8], [['deny-device', 'do-not-ask-again'], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]))).
+?- check((assessment(['omnibus-proposal', r9], [['await-device-consent', research], [policy, "GDPR Art. 88a(1)", "GDPR Art. 88a(4)(c)"]]))).
+?- check(('policy-result'(r3, [deny, ['prohibited-by', 'no-marketing']]))).
+?- check(('policy-result'(r4, [deny, ['not-permitted', [[unmet, 'consent-given', 'consent-status', 'consent-withdrawn', equal, 'consent-given']]]]))).
+?- check(('policy-result'(r5, [deny, ['not-permitted', [[unmet, pseudonymised, 'technical-measure', encryption, equal, pseudonymisation], [unmet, 'before-2027', date, 20270301, 'less-than', 20270101]]]]))).
+?- check(('policy-result'(r6, [deny, ['prohibited-by', 'no-transfer-us']]))).
+?- check(('policy-conflict'(r6, ['resolved-by', prohibit, 'no-transfer-us', [overrides, research]]))).
+?- check(('policy-result'(r11, [deny, 'no-matching-permission']))).
+?- check((\+ ('planned-duty'([baseline, r1], [delete, ['within-days', 90]])))).

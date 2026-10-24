@@ -31,10 +31,10 @@ reaches(From, To) :-
 ?- reaches(nantes, paris).
 
 % Check
-:- assertion((reaches(paris, nantes))).
-:- assertion((reaches(chartres, nantes))).
-:- assertion((reaches(lemans, nantes))).
-:- assertion((reaches(angers, nantes))).
-:- assertion((reaches(paris, tours))).
-:- assertion((\+ (reaches(nantes, paris)))).
-:- assertion((\+ (reaches(tours, nantes)))).
+?- check((reaches(paris, nantes))).
+?- check((reaches(chartres, nantes))).
+?- check((reaches(lemans, nantes))).
+?- check((reaches(angers, nantes))).
+?- check((reaches(paris, tours))).
+?- check((\+ (reaches(nantes, paris)))).
+?- check((\+ (reaches(tours, nantes)))).

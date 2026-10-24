@@ -23,10 +23,10 @@ head_tail([Head | Tail], Head, Tail).
 ?- why.
 
 % Check
-:- assertion(append([], [a, b], [a, b])).
-:- assertion(append([a], [b], [a, b])).
-:- assertion(append([a, b], [], [a, b])).
-:- assertion(aggregate_all(count, append(Prefix, Suffix, [a, b]), 3)).
-:- assertion(matching_pair(pair(same, same))).
-:- assertion(\+ matching_pair(pair(a, b))).
-:- assertion(head_tail([a, b, c], a, [b, c])).
+?- check(append([], [a, b], [a, b])).
+?- check(append([a], [b], [a, b])).
+?- check(append([a, b], [], [a, b])).
+?- check(aggregate_all(count, append(Prefix, Suffix, [a, b]), 3)).
+?- check(matching_pair(pair(same, same))).
+?- check(\+ matching_pair(pair(a, b))).
+?- check(head_tail([a, b, c], a, [b, c])).

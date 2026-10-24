@@ -41,8 +41,8 @@ is_a(test, 'passed-check') :-
 ?- why.
 
 % Check
-:- assertion(('is-older-than'('pat-h', 80))).
-:- assertion(('is-older-than'('pat-h', 82))).
-:- assertion((\+ ('is-older-than'('pat-h', 83)))).
-:- assertion((is_a(test, 'passed-check'))).
-:- assertion((aggregate_all(count, is_a(Subject, 'passed-check'), 1))).
+?- check(('is-older-than'('pat-h', 80))).
+?- check(('is-older-than'('pat-h', 82))).
+?- check((\+ ('is-older-than'('pat-h', 83)))).
+?- check((is_a(test, 'passed-check'))).
+?- check((aggregate_all(count, is_a(Subject, 'passed-check'), 1))).

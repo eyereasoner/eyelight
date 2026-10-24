@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
+use wheye::{check, parse, Certificate, Condition, Limits};
 
 fn cli(args: &[&str], input: &str) -> std::process::Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_wheye"))
@@ -17,163 +18,141 @@ fn cli(args: &[&str], input: &str) -> std::process::Output {
         .unwrap();
     child.wait_with_output().unwrap()
 }
+fn proof(text: &str) -> Certificate {
+    let start = text.find("wheye-proof 1\n").unwrap();
+    let end = text[start..]
+        .find("\n?- check.")
+        .map(|n| start + n)
+        .unwrap_or(text.len());
+    Certificate::parse(&text[start..end]).unwrap()
+}
 #[test]
-fn stdin_answers_proof_and_generated_proof_check() {
-    let source = "human(socrates). mortal(X) :- human(X). ?- mortal(Who).";
+fn source_requests_select_answers_proof_verification_and_results() {
+    let source="human(socrates). mortal(P):-human(P). ?- mortal(Who). ?- why. ?- check. ?- check(mortal(socrates)). ?- check(mortal(plato)).";
     let result = cli(&["-"], source);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let text = String::from_utf8(result.stdout).unwrap();
+    assert!(text.starts_with("?- mortal(Who).\nWho = socrates.\n\n?- why.\nwheye-proof 1\n"));
+    assert!(text
+        .ends_with("\n?- check(mortal(socrates)).\ntrue.\n\n?- check(mortal(plato)).\nfalse.\n"));
+    let certificate = proof(&text);
+    assert_eq!(certificate.steps.len(), 2);
+    assert_eq!(certificate.claims.len(), 1);
+    assert!(check(&parse(source).unwrap(), &certificate)
+        .unwrap()
+        .valid());
+    for condition in Condition::ALL {
+        assert!(text.contains(&format!("{condition}:")));
+    }
+}
+#[test]
+fn echoed_queries_keep_goal_structure_and_ignore_source_layout() {
+    let result = cli(
+        &["-"],
+        "p(a). ?- % a comment\n p( X ). ?- check((p(X), X = a)).",
+    );
     assert!(result.status.success());
     assert_eq!(
         String::from_utf8(result.stdout).unwrap(),
-        "Who = socrates.\n"
+        "?- p(X).\nX = a.\n\n?- check((p(X), X = a)).\ntrue.\n"
     );
-    let result = cli(&["-p", "-"], source);
-    assert!(String::from_utf8(result.stdout)
-        .unwrap()
-        .contains("step 2 rule 1 [1] : mortal(socrates)."));
-    let result = cli(&["-c", "-"], source);
+}
+#[test]
+fn checks_do_not_replace_the_ordinary_query_and_context_crosses_files() {
+    let file = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minimal.pl");
+    let result = cli(&[file, "-"], "?- check(mortal(plato)). ?- why. ?- check.");
     assert!(result.status.success());
     let text = String::from_utf8(result.stdout).unwrap();
+    assert!(
+        text.starts_with("?- mortal(Who).\nWho = socrates.\n\n?- check(mortal(plato)).\nfalse.\n")
+    );
     assert!(text.contains("checked: 2 steps, 1 claim"));
-    for condition in wheye::Condition::ALL {
-        assert!(text.contains(&format!("{condition}:")));
-    }
-    assert!(text.contains("C5 re-decision: not applicable"));
+    assert_eq!(proof(&text).claims.len(), 1);
 }
 #[test]
-fn saved_proof_from_stdin_is_checked_against_source() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minimal.pl");
-    let result = cli(&["-p", source], "");
-    assert!(result.status.success());
-    let proof = String::from_utf8(result.stdout).unwrap();
-    assert!(proof.starts_with("wheye-proof 1\n"));
-    assert!(cli(&["--check-proof", "-", source], &proof)
-        .status
-        .success());
-    let forged = proof.replace("mortal(socrates)", "mortal(plato)");
-    let result = cli(&["--check-proof", "-", source], &forged);
-    assert!(!result.status.success());
-    assert!(result.stdout.is_empty());
-    let diagnostic = String::from_utf8(result.stderr).unwrap();
-    assert!(diagnostic.contains("[C1 resolution] step 2:"));
-    for condition in wheye::Condition::ALL {
-        assert!(diagnostic.contains(&format!("{condition}:")));
-    }
-}
-#[test]
-fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
-    for (args, input) in [
-        (vec!["-"], "p(."),
-        (vec!["--max-facts", "1", "-"], "p(a). q(X) :- p(X)."),
-        (vec!["--bogus"], ""),
-        (vec!["--check-proof", "-", "-"], ""),
-        (vec!["-p", "-c", "-"], ""),
+fn only_help_and_version_options_are_available() {
+    let help = String::from_utf8(cli(&["-h"], "").stdout).unwrap();
+    assert!(help.contains("?- why."));
+    assert!(help.contains("?- check."));
+    assert!(help.contains("?- check(Goal)."));
+    for removed in [
+        "-e",
+        "--explain",
+        "-p",
+        "--proof",
+        "-c",
+        "--prove-and-check",
+        "--check-proof",
+        "--max-facts",
+        "--max-matches",
+        "--help",
+        "--version",
     ] {
-        let result = cli(&args, input);
+        let result = cli(&[removed, "-"], "");
+        assert!(!result.status.success());
+        assert!(result.stdout.is_empty());
+        assert!(!help.contains(removed), "obsolete option {removed} in help");
+    }
+    assert_eq!(
+        String::from_utf8(cli(&["-v"], "").stdout).unwrap(),
+        format!("wheye {}\n", wheye::VERSION)
+    );
+    assert_eq!(cli(&[], "").stdout, cli(&["-h"], "").stdout);
+}
+#[test]
+fn malformed_input_and_missing_context_fail_without_partial_output() {
+    for source in [
+        "p(.",
+        "?- why.",
+        "?- check.",
+        "p(a). ?- p(X). :- assertion(p(a)).",
+    ] {
+        let result = cli(&["-"], source);
         assert!(!result.status.success());
         assert!(result.stdout.is_empty());
         assert!(String::from_utf8(result.stderr)
             .unwrap()
             .starts_with("wheye: "));
     }
-}
-#[test]
-fn help_version_and_multiple_source_files_work() {
-    let help = cli(&[], "");
-    assert!(help.status.success());
-    let help = String::from_utf8(help.stdout).unwrap();
-    assert!(help.starts_with("wheye — a small relational reasoner\n"));
-    assert!(help.contains("Usage: wheye [OPTIONS] FILE..."));
-    assert!(help.contains("Prolog-style .pl syntax"));
-    assert_eq!(
-        String::from_utf8(cli(&["--version"], "").stdout).unwrap(),
-        format!("wheye {}\n", wheye::VERSION)
-    );
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/minimal.pl");
-    let result = cli(&[path, "-"], "human(hypatia).");
+    let result = cli(&["-"], "?- check(missing(X)).");
     assert!(result.status.success());
-    assert!(String::from_utf8(result.stdout)
-        .unwrap()
-        .contains("Who = hypatia."));
+    assert_eq!(result.stdout, b"?- check(missing(X)).\nfalse.\n");
 }
-
 #[test]
-fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/orders.pl");
-    let result = cli(&["-c", source], "");
+fn all_nine_conditions_and_forged_certificates_still_work() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/orders.pl");
+    let result = cli(&[path], "");
     assert!(
         result.status.success(),
         "{}",
         String::from_utf8_lossy(&result.stderr)
     );
-    let report = String::from_utf8(result.stdout).unwrap();
-    assert!(!report.contains("not applicable"));
-    for condition in wheye::Condition::ALL {
-        assert!(report.contains(&format!("{condition}:")));
+    let output = String::from_utf8(result.stdout).unwrap();
+    assert!(!output.contains("not applicable"));
+    for condition in Condition::ALL {
+        assert!(output.contains(&format!("{condition}:")));
     }
-    let result = cli(&["-p", source], "");
-    assert!(result.status.success());
-    let proof = String::from_utf8(result.stdout).unwrap();
-    assert!(cli(&["--check-proof", "-", source], &proof)
-        .status
-        .success());
-    let forged = proof.replace("'>='(15, 10)", "'>='(0, 10)");
-    assert_ne!(forged, proof);
-    let result = cli(&["--check-proof", "-", source], &forged);
-    assert!(!result.status.success());
-    assert!(result.stdout.is_empty());
-    assert!(String::from_utf8(result.stderr)
-        .unwrap()
-        .contains("[C5 re-decision]"));
-    let result = cli(
-        &["--max-matches", "1", "--check-proof", "-", source],
-        &proof,
-    );
-    assert!(!result.status.success());
-    assert!(result.stdout.is_empty());
-}
-
-#[test]
-fn answers_are_quiet_and_one_proof_format_is_checkable() {
-    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
-    let answer = cli(&[source], "");
-    assert!(answer.status.success());
-    assert_eq!(answer.stdout, b"Who = socrates.\n");
-    let proof = cli(&["-p", source], "");
-    let result = cli(&["--proof", source], "");
-    assert!(result.status.success());
-    assert_eq!(result.stdout, proof.stdout);
-    let text = String::from_utf8(proof.stdout).unwrap();
-    let certificate = wheye::Certificate::parse(&text).unwrap();
-    assert_eq!(certificate.steps.len(), 2);
-    assert_eq!(certificate.claims.len(), 1);
-    assert!(cli(&["--check-proof", "-", source], &text).status.success());
-    let forged = text.replace("mortal(socrates)", "mortal(plato)");
-    assert!(!cli(&["--check-proof", "-", source], &forged)
-        .status
-        .success());
-    let failure = cli(&["-"], "p(a). ?- p(X). :- assertion(p(b)).");
-    assert!(!failure.status.success());
-    assert!(failure.stdout.is_empty());
-    assert!(String::from_utf8(failure.stderr)
-        .unwrap()
-        .contains("Assertion failed"));
-}
-
-#[test]
-fn help_matches_the_supported_output_options() {
-    let help = String::from_utf8(cli(&["-h"], "").stdout).unwrap();
-    assert!(help.contains("Without an output option, print answers only. Assertions run silently."));
-    assert!(help.contains("-p, --proof"));
-    assert!(help.contains("-c, --prove-and-check"));
-    assert!(help.contains("--check-proof FILE"));
-    assert!(!help.contains("--explain"));
-    assert!(!help.contains("-e,"));
-    for option in ["-e", "--explain"] {
-        let result = cli(&[option, "-"], "");
-        assert!(!result.status.success());
-        assert!(result.stdout.is_empty());
-        assert!(String::from_utf8(result.stderr)
-            .unwrap()
-            .contains("Unknown option"));
-    }
+    let source = std::fs::read_to_string(path).unwrap();
+    let program = parse(&source).unwrap();
+    let certificate = proof(&output);
+    assert!(check(&program, &certificate).unwrap().valid());
+    let forged = certificate
+        .to_string()
+        .replace("'>='(15, 10)", "'>='(0, 10)");
+    let report = check(&program, &Certificate::parse(&forged).unwrap()).unwrap();
+    assert!(!report.valid());
+    assert!(report.condition(Condition::C5).failed > 0);
+    assert!(wheye::check_with_limits(
+        &program,
+        &certificate,
+        Limits {
+            max_matches: 1,
+            ..Limits::default()
+        }
+    )
+    .is_err());
 }

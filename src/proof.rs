@@ -206,6 +206,9 @@ fn claim_premises(claim: &Claim) -> Vec<usize> {
 
 impl Certificate {
     pub(crate) fn from_run(program: &Program, run: &Run) -> Self {
+        Self::from_run_for(program, run, None)
+    }
+    pub(crate) fn from_run_for(program: &Program, run: &Run, query: Option<usize>) -> Self {
         let mut claims: Vec<_> = if program.queries.is_empty() {
             run.steps
                 .iter()
@@ -219,7 +222,12 @@ impl Certificate {
             run.answers
                 .iter()
                 .enumerate()
-                .filter(|(q, _)| !program.queries[*q].assertion)
+                .filter(|(q, _)| {
+                    (query.is_some()
+                        || program.requests.is_empty()
+                        || program.requests.contains(&crate::Request::Answer(*q)))
+                        && query.is_none_or(|index| index == *q)
+                })
                 .flat_map(|(q, answers)| {
                     answers.iter().map(move |a| Claim::Answer {
                         query: q + 1,
@@ -725,7 +733,7 @@ impl fmt::Display for Report {
         }
         writeln!(
             f,
-            "Source assertions are assumed. Answer completeness is not checked."
+            "Source facts and rules are assumed. Answer completeness is not checked."
         )
     }
 }

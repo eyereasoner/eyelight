@@ -84,13 +84,13 @@ trace_alert(User, Traceid, Ip) :-
 ?- unparsed_log(Log).
 
 % Check
-:- assertion(trace_alert(alice, '4bf92f3577b34da6a3ce929d0e0e4736', '203.0.113.9')).
-:- assertion(captured_field(l1, level, warn)).
-:- assertion(captured_field(l2, event, payment_denied)).
-:- assertion(captured_field(l3, user, bob)).
-:- assertion(captured_field(l1, flags, '01')).
-:- assertion(unparsed_log(noise)).
-:- assertion(aggregate_all(count, parsed_log(Log), 3)).
-:- assertion(aggregate_all(count, captured_field(Log, Name, Value), 24)).
-:- assertion(aggregate_all(count, trace_alert(User, Trace, Ip), 1)).
-:- assertion(\+ parsed_log(noise)).
+?- check(trace_alert(alice, '4bf92f3577b34da6a3ce929d0e0e4736', '203.0.113.9')).
+?- check(captured_field(l1, level, warn)).
+?- check(captured_field(l2, event, payment_denied)).
+?- check(captured_field(l3, user, bob)).
+?- check(captured_field(l1, flags, '01')).
+?- check(unparsed_log(noise)).
+?- check(aggregate_all(count, parsed_log(Log), 3)).
+?- check(aggregate_all(count, captured_field(Log, Name, Value), 24)).
+?- check(aggregate_all(count, trace_alert(User, Trace, Ip), 1)).
+?- check(\+ parsed_log(noise)).

@@ -39,9 +39,9 @@ status(Field, over) :-
 ?- balance(Field, Total, Lost, Available, Deficit, Surplus, Index).
 
 % Check
-:- assertion(status(low_input, under)).
-:- assertion(status(balanced_loam, balanced)).
-:- assertion(status(high_input, over)).
-:- assertion(status(sandy_high_input, over)).
-:- assertion(balance(low_input, 100.0, 15.0, 85.0, 45.0, 0.0, 0.0)).
-:- assertion((balance(sandy_high_input, Total, Lost, Available, _, Surplus, Index), abs(Total-Lost-Available) < 1.0e-12, abs(Surplus-18.0) < 1.0e-12, abs(Index-7.2) < 1.0e-12)).
+?- check(status(low_input, under)).
+?- check(status(balanced_loam, balanced)).
+?- check(status(high_input, over)).
+?- check(status(sandy_high_input, over)).
+?- check(balance(low_input, 100.0, 15.0, 85.0, 45.0, 0.0, 0.0)).
+?- check((balance(sandy_high_input, Total, Lost, Available, _, Surplus, Index), abs(Total-Lost-Available) < 1.0e-12, abs(Surplus-18.0) < 1.0e-12, abs(Index-7.2) < 1.0e-12)).

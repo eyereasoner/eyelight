@@ -5,7 +5,7 @@
 % findRoot([Number, Start, Tolerance], Root) stops when abs(f(x)) is below
 % the tolerance. The supplied starts approach sqrt(2), e, and pi. Other
 % starts may fail or not converge; there is no iteration limit. Displayed
-% roots are rounded, and assertions check unrounded values.
+% roots are rounded, and goal checks check unrounded values.
 %
 % See https://en.wikipedia.org/wiki/Newton%27s_method
 
@@ -45,7 +45,7 @@ rounded_root(Inputs, Root) :-
 ?- rounded_root([3, 3.0, 1.0e-15], Root).
 
 % Check
-:- assertion((findRoot([1, 1.0, 1.0e-15], Root), abs(Root - sqrt(2)) < 1.0e-14)).
-:- assertion((findRoot([2, 2.0, 1.0e-15], Root), abs(Root - e) < 1.0e-14)).
-:- assertion((findRoot([3, 3.0, 1.0e-15], Root), abs(Root - pi) < 1.0e-14)).
-:- assertion((findRoot([1, 1.0, 1.0e-15], Root), f(1, Root, Residual), abs(Residual) < 1.0e-15)).
+?- check((findRoot([1, 1.0, 1.0e-15], Root), abs(Root - sqrt(2)) < 1.0e-14)).
+?- check((findRoot([2, 2.0, 1.0e-15], Root), abs(Root - e) < 1.0e-14)).
+?- check((findRoot([3, 3.0, 1.0e-15], Root), abs(Root - pi) < 1.0e-14)).
+?- check((findRoot([1, 1.0, 1.0e-15], Root), f(1, Root, Residual), abs(Residual) < 1.0e-15)).

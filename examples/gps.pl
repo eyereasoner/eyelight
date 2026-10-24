@@ -125,20 +125,20 @@ outcome(trip, Label) :-
 ?- why.
 
 % Check
-:- assertion((aggregate_all(count, is_a(Subject, 'available-route'), 2))).
-:- assertion((route(trip, ['drive-gent-brugge', 'drive-brugge-oostende']))).
-:- assertion((route(trip, ['drive-gent-kortrijk', 'drive-kortrijk-brugge', 'drive-brugge-oostende']))).
-:- assertion((duration(direct, 2400))).
-:- assertion((cost(direct, 0.01))).
-:- assertion((belief(direct, 0.9408))).
-:- assertion((comfort(direct, 0.99))).
-:- assertion((duration('via-kortrijk', 4100))).
-:- assertion((cost('via-kortrijk', 0.018))).
-:- assertion((belief('via-kortrijk', 0.903168))).
-:- assertion((comfort('via-kortrijk', 0.9801))).
-:- assertion((beats(direct, 'via-kortrijk'))).
-:- assertion((\+ (beats('via-kortrijk', direct)))).
-:- assertion(('recommended-route'(trip, direct))).
-:- assertion((\+ ('recommended-route'(trip, 'via-kortrijk')))).
-:- assertion((outcome(trip, "Gent → Brugge → Oostende"))).
-:- assertion((\+ (route([oostende, gent], ['drive-brugge-oostende', 'drive-gent-brugge'])))).
+?- check((aggregate_all(count, is_a(Subject, 'available-route'), 2))).
+?- check((route(trip, ['drive-gent-brugge', 'drive-brugge-oostende']))).
+?- check((route(trip, ['drive-gent-kortrijk', 'drive-kortrijk-brugge', 'drive-brugge-oostende']))).
+?- check((duration(direct, 2400))).
+?- check((cost(direct, 0.01))).
+?- check((belief(direct, 0.9408))).
+?- check((comfort(direct, 0.99))).
+?- check((duration('via-kortrijk', 4100))).
+?- check((cost('via-kortrijk', 0.018))).
+?- check((belief('via-kortrijk', 0.903168))).
+?- check((comfort('via-kortrijk', 0.9801))).
+?- check((beats(direct, 'via-kortrijk'))).
+?- check((\+ (beats('via-kortrijk', direct)))).
+?- check(('recommended-route'(trip, direct))).
+?- check((\+ ('recommended-route'(trip, 'via-kortrijk')))).
+?- check((outcome(trip, "Gent → Brugge → Oostende"))).
+?- check((\+ (route([oostende, gent], ['drive-brugge-oostende', 'drive-gent-brugge'])))).

@@ -15,7 +15,7 @@ is_a(Animal, animal) :-
 ?- is_a(milo, dog).
 
 % Check
-:- assertion((is_a(milo, animal))).
-:- assertion((is_a(luna, animal))).
-:- assertion((aggregate_all(count, is_a(Subject, animal), 2))).
-:- assertion((\+ (is_a(milo, dog)))).
+?- check((is_a(milo, animal))).
+?- check((is_a(luna, animal))).
+?- check((aggregate_all(count, is_a(Subject, animal), 2))).
+?- check((\+ (is_a(milo, dog)))).

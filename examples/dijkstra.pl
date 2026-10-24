@@ -66,8 +66,8 @@ route(Start, Goal, Path, Cost) :-
 ?- route(a, a, Path, Cost).
 
 % Check
-:- assertion(route(a, f, [a, c, b, d, e, f], 13)).
-:- assertion(route(f, a, [f, e, d, b, c, a], 13)).
-:- assertion(route(a, a, [a], 0)).
-:- assertion(aggregate_all(count, route(a, unreachable, _, _), 0)).
-:- assertion(aggregate_all(count, dijkstra([edge(a, b, -1)], a, b, _, _), 0)).
+?- check(route(a, f, [a, c, b, d, e, f], 13)).
+?- check(route(f, a, [f, e, d, b, c, a], 13)).
+?- check(route(a, a, [a], 0)).
+?- check(aggregate_all(count, route(a, unreachable, _, _), 0)).
+?- check(aggregate_all(count, dijkstra([edge(a, b, -1)], a, b, _, _), 0)).

@@ -120,8 +120,8 @@ solution(Name, Roots) :- polynomial(Name, Coefficients), roots(Coefficients, Raw
 ?- solution(repeated, Roots).
 
 % Check
-:- assertion(solution(real_quartic, [c(4.0, 0.0), c(1.0, 0.0), c(3.0, 0.0), c(2.0, 0.0)])).
-:- assertion(solution(complex_quartic, [c(1.0, 1.0), c(0.0, 1.0), c(5.0, 1.0), c(3.0, 2.0)])).
-:- assertion(solution(repeated, [c(1.0, 0.0), c(1.0, 0.0), c(1.0, 0.0), c(1.0, 0.0)])).
-:- assertion((roots([c(1, 0), c(0, 0), c(1, 0)], Raw), rounded(Raw, [c(0.0, 1.0), c(0.0, -1.0)]))).
-:- assertion(aggregate_all(count, roots([c(0, 0), c(1, 0)], _), 0)).
+?- check(solution(real_quartic, [c(4.0, 0.0), c(1.0, 0.0), c(3.0, 0.0), c(2.0, 0.0)])).
+?- check(solution(complex_quartic, [c(1.0, 1.0), c(0.0, 1.0), c(5.0, 1.0), c(3.0, 2.0)])).
+?- check(solution(repeated, [c(1.0, 0.0), c(1.0, 0.0), c(1.0, 0.0), c(1.0, 0.0)])).
+?- check((roots([c(1, 0), c(0, 0), c(1, 0)], Raw), rounded(Raw, [c(0.0, 1.0), c(0.0, -1.0)]))).
+?- check(aggregate_all(count, roots([c(0, 0), c(1, 0)], _), 0)).

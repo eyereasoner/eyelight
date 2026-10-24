@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export function runProgram(source: string, mode: string, proof: string): string;
+export function runProgram(source: string): string;
 
 export function version(): string;
 
@@ -9,7 +9,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
-    readonly runProgram: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+    readonly runProgram: (a: number, b: number, c: number) => void;
     readonly version: (a: number) => void;
     readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
     readonly __wbindgen_export: (a: number, b: number) => number;

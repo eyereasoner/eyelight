@@ -21,16 +21,23 @@ test('worker runs the engine off the UI thread and reports failures', async () =
   const messages = [];
   const context = vm.createContext({ self: { postMessage: message => messages.push(message) } });
   const script = new vm.Script(source.replace("import('./pkg/wheye.js')", 'Promise.resolve(mockEngine)'), { filename: fileURLToPath(new URL('playground-worker.js', root)) });
-  context.mockEngine = { default: async () => {}, version: () => '0.1.0', runProgram: (source, mode, proof) => {
+  context.mockEngine = { default: async () => {}, version: () => '0.1.0', runProgram: source => {
     if (source === 'bad') throw new Error('specific failure');
-    return `${source}/${mode}/${proof}`;
+    return source;
   } };
   script.runInContext(context);
   await context.self.onmessage({ data: { kind: 'init' } });
   assert.equal(messages[0].version, '0.1.0');
-  await context.self.onmessage({ data: { kind: 'run', id: 2, source: 'hello', mode: 'proof', proof: '' } });
-  assert.equal(messages[1].output, 'hello/proof/');
+  await context.self.onmessage({ data: { kind: 'run', id: 2, source: 'hello' } });
+  assert.equal(messages[1].output, 'hello');
   await context.self.onmessage({ data: { kind: 'run', id: 3, source: 'bad' } });
   assert.equal(messages[2].kind, 'error');
   assert.match(messages[2].message, /specific failure/);
+});
+
+test('the source is the only input to execution and sharing', async () => {
+  const html=await readFile(new URL('playground.html',root),'utf8');
+  const js=await readFile(new URL('playground.js',root),'utf8');
+  assert.doesNotMatch(html,/id="(?:mode|saved-proof)"/);
+  assert.doesNotMatch(js,/get\('mode'\)|get\('proof'\)|set\('mode'\)|set\('proof'\)/);
 });

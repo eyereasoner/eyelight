@@ -21,7 +21,7 @@ reaches(From, ada) :-
 ?- why((reaches(ben, ada))).
 
 % Check
-:- assertion((\+ (reaches(ada, ada)))).
-:- assertion((reaches(ben, ada))).
-:- assertion((reaches(cara, ada))).
-:- assertion((reaches(ben, cara))).
+?- check((\+ (reaches(ada, ada)))).
+?- check((reaches(ben, ada))).
+?- check((reaches(cara, ada))).
+?- check((reaches(ben, cara))).

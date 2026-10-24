@@ -75,8 +75,8 @@ is_a(Entity, j10) :-
 ?- why.
 
 % Check
-:- assertion((is_a(ind, a2))).
-:- assertion((is_a(ind, n10))).
-:- assertion((is_a(ind, i10))).
-:- assertion((is_a(ind, j10))).
-:- assertion((\+ (is_a(ind, n11)))).
+?- check((is_a(ind, a2))).
+?- check((is_a(ind, n10))).
+?- check((is_a(ind, i10))).
+?- check((is_a(ind, j10))).
+?- check((\+ (is_a(ind, n11)))).

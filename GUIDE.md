@@ -1,6 +1,6 @@
 # Wheye guide
 
-Version **0.1.14**. Run a Prolog subset in the native CLI or browser, get
+Version **0.1.15**. Run a Prolog subset in the native CLI or browser, get
 answers, and inspect their independently checkable proofs. The
 [specification](https://eyereasoner.github.io/wheye/SPEC/) defines the language
 and the [C1–C9 contract](https://eyereasoner.github.io/wheye/SPEC/#8-verification).
@@ -12,8 +12,6 @@ With Rust and Cargo installed:
 ```sh
 cargo build --release --locked
 ./target/release/wheye examples/socrates.pl
-./target/release/wheye --proof examples/socrates.pl
-./target/release/wheye --prove-and-check examples/socrates.pl
 cargo install --path . --locked
 ```
 
@@ -24,13 +22,18 @@ human(socrates).
 mortal(Person) :- human(Person).
 ?- mortal(Who).
 ?- why.
-:- assertion(mortal(socrates)).
+?- check.
+?- check(mortal(socrates)).
 ```
 
-`why` markers in existing programs are accepted without adding output. Use
-`--proof` to see the reasoning. Assertions check an expected result and fail
-the run if no solution exists; successful checks stay silent. They never assert facts. Opening a shared
-playground program does not run it automatically; press **Run**.
+Each request prints its `?- ... .` line, followed by its result. An ordinary
+query prints answers; `why` prints its proof certificate; bare `check` verifies
+that certificate under C1–C9. `check(Goal)` prints `true.` or `false.` without
+changing which ordinary query `why` and `check` refer to. Goal checks never
+add facts. A false goal check is a result, not a run error.
+
+The playground uses the same source requests. Opening a shared program does
+not run it automatically; press **Run**.
 
 ## Explore the examples
 
@@ -39,13 +42,13 @@ and selectable in the [playground](https://eyereasoner.github.io/wheye/playgroun
 The collection includes lists, structural unification, recursive arithmetic,
 Fibonacci at 10,000, graph algorithms, finite optimization, text processing,
 scientific calculations, and classification chains. Source header comments
-explain each example's assumptions and expected results. Saved transcripts in
-`examples/output/` are reference outputs; the CLI's certificate and report
+explain each example's assumptions and expected results. Historical transcripts in
+`examples/output/` use an earlier output format; the CLI's certificate and report
 format is described below.
 
 | Example | What it shows |
 | --- | --- |
-| [Socrates](https://github.com/eyereasoner/wheye/blob/main/examples/socrates.pl) | Queries, explanations, assertions |
+| [Socrates](https://github.com/eyereasoner/wheye/blob/main/examples/socrates.pl) | Queries, certificates, goal checks |
 | [Lists](https://github.com/eyereasoner/wheye/blob/main/examples/lists.pl) | Tabled list processing |
 | [Aggregation](https://github.com/eyereasoner/wheye/blob/main/examples/aggregation.pl) | Counts, sums, minima, maxima |
 | [List collection](https://github.com/eyereasoner/wheye/blob/main/examples/list-collection.pl) | Lists with repeated projected items |
@@ -58,16 +61,16 @@ finds three routes from Ostend to Prague with at most two intermediate stops.
 Change `route_request/3` to ask for other endpoints or limits. The third answer
 field is the requested limit; route text lists the actual airports. Repeated
 airports are excluded, and an airport can have a zero-leg route to itself.
-The example includes assertions for its supplied answers.
+The example includes goal checks for its supplied answers.
 
 The packaged classification examples cover depths 10, 100, 1,000, 10,000, and
-100,000. The first four include compatibility `why` markers and assertions; the largest selects
+100,000. The first four include `why` requests and goal checks; the largest selects
 `test(true)` and is kept small enough to inspect or check without printing its
 entire closure. Use files for large proofs:
 
 ```sh
-./target/release/wheye -c examples/deep-taxonomy-100000.pl
-./target/release/wheye -p examples/deep-taxonomy-100000.pl > /tmp/taxonomy.proof
+printf '?- why.\n?- check.\n' > /tmp/taxonomy-requests.pl
+./target/release/wheye examples/deep-taxonomy-100000.pl /tmp/taxonomy-requests.pl > /tmp/taxonomy.txt
 ```
 
 Tests bound counted dispatch/matching work and proof size, including a
@@ -148,32 +151,35 @@ cannot supply witness identities. The certificate checker verifies C8 for
 the voucher example:
 
 ```sh
-./target/release/wheye -c examples/orders.pl
+./target/release/wheye examples/orders.pl
 ```
 
 ## Keep and independently check evidence
 
+Add `?- why.` after a query to print its certificate, and `?- check.` to
+verify that certificate. The orders example includes both:
+
 ```sh
-./target/release/wheye -p examples/orders.pl > /tmp/orders.proof
-./target/release/wheye --check-proof /tmp/orders.proof examples/orders.pl
+./target/release/wheye examples/orders.pl > /tmp/orders.txt
 ```
 
 There is one proof format, starting with `wheye-proof 1`. It lists supporting
-source facts, rule applications, pure decisions, any required closed boundaries
-and demanded-call patterns, and selected answer claims. `% Rule` comments show
-the source rules used; comments are informative and the checker uses the supplied
-source program. The proof is both readable and accepted by `--check-proof`.
-Assertions execute during reasoning but are not exported as answer claims.
+source facts, rule applications, pure decisions, required closed boundaries
+and demanded-call patterns, and claims for the preceding ordinary query.
+`% Rule` comments show the source rules used; verification uses the supplied
+source program. To save a standalone certificate, retain the section starting
+at `wheye-proof 1` up to the next request. The Rust API accepts saved evidence
+with `Certificate::parse` and `check`; goal-check requests do not become claims.
 The checker validates the supplied evidence; it does not call the evaluator,
 activate tables, or repair missing facts. C5 recomputes builtins and aggregates.
 C6 requires complete finite models and transitively complete demanded calls;
 omitting a derivable counterexample cannot establish absence or a smaller
-aggregate. C8 checks witnesses, and C9 keeps queries and assertions out of
+aggregate. C8 checks witnesses, and C9 keeps queries and goal checks out of
 inference evidence.
 
 Every report lists C1–C9. Conditions for unused features are not applicable.
 The voucher example performs nonzero successful checks under all nine.
-Source assertions remain assumptions. A valid certificate establishes support
+Source facts and rules remain assumptions. A valid certificate establishes support
 for recorded claims; it does not authenticate facts, establish external-world
 truth, or prove that every answer was selected. An empty certificate establishes
 no positive claim.
@@ -181,27 +187,23 @@ no positive claim.
 ## Use the command line
 
 ```sh
-wheye [OPTIONS] FILE...
-wheye [OPTIONS] -
+wheye FILE...
+wheye -
 wheye rules.pl data.pl
-wheye --check-proof - rules.pl data.pl < /tmp/saved.proof
+wheye -h
+wheye -v
 ```
 
-| Option | Output |
-| --- | --- |
-| `-p`, `--proof` | The readable, checkable proof |
-| `-c`, `--prove-and-check` | Generate and independently check the proof |
-| `--check-proof FILE` | Check saved evidence against the source |
-| `--max-facts N` | Bound stored evidence |
-| `--max-matches N` | Bound counted matching and finite-model work |
-| `-v`, `--version` | Version |
-| `-h`, `--help` | Usage |
+Only `-h` (help) and `-v` (version) are options. `-` reads source from stdin;
+multiple files form one program in the supplied order. Source requests select
+the output, with each request echoed before its result. Use `?- why.` for
+proofs and `?- check.` for verification. `?- check(Goal).` prints a boolean
+result; `:- assertion(Goal).` is no longer supported.
 
-Default output contains only answer bindings, `true.`, or `false.`, without query
-headings, explanations, or successful assertion messages. Choose one output mode per invocation. Success returns status 0. Parse errors,
-failed assertions, incomplete runs, and invalid proofs return status 1 with no
-successful partial stdout. Keep source file order the same when checking;
-source fact, rule, and query IDs are separate ordered lists.
+Success returns status 0. Parse errors, incomplete runs, missing preceding
+queries for `why` or bare `check`, and invalid proof reports return status 1
+with no successful partial stdout. Source fact, rule, and query IDs are
+separate ordered lists; keep source file order when checking saved evidence.
 
 ## Embed the engine
 
@@ -210,7 +212,7 @@ use wheye::{check, parse, reason, Limits};
 fn main() -> Result<(), wheye::Error> {
     let program = parse("human(socrates). mortal(X):-human(X). ?- mortal(Who).")?;
     let run = reason(&program, Limits::default())?;
-    print!("{}", run.output(&program));
+    print!("{}", run.output(&program)?);
     let report = check(&program, &run.certificate(&program))?;
     report.require_valid()?;
     Ok(())
@@ -219,7 +221,7 @@ fn main() -> Result<(), wheye::Error> {
 
 `Run` exposes stored evidence, query answers, counted work, and closed
 boundaries. `Certificate::parse` reads saved evidence. `execute` offers the
-same string interface as the browser. Both `check` and `check_with_limits`
+same string interface as the browser: `execute(source, Limits::default())`. Both `check` and `check_with_limits`
 return `Ok(report)` when semantic checking finishes, even for an invalid proof.
 Inspect **`report.valid()`** or call **`report.require_valid()?`** before accepting
 it. `report.conditions` lists the nine conditions; `report.failures` gives
@@ -238,7 +240,7 @@ cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 git diff --check
 ```
 
-Tests run every packaged program and its assertions, check C1–C9, reject forged
+Tests run every packaged program and its goal checks, check C1–C9, reject forged
 certificates including omitted demanded calls, and preserve independent
 exhaustive small-graph oracles. The browser tests use real WebAssembly and
 check worker cancellation, sharing, desktop layout, and phone layout.

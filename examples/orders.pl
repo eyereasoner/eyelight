@@ -26,3 +26,6 @@ voucher(Customer, Voucher, Total) :-
     fresh(Voucher).
 
 ?- voucher(Customer, Voucher, Total).
+
+?- why.
+?- check.

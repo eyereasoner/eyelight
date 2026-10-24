@@ -29,9 +29,9 @@ sum([X | Xs], Total) :-
 ?- why.
 
 % Check
-:- assertion(append([a, b], [c, d], [a, b, c, d])).
-:- assertion(squares([1, 2, 3, 4], [1, 4, 9, 16])).
-:- assertion(sum([1, 2, 3, 4], 10)).
-:- assertion(append([], [a], [a])).
-:- assertion(squares([], [])).
-:- assertion(sum([], 0)).
+?- check(append([a, b], [c, d], [a, b, c, d])).
+?- check(squares([1, 2, 3, 4], [1, 4, 9, 16])).
+?- check(sum([1, 2, 3, 4], 10)).
+?- check(append([], [a], [a])).
+?- check(squares([], [])).
+?- check(sum([], 0)).

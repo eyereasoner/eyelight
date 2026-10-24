@@ -74,8 +74,8 @@ is_a(Case, 'finished-case') :-
 ?- is_a(Who, 'finished-case').
 
 % Check
-:- assertion((output(case1, [1, 0, 1, 0, 1, 0, blank]))).
-:- assertion((output(case2, [1, 1, 0, 0, 0, 0, blank]))).
-:- assertion((output(case3, [1, 0, 0, 0, 0, 0, 0, blank]))).
-:- assertion((output(case4, [1, blank]))).
-:- assertion((aggregate_all(count, is_a(Subject, 'finished-case'), 4))).
+?- check((output(case1, [1, 0, 1, 0, 1, 0, blank]))).
+?- check((output(case2, [1, 1, 0, 0, 0, 0, blank]))).
+?- check((output(case3, [1, 0, 0, 0, 0, 0, 0, blank]))).
+?- check((output(case4, [1, blank]))).
+?- check((aggregate_all(count, is_a(Subject, 'finished-case'), 4))).

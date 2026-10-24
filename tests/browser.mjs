@@ -41,14 +41,19 @@ async function wait(expression, label) {
 }
 async function navigate(url) {
   await command('Page.navigate', { url });
-  await wait('document.readyState === "complete" && !!document.getElementById("run") && !document.getElementById("run").disabled && !document.getElementById("source").disabled', 'page ready');
+  await wait(`location.href === ${JSON.stringify(url)} && document.readyState === "complete" && !!document.getElementById("run") && !document.getElementById("run").disabled && !document.getElementById("source").disabled`, 'page ready');
+  const params = new URLSearchParams(new URL(url).hash.slice(1));
+  if (params.has('example')) {
+    await wait(`document.getElementById("example").value === ${JSON.stringify(params.get('example'))} && !document.getElementById("source").disabled`, 'shared example loaded');
+  } else if (params.has('code')) {
+    await wait(`document.getElementById("source").value === ${JSON.stringify(params.get('code'))}`, 'shared source restored');
+  }
   await delay(80);
 }
 async function set(id, value, event = 'input') {
   await evaluate(`document.getElementById(${JSON.stringify(id)}).value = ${JSON.stringify(value)}; document.getElementById(${JSON.stringify(id)}).dispatchEvent(new Event(${JSON.stringify(event)}, { bubbles: true }));`);
 }
-async function run(mode) {
-  if (mode) await set('mode', mode, 'change');
+async function run() {
   await evaluate('document.getElementById("run").click()');
   await wait('!document.getElementById("run").disabled', 'run completion');
   return evaluate('document.getElementById("output").textContent');
@@ -70,107 +75,87 @@ try {
   await command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
   await navigate(`${base}#example=socrates`);
   assert.match(await evaluate('document.getElementById("output").textContent'), /first answer/);
-  assert.match(await run('answers'), /Who = socrates/);
-  assert.match(await run('proof'), /step 2 rule 1 \[1\] : mortal\(socrates\)/);
+  assert.equal(await evaluate('document.querySelector("#mode, #saved-proof")'), null);
   assert.equal(await evaluate('document.getElementById("version").textContent'), `v${expectedVersion}`);
-  assert.equal(await evaluate('document.querySelector(".editors .panel-heading > span").textContent'), '.pl');
+  const socrates = await run();
+  assert.match(socrates, /\?- mortal\(Who\)\.\nWho = socrates/);
+  assert.match(socrates, /\?- why\.\nwheye-proof 1/);
+  assert.match(socrates, /\?- check\.\nchecked: 2 steps, 1 claim/);
+  for (let id = 1; id <= 9; id++) assert.match(socrates, new RegExp(`C${id} `));
   const widths = await evaluate('[...document.querySelectorAll(".editors > .panel")].map(e => e.getBoundingClientRect().width)');
   assert.ok(Math.abs(widths[0] - widths[1]) < 1);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'));
   await screenshot('desktop');
 
-  const generated = await run('checked');
-  assert.match(generated, /checked: 2 steps, 1 claim/);
-  for (let id = 1; id <= 9; id++) assert.match(generated, new RegExp(`C${id} `));
-  await screenshot('desktop-proof-check');
-
-  const proof = await run('proof');
-  assert.match(proof, /^wheye-proof 1/);
-  await set('saved-proof', proof);
-  const checked = await run('check');
-  assert.match(checked, /checked: 2 steps, 1 claim/);
-  for (let id = 1; id <= 9; id++) assert.match(checked, new RegExp(`C${id} `));
-  assert.match(checked, /C5 re-decision: 0 checked, 0 failed/);
-  assert.match(checked, /C6 boundary consistency: 0 checked, 0 failed/);
-  assert.match(checked, /C8 witness integrity: not applicable/);
-  assert.equal(await evaluate('document.getElementById("saved-proof-panel").hidden'), false);
-  await set('saved-proof', proof.replace('mortal(socrates)', 'mortal(plato)'));
-  const invalid = await run('check');
-  assert.match(invalid, /invalid: 2 steps/);
-  assert.match(invalid, /\[C1 resolution\] step 2/);
+  await set('source', 'p(a). ?- p(X). ?- check(p(b)). ?- why. ?- check.');
+  const explicit = await run();
+  assert.match(explicit, /^\?- p\(X\)\.\nX = a\.\n\n\?- check\(p\(b\)\)\.\nfalse\./);
+  assert.match(explicit, /checked: 1 step, 1 claim/);
+  await set('source', '?- check(true). ?- check(false).');
+  assert.equal(await run(), '?- check(true).\ntrue.\n\n?- check(false).\nfalse.\n');
   await set('source', 'human(X). ?- human(X).');
-  assert.match(await run('answers'), /ground answer/);
+  assert.match(await run(), /ground answer/);
   assert.ok(await evaluate('document.getElementById("output").classList.contains("error")'));
 
-  for (const name of ['arithmetic', 'negation', 'aggregation', 'witnesses', 'orders']) {
+  async function example(name) {
     await set('example', name, 'change');
     await wait(`!document.getElementById("source").disabled && document.getElementById("example").value === ${JSON.stringify(name)}`, `${name} loaded`);
-    const result = await run('checked');
-    assert.match(result, /^checked:/, name);
+    return evaluate('document.getElementById("source").value');
+  }
+  for (const name of ['arithmetic', 'negation', 'aggregation', 'witnesses', 'orders']) {
+    const source = await example(name);
+    await set('source', source + '\n?- check.');
+    const result = await run();
+    assert.match(result, /^checked:/m, name);
     if (name === 'orders') {
       assert.doesNotMatch(result, /not applicable/);
       for (let i = 1; i <= 9; i++) assert.match(result, new RegExp(`C${i} [^\n]+: [1-9][0-9]* checked, 0 failed`));
-      const certificate = await run('proof');
-      const forged = certificate.replace("'>='(15, 10)", "'>='(0, 10)");
-      assert.notEqual(forged, certificate);
-      await set('saved-proof', forged);
-      assert.match(await run('check'), /\[C5 re-decision\]/);
     }
   }
 
-  await set('example', 'deep-taxonomy-100000', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "deep-taxonomy-100000"', 'deep taxonomy loaded');
-  assert.equal(await run('answers'), 'Result = true.\n');
-  const deepReport = await run('checked');
-  assert.match(deepReport, /^checked: 100003 steps, 1 claim/);
-  await set('mode', 'answers', 'change');
+  const deep = await example('deep-taxonomy-100000');
+  assert.equal(await run(), '?- test(Result).\nResult = true.\n');
+  await set('source', deep + '\n?- check.');
+  assert.match(await run(), /^checked: 100003 steps, 1 claim/m);
+  await set('source', deep);
   await evaluate('document.getElementById("share").click()');
   await wait('!document.getElementById("share-box").hidden', 'deep taxonomy share opened');
   assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=deep-taxonomy-100000');
 
   await navigate(`${base}#example=path-discovery`);
-  const airportAnswers = await run('answers');
-  assert.equal((airportAnswers.match(/Stopovers = 2/g) || []).length, 3);
+  const airport = await evaluate('document.getElementById("source").value');
+  await set('source', airport + '\n?- check.');
+  const routes = await run();
+  assert.equal((routes.match(/Stopovers = 2/g) || []).length, 3, routes.slice(0, 1000));
   for (const name of ['Heraklion International Nikos Kazantzakis Airport', 'Diagoras Airport', 'Palma De Mallorca Airport']) {
-    assert.ok(airportAnswers.includes(`Liège Airport -> ${name} -> Václav Havel Airport Prague`));
+    assert.ok(routes.includes(`Liège Airport -> ${name} -> Václav Havel Airport Prague`));
   }
-  assert.match(await run('checked'), /^checked: [0-9]+ steps, 3 claims/);
-  await set('mode', 'answers', 'change');
+  assert.match(routes, /^checked: [0-9]+ steps, 3 claims/m);
+  await set('source', airport);
   await evaluate('document.getElementById("share").click()');
-  await wait('!document.getElementById("share-box").hidden', 'airport share opened');
   assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=path-discovery');
   await screenshot('desktop-airport-routes');
-
-  await set('example', 'paths', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("source").value.includes("follows(ada, ben)")', 'paths loaded');
-  const paths = await run('answers');
-  for (const name of ['ben', 'cara']) assert.match(paths, new RegExp(`Who = ${name}`));
+  await example('paths');
+  for (const name of ['ben', 'cara']) assert.match(await run(), new RegExp(`Who = ${name}`));
   await evaluate('document.getElementById("share").click()');
-  await wait('!document.getElementById("share-box").hidden', 'share opened');
   assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=paths');
 
-  const unicode = "human('Élodie'). mortal(P) :- human(P). ?- mortal(Who).";
+  const unicode = "human('Élodie'). mortal(P) :- human(P). ?- mortal(Who). ?- why. ?- check.";
   await set('source', unicode);
-  await set('saved-proof', proof);
-  await set('mode', 'proof', 'change');
   await evaluate('document.getElementById("share").click()');
   const shared = await evaluate('document.getElementById("share-url").value');
   const params = new URLSearchParams(new URL(shared).hash.slice(1));
   assert.equal(params.get('code'), unicode);
-  assert.equal(params.get('proof'), proof);
-  assert.equal(params.get('mode'), 'proof');
+  assert.deepEqual([...params.keys()], ['code']);
   await navigate(shared);
   assert.equal(await evaluate('document.getElementById("source").value'), unicode);
-  assert.equal(await evaluate('document.getElementById("saved-proof").value'), proof);
   assert.match(await evaluate('document.getElementById("output").textContent'), /first answer/);
   assert.match(await run(), /Élodie/);
 
-  // Cancel before worker initialization resolves, then run successfully again.
   await navigate(`${base}#example=socrates`);
   await evaluate('document.getElementById("run").click(); document.getElementById("stop").click()');
   assert.equal(await evaluate('document.getElementById("status").textContent'), 'Stopped.');
-  assert.match(await run('answers'), /socrates/);
-  // A larger closure keeps the worker busy while the UI remains cancellable.
+  assert.match(await run(), /socrates/);
   const chain = Array.from({ length: 250 }, (_, i) => `edge(n${i},n${i + 1}).`).join('\n')
     + '\npath(X,Y) :- edge(X,Y). path(X,Z) :- path(X,Y), edge(Y,Z). ?- path(n0,Y).';
   await set('source', chain);
@@ -179,7 +164,7 @@ try {
   await evaluate('document.getElementById("stop").click()');
   assert.equal(await evaluate('document.getElementById("status").textContent'), 'Stopped.');
   await set('source', unicode);
-  assert.match(await run('answers'), /Élodie/);
+  assert.match(await run(), /Élodie/);
   await delay(250);
   await navigate(base);
   assert.equal(await evaluate('document.getElementById("source").value'), unicode);
@@ -187,34 +172,26 @@ try {
 
   await command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await navigate(`${base}#example=socrates`);
-  const phoneReport = await run('checked');
-  assert.match(phoneReport, /checked: 2 steps, 1 claim/);
-  for (let id = 1; id <= 9; id++) assert.match(phoneReport, new RegExp(`C${id} `));
+  assert.match(await run(), /checked: 2 steps, 1 claim/);
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'phone layout overflows');
   assert.ok(await evaluate('document.querySelector(".output-panel").getBoundingClientRect().top > document.querySelector(".editors .panel").getBoundingClientRect().top'), 'phone panels should stack');
   await screenshot('mobile');
-  await set('example', 'orders', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "orders"', 'mobile voucher loaded');
-  const mobileVoucher = await run('checked');
-  assert.match(mobileVoucher, /^checked:/);
-  assert.doesNotMatch(mobileVoucher, /not applicable/);
-  assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile voucher layout overflows');
-  await screenshot('mobile-all-conditions');
-  await set('example', 'deep-taxonomy-1000', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "deep-taxonomy-1000"', 'mobile taxonomy loaded');
-  assert.match(await run('checked'), /^checked: 1002 steps, 1 claim/);
-  assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile taxonomy layout overflows');
-
-  await set('example', 'path-discovery', 'change');
-  await wait('!document.getElementById("source").disabled && document.getElementById("example").value === "path-discovery"', 'mobile airport graph loaded');
-  assert.match(await run('checked'), /^checked: [0-9]+ steps, 3 claims/);
-  assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile airport layout overflows');
-  await screenshot('mobile-airport-routes');
+  for (const name of ['orders', 'deep-taxonomy-1000', 'path-discovery']) {
+    const source = await example(name);
+    await set('source', source + '\n?- check.');
+    const result = await run();
+    assert.match(result, /^checked:/m);
+    if (name === 'orders') assert.doesNotMatch(result, /not applicable/);
+    if (name === 'deep-taxonomy-1000') assert.match(result, /checked: 1002 steps, 1 claim/);
+    if (name === 'path-discovery') assert.match(result, /checked: [0-9]+ steps, 3 claims/);
+    assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), 'mobile layout overflows');
+    await screenshot(`mobile-${name}`);
+  }
 
   if (pagesRoot) {
     // Check the compatibility route as well as the directory route used above.
     await navigate(new URL('playground.html#example=socrates', pagesRoot).href);
-    assert.match(await run('checked'), /checked: 2 steps, 1 claim/);
+    assert.match(await run(), /checked: 2 steps, 1 claim/);
     for (const [name, width, mobile] of [['desktop', 1280, false], ['mobile', 390, true]]) {
       await command('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile });
       for (const route of ['', 'SPEC/']) {
@@ -238,5 +215,5 @@ try {
     }
   }
   assert.deepEqual(exceptions, []);
-  console.log('Browser checks passed: full airport path discovery and sharing on desktop/mobile, depth-100000 taxonomy, short taxonomy share, mobile taxonomy, all nine proof conditions on desktop/mobile, new examples, forged built-ins, real Wasm, answers, explanations, proof round trip, forged proof, errors, short/snapshot shares, Unicode, autosave, no autorun, cold/hot cancellation, restart, equal desktop columns, and phone layout.');
+  console.log('Browser checks passed: source-selected answers, proofs and C1–C9 checks, echoed queries, all airport routes, depth-100000 taxonomy, desktop/mobile layouts, rendered docs, sharing, Unicode, autosave, cancellation and restart.');
 } finally { socket.close(); }

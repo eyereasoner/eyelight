@@ -62,10 +62,10 @@ knapsack_answer(feasible_pack_count, Count) :- aggregate_all(count, feasible_pac
 ?- why(best_pack(Pack, Weight, Value)).
 
 % Check
-:- assertion(best_pack([atlas, battery, camera, medkit, sensor], 15, 40)).
-:- assertion(knapsack_answer(feasible_pack_count, 113)).
-:- assertion(aggregate_all(count, best_pack(Pack, Weight, Value), 1)).
-:- assertion(feasible_pack([], 0, 0)).
-:- assertion(total_weight([field_laptop, drone, camera], 16)).
-:- assertion(\+ feasible_pack([field_laptop, drone, camera], 16, 37)).
-:- assertion(\+ best_pack([], 0, 0)).
+?- check(best_pack([atlas, battery, camera, medkit, sensor], 15, 40)).
+?- check(knapsack_answer(feasible_pack_count, 113)).
+?- check(aggregate_all(count, best_pack(Pack, Weight, Value), 1)).
+?- check(feasible_pack([], 0, 0)).
+?- check(total_weight([field_laptop, drone, camera], 16)).
+?- check(\+ feasible_pack([field_laptop, drone, camera], 16, 37)).
+?- check(\+ best_pack([], 0, 0)).

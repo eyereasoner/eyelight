@@ -38,8 +38,8 @@ cassini(10000, _Calc1) :-
 ?- fibonacci(10000, What).
 
 % Check
-:- assertion((fibonacci(0, 0))).
-:- assertion((fibonacci(1, 1))).
-:- assertion((fibonacci(10, 55))).
-:- assertion((fibonacci(100, 354224848179261915075))).
-:- assertion((cassini(10000, -1))).
+?- check((fibonacci(0, 0))).
+?- check((fibonacci(1, 1))).
+?- check((fibonacci(10, 55))).
+?- check((fibonacci(100, 354224848179261915075))).
+?- check((cassini(10000, -1))).

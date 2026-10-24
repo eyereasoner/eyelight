@@ -30,8 +30,8 @@ product(Left, Right, Product) :-
 ?- matrix(a, A), matrix(b, B), commutator(A, B, Difference).
 
 % Check
-:- assertion(product(a, b, m(7, 2, 3, 1))).
-:- assertion(product(b, a, m(1, 2, 3, 7))).
-:- assertion((product(a, b, AB), product(b, a, BA), AB \= BA)).
-:- assertion((matrix(a, A), multiply(A, m(1, 0, 0, 1), A))).
-:- assertion((matrix(a, A), matrix(b, B), commutator(A, B, m(6, 0, 0, -6)))).
+?- check(product(a, b, m(7, 2, 3, 1))).
+?- check(product(b, a, m(1, 2, 3, 7))).
+?- check((product(a, b, AB), product(b, a, BA), AB \= BA)).
+?- check((matrix(a, A), multiply(A, m(1, 0, 0, 1), A))).
+?- check((matrix(a, A), matrix(b, B), commutator(A, B, m(6, 0, 0, -6)))).

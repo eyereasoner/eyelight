@@ -44,9 +44,9 @@ plastic_ratio(A, B) :-
 ?- plastic_ratio(1000, Ratio).
 
 % Check
-:- assertion(padovan(0, 0)).
-:- assertion(padovan(5, 2)).
-:- assertion(padovan(91, 70748973084)).
-:- assertion(padovan(283, 19834325738278984504790864536272129)).
-:- assertion((padovan(3674, Value), padovan(3672, A), padovan(3671, B), Value =:= A + B)).
-:- assertion((plastic_ratio(1000, Ratio), abs(Ratio - 1.324717957244746) < 1.0e-14)).
+?- check(padovan(0, 0)).
+?- check(padovan(5, 2)).
+?- check(padovan(91, 70748973084)).
+?- check(padovan(283, 19834325738278984504790864536272129)).
+?- check((padovan(3674, Value), padovan(3672, A), padovan(3671, B), Value =:= A + B)).
+?- check((plastic_ratio(1000, Ratio), abs(Ratio - 1.324717957244746) < 1.0e-14)).

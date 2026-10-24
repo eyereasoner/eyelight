@@ -36,12 +36,12 @@ needs_maintenance(Turbine, performance_based_maintenance) :-
 ?- needs_maintenance(t123, Reason).
 
 % Check
-:- assertion(needs_maintenance(t456, time_based_maintenance)).
-:- assertion(needs_maintenance(t456, age_based_maintenance)).
-:- assertion(needs_maintenance(t456, problem_based_maintenance)).
-:- assertion(needs_maintenance(t456, performance_based_maintenance)).
-:- assertion(needs_maintenance(t789, problem_based_maintenance)).
-:- assertion(needs_maintenance(t101, performance_based_maintenance)).
-:- assertion(aggregate_all(count, needs_maintenance(Turbine, Reason), 6)).
-:- assertion(aggregate_all(count, needs_maintenance(t123, Reason), 0)).
-:- assertion(\+ needs_maintenance(t101, age_based_maintenance)).
+?- check(needs_maintenance(t456, time_based_maintenance)).
+?- check(needs_maintenance(t456, age_based_maintenance)).
+?- check(needs_maintenance(t456, problem_based_maintenance)).
+?- check(needs_maintenance(t456, performance_based_maintenance)).
+?- check(needs_maintenance(t789, problem_based_maintenance)).
+?- check(needs_maintenance(t101, performance_based_maintenance)).
+?- check(aggregate_all(count, needs_maintenance(Turbine, Reason), 6)).
+?- check(aggregate_all(count, needs_maintenance(t123, Reason), 0)).
+?- check(\+ needs_maintenance(t101, age_based_maintenance)).

@@ -63,11 +63,11 @@ cosineSimilarity(Case, Similarity) :-
 ?- why.
 
 % Check
-:- assertion(dotProduct(pair1, 12.0)).
-:- assertion((vector(pair1, a, A), sum_squares(A, 14.0))).
-:- assertion((vector(pair1, b, B), sum_squares(B, 77.0))).
-:- assertion((normA(pair1, A), abs(A*A - 14) < 1.0e-12)).
-:- assertion((normB(pair1, B), abs(B*B - 77) < 1.0e-12)).
-:- assertion((cosineSimilarity(pair1, S), abs(S - 0.3654869423239036) < 1.0e-12)).
-:- assertion(dot([], [], 0.0)).
-:- assertion(\+ dot([1.0], [], 0.0)).
+?- check(dotProduct(pair1, 12.0)).
+?- check((vector(pair1, a, A), sum_squares(A, 14.0))).
+?- check((vector(pair1, b, B), sum_squares(B, 77.0))).
+?- check((normA(pair1, A), abs(A*A - 14) < 1.0e-12)).
+?- check((normB(pair1, B), abs(B*B - 77) < 1.0e-12)).
+?- check((cosineSimilarity(pair1, S), abs(S - 0.3654869423239036) < 1.0e-12)).
+?- check(dot([], [], 0.0)).
+?- check(\+ dot([1.0], [], 0.0)).

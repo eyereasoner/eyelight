@@ -58,14 +58,14 @@ audit_summary(finding_count, Count) :- aggregate_all(count, finding(Subject, Rea
 ?- audit_summary(Kind, Count).
 
 % Check
-:- assertion(finding(customer(c1), conflicting_email("ada@example.org", "ada.new@example.org"))).
-:- assertion(finding(customer(c2), empty_email)).
-:- assertion(finding(customer(c3), missing_email)).
-:- assertion(finding(order(o2), unknown_customer(c9))).
-:- assertion(finding(order(o3), invalid_amount(-5))).
-:- assertion(finding(order(o3), duplicate_key(r09, r10))).
-:- assertion(finding(record(r11), unsupported_shape(shipment, 1))).
-:- assertion(audit_summary(customer_count, 3)).
-:- assertion(audit_summary(finding_count, 7)).
-:- assertion(\+ finding(order(o1), invalid_amount(120))).
-:- assertion(\+ finding(customer(c1), missing_email)).
+?- check(finding(customer(c1), conflicting_email("ada@example.org", "ada.new@example.org"))).
+?- check(finding(customer(c2), empty_email)).
+?- check(finding(customer(c3), missing_email)).
+?- check(finding(order(o2), unknown_customer(c9))).
+?- check(finding(order(o3), invalid_amount(-5))).
+?- check(finding(order(o3), duplicate_key(r09, r10))).
+?- check(finding(record(r11), unsupported_shape(shipment, 1))).
+?- check(audit_summary(customer_count, 3)).
+?- check(audit_summary(finding_count, 7)).
+?- check(\+ finding(order(o1), invalid_amount(120))).
+?- check(\+ finding(customer(c1), missing_email)).

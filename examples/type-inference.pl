@@ -63,14 +63,14 @@ type_reason(apply_id, "the identity function's parameter type is unified with in
 ?- type_reason(Name, Reason).
 
 % Check
-:- assertion(type_answer(id, fun(t0, t0))).
-:- assertion(type_answer(const, fun(t0, fun(t1, t0)))).
-:- assertion(type_answer(apply_id, int)).
-:- assertion(type_answer(compose, fun(fun(t1, t2), fun(fun(t0, t1), fun(t0, t2))))).
-:- assertion(type_answer(branch, int)).
-:- assertion(type_answer(first_of_pair, bool)).
-:- assertion(aggregate_all(count, type_answer(Name, Type), 6)).
-:- assertion(\+ type_expr([], add(bool_lit(true), int_lit(1)), int)).
-:- assertion(\+ type_expr([], if(bool_lit(true), int_lit(1), bool_lit(false)), int)).
-:- assertion(type_expr([[x, bool], [x, int]], var(x), bool)).
-:- assertion(\+ type_expr([[x, bool], [x, int]], var(x), int)).
+?- check(type_answer(id, fun(t0, t0))).
+?- check(type_answer(const, fun(t0, fun(t1, t0)))).
+?- check(type_answer(apply_id, int)).
+?- check(type_answer(compose, fun(fun(t1, t2), fun(fun(t0, t1), fun(t0, t2))))).
+?- check(type_answer(branch, int)).
+?- check(type_answer(first_of_pair, bool)).
+?- check(aggregate_all(count, type_answer(Name, Type), 6)).
+?- check(\+ type_expr([], add(bool_lit(true), int_lit(1)), int)).
+?- check(\+ type_expr([], if(bool_lit(true), int_lit(1), bool_lit(false)), int)).
+?- check(type_expr([[x, bool], [x, int]], var(x), bool)).
+?- check(\+ type_expr([[x, bool], [x, int]], var(x), int)).

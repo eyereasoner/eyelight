@@ -14,7 +14,7 @@ self.onmessage = async ({ data }) => {
       self.postMessage({ kind: 'ready', version: module.version() });
       return;
     }
-    const output = module.runProgram(data.source, data.mode, data.proof);
+    const output = module.runProgram(data.source);
     self.postMessage({ kind: 'result', id: data.id, output });
   } catch (error) {
     self.postMessage({ kind: data.kind === 'init' ? 'fatal' : 'error', id: data.id, message: String(error) });

@@ -77,11 +77,11 @@ weighted_interval_answer(candidate_count, Count) :-
 ?- why(optimal_schedule(Ids, Value)).
 
 % Check
-:- assertion(optimal_schedule([1, 4, 8], 13)).
-:- assertion(previous_compatible(1, 0)).
-:- assertion(previous_compatible(4, 1)).
-:- assertion(previous_compatible(8, 4)).
-:- assertion(weighted_interval_answer(candidate_count, 8)).
-:- assertion(aggregate_all(count, chosen_interval(I), 3)).
-:- assertion(\+ chosen_interval(5)).
-:- assertion(best_to(0, 0)).
+?- check(optimal_schedule([1, 4, 8], 13)).
+?- check(previous_compatible(1, 0)).
+?- check(previous_compatible(4, 1)).
+?- check(previous_compatible(8, 4)).
+?- check(weighted_interval_answer(candidate_count, 8)).
+?- check(aggregate_all(count, chosen_interval(I), 3)).
+?- check(\+ chosen_interval(5)).
+?- check(best_to(0, 0)).

@@ -39,9 +39,9 @@ occurrences(Item, [Other|Rest], Count) :-
 ?- bulk_list(Order, Items).
 
 % Check
-:- assertion((pick_list(alpha, Items), occurrences(item(bolts, 4), Items, 2), occurrences(item(nuts, 4), Items, 1))).
-:- assertion(pick_list(beta, [item(washers, 12)])).
-:- assertion(pick_list(empty, [])).
-:- assertion(aggregate_all(list(Quantity), line(alpha, Line, Product, Quantity), [4, 4, 4])).
-:- assertion(bulk_list(alpha, [])).
-:- assertion(bulk_list(beta, [item(washers, 12)])).
+?- check((pick_list(alpha, Items), occurrences(item(bolts, 4), Items, 2), occurrences(item(nuts, 4), Items, 1))).
+?- check(pick_list(beta, [item(washers, 12)])).
+?- check(pick_list(empty, [])).
+?- check(aggregate_all(list(Quantity), line(alpha, Line, Product, Quantity), [4, 4, 4])).
+?- check(bulk_list(alpha, [])).
+?- check(bulk_list(beta, [item(washers, 12)])).

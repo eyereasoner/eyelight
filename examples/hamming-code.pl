@@ -39,6 +39,6 @@ decoded(Name, Syndrome, Corrected, Payload) :-
 ?- why.
 
 % Check
-:- assertion(decoded(packet1, 5, [1, 0, 1, 1, 0, 1, 0], [1, 0, 1, 0])).
-:- assertion(decode([1, 0, 1, 1, 0, 1, 0], 0, [1, 0, 1, 1, 0, 1, 0], [1, 0, 1, 0])).
-:- assertion(decode([0, 0, 0, 0, 0, 0, 1], 7, [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0])).
+?- check(decoded(packet1, 5, [1, 0, 1, 1, 0, 1, 0], [1, 0, 1, 0])).
+?- check(decode([1, 0, 1, 1, 0, 1, 0], 0, [1, 0, 1, 1, 0, 1, 0], [1, 0, 1, 0])).
+?- check(decode([0, 0, 0, 0, 0, 0, 1], 7, [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0])).

@@ -40,9 +40,9 @@ stopping_distance_m(Name, Rounded) :-
 ?- stopping_distance_m(Name, Distance).
 
 % Check
-:- assertion(gap_status(city_dry, sufficient_in_model)).
-:- assertion(gap_status(city_wet, sufficient_in_model)).
-:- assertion(gap_status(highway_short_gap, insufficient_in_model)).
-:- assertion(gap_status(city_ice, insufficient_in_model)).
-:- assertion((distance(city_dry, _, _, Dry), distance(city_wet, _, _, Wet), distance(city_ice, _, _, Ice), Dry < Wet, Wet < Ice)).
-:- assertion((distance(city_dry, R, B, D), abs(D-R-B) < 1.0e-12)).
+?- check(gap_status(city_dry, sufficient_in_model)).
+?- check(gap_status(city_wet, sufficient_in_model)).
+?- check(gap_status(highway_short_gap, insufficient_in_model)).
+?- check(gap_status(city_ice, insufficient_in_model)).
+?- check((distance(city_dry, _, _, Dry), distance(city_wet, _, _, Wet), distance(city_ice, _, _, Ice), Dry < Wet, Wet < Ice)).
+?- check((distance(city_dry, R, B, D), abs(D-R-B) < 1.0e-12)).

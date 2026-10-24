@@ -55,15 +55,15 @@ pow([X, Y], Z) :-
 
 % Check
 % Direct multiplication and exponentiation check the recursive algorithms.
-:- assertion(prod([3, 0], 0)).
-:- assertion(prod([5, 6], 30)).
-:- assertion((prod([238, 13], Product), Product =:= 238 * 13)).
-:- assertion((prod([8367238, 27133], Product), Product =:= 8367238 * 27133)).
-:- assertion((prod([62713345408367238, 40836723862713345], Product),
+?- check(prod([3, 0], 0)).
+?- check(prod([5, 6], 30)).
+?- check((prod([238, 13], Product), Product =:= 238 * 13)).
+?- check((prod([8367238, 27133], Product), Product =:= 8367238 * 27133)).
+?- check((prod([62713345408367238, 40836723862713345], Product),
               Product =:= 62713345408367238 * 40836723862713345)).
-:- assertion((prod([4083672386271334562713345408367238, 4083672386271334562713345408367238], Product),
+?- check((prod([4083672386271334562713345408367238, 4083672386271334562713345408367238], Product),
               Product =:= 4083672386271334562713345408367238 ^ 2)).
-:- assertion(pow([3, 0], 1)).
-:- assertion(pow([5, 6], 15625)).
-:- assertion((pow([238, 13], Power), Power =:= 238 ^ 13)).
-:- assertion((pow([8367238, 2713], Power), Power =:= 8367238 ^ 2713)).
+?- check(pow([3, 0], 1)).
+?- check(pow([5, 6], 15625)).
+?- check((pow([238, 13], Power), Power =:= 238 ^ 13)).
+?- check((pow([8367238, 2713], Power), Power =:= 8367238 ^ 2713)).

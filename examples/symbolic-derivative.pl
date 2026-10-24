@@ -45,9 +45,9 @@ derivative_result(Name, Derivative) :-
 ?- why(derivative_result(square, Derivative)).
 
 % Check
-:- assertion(derivative_result(square, add(mul(const(1), var(x)), mul(var(x), const(1))))).
-:- assertion(derivative_result(linear_plus_const, add(const(1), const(0)))).
-:- assertion(derivative_result(nested_log, divide(divide(const(1), var(x)), log(var(x))))).
-:- assertion(aggregate_all(count, derivative_result(Name, Derivative), 4)).
-:- assertion(d(var(y), x, const(0))).
-:- assertion(d(pow(var(x), 3), x, mul(mul(const(3), pow(var(x), 2)), const(1)))).
+?- check(derivative_result(square, add(mul(const(1), var(x)), mul(var(x), const(1))))).
+?- check(derivative_result(linear_plus_const, add(const(1), const(0)))).
+?- check(derivative_result(nested_log, divide(divide(const(1), var(x)), log(var(x))))).
+?- check(aggregate_all(count, derivative_result(Name, Derivative), 4)).
+?- check(d(var(y), x, const(0))).
+?- check(d(pow(var(x), 3), x, mul(mul(const(3), pow(var(x), 2)), const(1)))).

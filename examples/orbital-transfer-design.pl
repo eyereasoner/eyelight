@@ -28,5 +28,5 @@ transfer_report(Name, TotalDV, Days) :-
 ?- why.
 
 % Check
-:- assertion((hohmann(earth_mars, D1, D2, Days), D1 > 2.9, D1 < 3.0, D2 > 2.6, D2 < 2.7, Days > 258, Days < 260)).
-:- assertion((hohmann(earth_mars, D1, D2, _), D1+D2 < 6)).
+?- check((hohmann(earth_mars, D1, D2, Days), D1 > 2.9, D1 < 3.0, D2 > 2.6, D2 < 2.7, Days > 258, Days < 260)).
+?- check((hohmann(earth_mars, D1, D2, _), D1+D2 < 6)).

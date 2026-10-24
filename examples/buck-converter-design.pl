@@ -36,5 +36,5 @@ ripple_report(Name, Duty, CurrentPP, VoltagePP) :-
 ?- within_ripple_limits(Name).
 
 % Check
-:- assertion(within_ripple_limits(demo)).
-:- assertion((ripple(demo, D, I, Ratio, V), abs(D-5/24) < 1.0e-12, I > 0.35, I < 0.37, Ratio < 0.30, V < 0.002)).
+?- check(within_ripple_limits(demo)).
+?- check((ripple(demo, D, I, Ratio, V), abs(D-5/24) < 1.0e-12, I > 0.35, I < 0.37, Ratio < 0.30, V < 0.002)).

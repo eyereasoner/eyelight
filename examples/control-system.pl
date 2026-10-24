@@ -60,7 +60,7 @@ measurement10(I, M1) :-
 
 % Check
 % Compare real-valued commands with independent expected values and tolerances.
-:- assertion((control1(actuator1, C), abs(C - 39.27346198678276) < 1.0e-10)).
-:- assertion((control1(actuator2, C), abs(C - 26.08) < 1.0e-12)).
-:- assertion(measurement10(disturbance2, 45)).
-:- assertion(aggregate_all(count, control1(Actuator, Command), 2)).
+?- check((control1(actuator1, C), abs(C - 39.27346198678276) < 1.0e-10)).
+?- check((control1(actuator2, C), abs(C - 26.08) < 1.0e-12)).
+?- check(measurement10(disturbance2, 45)).
+?- check(aggregate_all(count, control1(Actuator, Command), 2)).

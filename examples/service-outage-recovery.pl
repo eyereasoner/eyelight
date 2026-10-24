@@ -83,13 +83,13 @@ restored(Node) :- best_repair(Plan, _), unavailable(Node), operating(Node, Plan)
 ?- restored(Node).
 
 % Check
-:- assertion(best_repair([catalog_replica, bank_backup], 3)).
-:- assertion(affected_function(place_order)).
-:- assertion(affected_function(mobile_checkout)).
-:- assertion(restored(web_store)).
-:- assertion(restored(mobile_app)).
-:- assertion(operating(risk_engine, [])).
-:- assertion(\+ operating(payment_service, [])).
-:- assertion(operating(payment_service, [bank_backup])).
-:- assertion(\+ operating(checkout_api, [bank_backup])).
-:- assertion(aggregate_all(count, feasible_repair(Plan, Cost), 9)).
+?- check(best_repair([catalog_replica, bank_backup], 3)).
+?- check(affected_function(place_order)).
+?- check(affected_function(mobile_checkout)).
+?- check(restored(web_store)).
+?- check(restored(mobile_app)).
+?- check(operating(risk_engine, [])).
+?- check(\+ operating(payment_service, [])).
+?- check(operating(payment_service, [bank_backup])).
+?- check(\+ operating(checkout_api, [bank_backup])).
+?- check(aggregate_all(count, feasible_repair(Plan, Cost), 9)).
