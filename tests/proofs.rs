@@ -1,4 +1,4 @@
-use eyelight::{check, parse, reason, Certificate, Claim, Justification, Limits};
+use whye::{check, parse, reason, Certificate, Claim, Justification, Limits};
 
 const PROGRAM: &str = "p(a). p(b). edge(a,b). q(X) :- p(X). r(X,Y) :- q(X), edge(X,Y). ?- r(X,Y).";
 
@@ -18,7 +18,7 @@ fn reject(certificate: &Certificate) {
 #[test]
 fn forged_source_fact_is_rejected() {
     let mut c = certificate();
-    c.steps[0].atom.values[0] = eyelight::Value::Symbol("forged".into());
+    c.steps[0].atom.values[0] = whye::Value::Symbol("forged".into());
     reject(&c);
 }
 #[test]
@@ -61,7 +61,7 @@ fn missing_rule_premises_are_rejected() {
 #[test]
 fn wrong_head_and_inconsistent_rule_bindings_are_rejected() {
     let p = parse("p(a). edge(b,c). r(X,Y) :- p(X), edge(X,Y). ?- r(X,Y).").unwrap();
-    let forged = Certificate::parse("eyelight-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : edge(b,c).\nstep 3 rule 1 [1,2] : r(a,c).\nanswer 1 [3]\n").unwrap();
+    let forged = Certificate::parse("whye-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : edge(b,c).\nstep 3 rule 1 [1,2] : r(a,c).\nanswer 1 [3]\n").unwrap();
     assert!(!check(&p, &forged).unwrap().valid());
     let mut c = certificate();
     c.steps.last_mut().unwrap().atom.values.reverse();
@@ -72,7 +72,7 @@ fn incomplete_query_conjunction_is_rejected() {
     let p = parse("p(a). q(b). ?- p(X), q(X).").unwrap();
     for claim in ["answer 1 [1]", "answer 1 [1,2]"] {
         let c = Certificate::parse(&format!(
-            "eyelight-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : q(b).\n{claim}\n"
+            "whye-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : q(b).\n{claim}\n"
         ))
         .unwrap();
         assert!(!check(&p, &c).unwrap().valid());
@@ -118,14 +118,15 @@ fn missing_and_zero_query_evidence_is_rejected() {
 #[test]
 fn malformed_metadata_and_variable_conclusions_are_rejected() {
     for text in [
-        "eyelight-proof 2",
-        "eyelight-proof 1\nstep 0 source 1 : p(a).",
-        "eyelight-proof 1\nstep 1 trusted 1 : p(a).",
-        "eyelight-proof 1\nstep 1 source 1 : p(X).",
-        "eyelight-proof 1\nstep 1 source 0 : p(a).",
-        "eyelight-proof 1\nstep 1 source 1 extra : p(a).",
-        "eyelight-proof 1\nanswer 1 [0]",
-        "eyelight-proof 1\nunknown",
+        "other-proof 1\nstep 1 source 1 : p(a).\nanswer 1 [1]\n",
+        "whye-proof 2",
+        "whye-proof 1\nstep 0 source 1 : p(a).",
+        "whye-proof 1\nstep 1 trusted 1 : p(a).",
+        "whye-proof 1\nstep 1 source 1 : p(X).",
+        "whye-proof 1\nstep 1 source 0 : p(a).",
+        "whye-proof 1\nstep 1 source 1 extra : p(a).",
+        "whye-proof 1\nanswer 1 [0]",
+        "whye-proof 1\nunknown",
     ] {
         assert!(Certificate::parse(text).is_err(), "accepted {text}");
     }

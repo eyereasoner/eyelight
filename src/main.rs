@@ -1,11 +1,11 @@
-use eyelight::{check_with_limits, parse, reason, Certificate, Error, Limits, Program, VERSION};
 use std::io::{self, Read};
 use std::process::ExitCode;
+use whye::{check_with_limits, parse, reason, Certificate, Error, Limits, Program, VERSION};
 
-const HELP: &str = "eyelight — a small relational reasoner
+const HELP: &str = "whye — a small relational reasoner
 
-Usage: eyelight [OPTIONS] FILE...
-       eyelight [OPTIONS] -
+Usage: whye [OPTIONS] FILE...
+       whye [OPTIONS] -
 
   -e, --explain              Answers with their supporting rules and facts
   -p, --proof                Write a checkable proof certificate
@@ -52,7 +52,7 @@ fn run() -> Result<String, Error> {
                 continue;
             }
             "-h" | "--help" => return Ok(HELP.to_owned()),
-            "-v" | "--version" => return Ok(format!("eyelight {VERSION}\n")),
+            "-v" | "--version" => return Ok(format!("whye {VERSION}\n")),
             "-e" | "--explain" => Some("explain"),
             "-p" | "--proof" => Some("proof"),
             "-c" | "--prove-and-check" => Some("checked"),
@@ -141,7 +141,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(error) => {
-            eprintln!("eyelight: {error}");
+            eprintln!("whye: {error}");
             ExitCode::FAILURE
         }
     }

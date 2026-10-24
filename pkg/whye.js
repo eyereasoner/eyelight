@@ -1,4 +1,4 @@
-/* @ts-self-types="./eyelight.d.ts" */
+/* @ts-self-types="./whye.d.ts" */
 
 /**
  * @param {string} source
@@ -67,7 +67,7 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./eyelight_bg.js": import0,
+        "./whye_bg.js": import0,
     };
 }
 
@@ -267,7 +267,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('eyelight_bg.wasm', import.meta.url);
+        module_or_path = new URL('whye_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

@@ -1,10 +1,10 @@
-# Eyelight guide
+# Whye guide
 
-Version **0.1.11**. Run programs, explore examples, and check their proofs. The
-[specification](https://eyereasoner.github.io/eyelight/SPEC/) defines the language
+Version **0.1.12**. Run programs, explore examples, and check their proofs. The
+[specification](https://eyereasoner.github.io/whye/SPEC/) defines the language
 and proof contract.
 
-Give eyelight facts and rules, then ask what follows:
+Give whye facts and rules, then ask what follows:
 
 ```prolog
 human(socrates).
@@ -18,7 +18,7 @@ mortal(Person) :- human(Person).
 Who = socrates.
 ```
 
-Eyelight programs use Prolog-style clause syntax and the `.pl` extension. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/eyelight/SPEC/) describes the complete language.
+Whye programs use Prolog-style clause syntax and the `.pl` extension. It implements **Datalog-style rules with stratified negation, aggregation, explicit built-ins, and scoped fresh witnesses**. It does not parse N3 or implement general Prolog. The [specification](https://eyereasoner.github.io/whye/SPEC/) describes the complete language.
 
 ## Run your first program
 
@@ -26,12 +26,12 @@ With Rust and Cargo installed:
 
 ```sh
 cargo build --release --locked
-./target/release/eyelight examples/socrates.pl
-./target/release/eyelight --explain examples/socrates.pl
-./target/release/eyelight --prove-and-check examples/socrates.pl
+./target/release/whye examples/socrates.pl
+./target/release/whye --explain examples/socrates.pl
+./target/release/whye --prove-and-check examples/socrates.pl
 ```
 
-Install from this checkout if you want `eyelight` on your path:
+Install from this checkout if you want `whye` on your path:
 
 ```sh
 cargo install --path . --locked
@@ -58,17 +58,17 @@ The answers are `park` and `station`. The cycle does not create duplicate answer
 
 | Example | What it shows |
 | --- | --- |
-| [Socrates](https://github.com/eyereasoner/eyelight/blob/main/examples/socrates.pl) | A first conclusion and query |
-| [Paths](https://github.com/eyereasoner/eyelight/blob/main/examples/paths.pl) | Recursive reachability with cycles |
-| [Airport path discovery](https://github.com/eyereasoner/eyelight/blob/main/examples/path-discovery.pl) | Full airport graph, routes with up to two stopovers, and checked route text |
-| [Family](https://github.com/eyereasoner/eyelight/blob/main/examples/family.pl) | Joins and shared variables |
-| [Values](https://github.com/eyereasoner/eyelight/blob/main/examples/values.pl) | Distinct atoms, strings, and integers |
-| [RDF-shaped data](https://github.com/eyereasoner/eyelight/blob/main/examples/rdf.pl) | IRIs represented in an ordinary triple relation |
-| [Price calculations](https://github.com/eyereasoner/eyelight/blob/main/examples/arithmetic.pl) | Arithmetic, comparisons, and string built-ins |
-| [Outside the network](https://github.com/eyereasoner/eyelight/blob/main/examples/negation.pl) | Stratified negation after recursive reachability |
-| [Department budgets](https://github.com/eyereasoner/eyelight/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
-| [Fresh tickets](https://github.com/eyereasoner/eyelight/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
-| [Customer vouchers](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
+| [Socrates](https://github.com/eyereasoner/whye/blob/main/examples/socrates.pl) | A first conclusion and query |
+| [Paths](https://github.com/eyereasoner/whye/blob/main/examples/paths.pl) | Recursive reachability with cycles |
+| [Airport path discovery](https://github.com/eyereasoner/whye/blob/main/examples/path-discovery.pl) | Full airport graph, routes with up to two stopovers, and checked route text |
+| [Family](https://github.com/eyereasoner/whye/blob/main/examples/family.pl) | Joins and shared variables |
+| [Values](https://github.com/eyereasoner/whye/blob/main/examples/values.pl) | Distinct atoms, strings, and integers |
+| [RDF-shaped data](https://github.com/eyereasoner/whye/blob/main/examples/rdf.pl) | IRIs represented in an ordinary triple relation |
+| [Price calculations](https://github.com/eyereasoner/whye/blob/main/examples/arithmetic.pl) | Arithmetic, comparisons, and string built-ins |
+| [Outside the network](https://github.com/eyereasoner/whye/blob/main/examples/negation.pl) | Stratified negation after recursive reachability |
+| [Department budgets](https://github.com/eyereasoner/whye/blob/main/examples/aggregation.pl) | Grouped counts, sums, minima, and maxima |
+| [Fresh tickets](https://github.com/eyereasoner/whye/blob/main/examples/witnesses.pl) | Witnesses scoped to individual rule firings |
+| [Customer vouchers](https://github.com/eyereasoner/whye/blob/main/examples/orders.pl) | Every C1–C9 condition actively checked |
 
 The airport path discovery example keeps all 7,698 airports and 37,274 directed
 links. Its request searches from Ostend-Bruges to Prague with at most two
@@ -78,8 +78,8 @@ and the airport names in travel order. Built-ins exclude repeated airport IDs
 and assemble the route text; proof checking re-decides those tests and strings.
 
 ```sh
-./target/release/eyelight examples/path-discovery.pl
-./target/release/eyelight -c examples/path-discovery.pl
+./target/release/whye examples/path-discovery.pl
+./target/release/whye -c examples/path-discovery.pl
 ```
 
 Edit `route_request(From, To, Limit)` to use other airport labels and a limit of
@@ -96,17 +96,17 @@ chain and leaves out the side branches.
 
 | Depth | Program |
 | --- | --- |
-| 10 | [deep-taxonomy-10.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-10.pl) |
-| 100 | [deep-taxonomy-100.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-100.pl) |
-| 1,000 | [deep-taxonomy-1000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-1000.pl) |
-| 10,000 | [deep-taxonomy-10000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-10000.pl) |
-| 100,000 | [deep-taxonomy-100000.pl](https://github.com/eyereasoner/eyelight/blob/main/examples/deep-taxonomy-100000.pl) |
+| 10 | [deep-taxonomy-10.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-10.pl) |
+| 100 | [deep-taxonomy-100.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-100.pl) |
+| 1,000 | [deep-taxonomy-1000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-1000.pl) |
+| 10,000 | [deep-taxonomy-10000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-10000.pl) |
+| 100,000 | [deep-taxonomy-100000.pl](https://github.com/eyereasoner/whye/blob/main/examples/deep-taxonomy-100000.pl) |
 
 All five are available in the playground. Run the largest natively with the
 default resource limits:
 
 ```sh
-./target/release/eyelight -c examples/deep-taxonomy-100000.pl
+./target/release/whye -c examples/deep-taxonomy-100000.pl
 ```
 
 It checks a certificate with 100,003 steps and one claim. At depth `d`, the
@@ -127,7 +127,7 @@ WSL2, Rust 1.99.1, release build; median of three runs on a quiet machine):
 | 100,000 | 3.991 s | 570.5 MiB |
 
 Elapsed time and memory depend on the machine and allocator. The
-[phase measurements](https://github.com/eyereasoner/eyelight/blob/main/reports/taxonomy-scaling.csv)
+[phase measurements](https://github.com/eyereasoner/whye/blob/main/reports/taxonomy-scaling.csv)
 include certificate text round trips and explanations as well; their total also
 includes freeing the run. Each column is an independent three-run median.
 
@@ -142,14 +142,14 @@ machine-dependent elapsed times, and reject a forged deep-chain conclusion.
 ## Keep the evidence
 
 ```sh
-./target/release/eyelight -p examples/socrates.pl > /tmp/socrates.proof
-./target/release/eyelight --check-proof /tmp/socrates.proof examples/socrates.pl
+./target/release/whye -p examples/socrates.pl > /tmp/socrates.proof
+./target/release/whye --check-proof /tmp/socrates.proof examples/socrates.pl
 ```
 
 The certificate is small enough to read:
 
 ```text
-eyelight-proof 1
+whye-proof 1
 step 1 source 1 : human(socrates).
 step 2 rule 1 [1] : mortal(socrates).
 answer 1 [2]
@@ -177,7 +177,7 @@ Source assertions are assumed. Answer completeness is not checked.
 
 A valid certificate establishes **support for its recorded claims relative to the source program**. Input facts are assumptions. The checker does not authenticate their authors or establish that every answer was found. A failed query prints `false.` but produces no claim proving that failure. An empty certificate establishes no answers.
 
-The [C1–C9 contract](https://eyereasoner.github.io/eyelight/SPEC/#8-verification) defines the requirements and counting units. All nine conditions have implementations. Applicability depends on the program: Socrates needs no built-in decisions, closed-world boundaries, or witnesses, so C5, C6, and C8 report not applicable there. The voucher example exercises all nine with nonzero check counts.
+The [C1–C9 contract](https://eyereasoner.github.io/whye/SPEC/#8-verification) defines the requirements and counting units. All nine conditions have implementations. Applicability depends on the program: Socrates needs no built-in decisions, closed-world boundaries, or witnesses, so C5, C6, and C8 report not applicable there. The voucher example exercises all nine with nonzero check counts.
 
 ## Calculate, exclude, and collect
 
@@ -217,14 +217,14 @@ Ada receives a voucher for a total of 15. Bea is blocked. `Price` and `Item` are
 `@fresh(Voucher)` creates a typed opaque witness belonging to that rule firing. It must be a rule's final goal and bind a new variable. Witnesses are deterministic within the program; they are not globally unique random identifiers. Source programs cannot supply witness constants.
 
 ```sh
-./target/release/eyelight -c examples/orders.pl
+./target/release/whye -c examples/orders.pl
 ```
 
 This checks all nine conditions: C5 recomputes calculations and aggregates, C6 verifies complete lower-stratum boundaries and absence tests, and C8 verifies witness identity. Other conditions validate the rule applications, references, dependency order, relevance, and query isolation.
 
 **Omitted facts cannot justify a negative test or a smaller aggregate.** The certificate includes the full relevant stratum prefix. The checker requires its input facts and verifies closure under every applicable source rule, without running the forward evaluator or adding missing conclusions. It shares the value model and pure matching, built-in, and aggregate semantics with the evaluator.
 
-Variables in `not` goals must be bound earlier. Negative and aggregate dependencies must be stratified. Rules that produce values through built-ins, aggregation, or fresh witnesses cannot define recursive relations; this prevents unbounded value generation. Positive recursion with tests on bound values remains supported. The [language reference](https://eyereasoner.github.io/eyelight/SPEC/#4-rules-and-body-goals) gives the exact modes and restrictions.
+Variables in `not` goals must be bound earlier. Negative and aggregate dependencies must be stratified. Rules that produce values through built-ins, aggregation, or fresh witnesses cannot define recursive relations; this prevents unbounded value generation. Positive recursion with tests on bound values remains supported. The [language reference](https://eyereasoner.github.io/whye/SPEC/#4-rules-and-body-goals) gives the exact modes and restrictions.
 
 ## Use the command line
 
@@ -245,9 +245,9 @@ Choose one output option per invocation. Success returns status 0. Parse errors,
 Files are parsed separately and merged in the supplied order. Variables belong to individual clauses and queries. Use `-` for stdin, once per invocation:
 
 ```sh
-./target/release/eyelight rules.pl data.pl
-./target/release/eyelight - < examples/socrates.pl
-./target/release/eyelight --check-proof - examples/socrates.pl < /tmp/socrates.proof
+./target/release/whye rules.pl data.pl
+./target/release/whye - < examples/socrates.pl
+./target/release/whye --check-proof - examples/socrates.pl < /tmp/socrates.proof
 ```
 
 Use the same source order when checking a saved certificate. Source-fact, rule, and query IDs are numbered separately from 1 in that order.
@@ -276,9 +276,9 @@ rustup target add wasm32-unknown-unknown
 ## Embed the engine
 
 ```rust
-use eyelight::{check, parse, reason, Limits};
+use whye::{check, parse, reason, Limits};
 
-fn main() -> Result<(), eyelight::Error> {
+fn main() -> Result<(), whye::Error> {
     let program = parse("human(socrates). mortal(X) :- human(X). ?- mortal(Who).")?;
     let run = reason(&program, Limits::default())?;
     print!("{}", run.output(&program));
@@ -291,9 +291,9 @@ fn main() -> Result<(), eyelight::Error> {
 }
 ```
 
-`Run` exposes stored proof steps, projected query answers, and the number of attempted matches. `Certificate::parse` reads the certificate format. `execute` provides the same string interface used by the browser. Parser and library errors use `eyelight::Error`; incomplete evaluation returns an error rather than a successful `Run`.
+`Run` exposes stored proof steps, projected query answers, and the number of attempted matches. `Certificate::parse` reads the certificate format. `execute` provides the same string interface used by the browser. Parser and library errors use `whye::Error`; incomplete evaluation returns an error rather than a successful `Run`.
 
-`check_with_limits` accepts explicit evidence-size and matching limits; `check` uses defaults. Both return `Ok(report)` when semantic checking finishes, including when the proof is invalid. Inspect **`report.valid()`** before accepting it, or call `report.require_valid()?` to turn an invalid report into an error. `report.conditions` lists all nine conditions with counts and applicability; `report.failures` supplies their diagnostics. `report.condition(eyelight::Condition::C9)` selects one condition. Unreadable certificates and malformed source programs return errors before a report can be produced.
+`check_with_limits` accepts explicit evidence-size and matching limits; `check` uses defaults. Both return `Ok(report)` when semantic checking finishes, including when the proof is invalid. Inspect **`report.valid()`** before accepting it, or call `report.require_valid()?` to turn an invalid report into an error. `report.conditions` lists all nine conditions with counts and applicability; `report.failures` supplies their diagnostics. `report.condition(whye::Condition::C9)` selects one condition. Unreadable certificates and malformed source programs return errors before a report can be produced.
 
 ## Current scope
 
@@ -319,7 +319,7 @@ Tests cover language behavior, the CLI, forged certificates for every applicable
 
 ```sh
 python3 -m http.server 8766 --bind 127.0.0.1
-google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/eyelight-browser about:blank
+google-chrome --headless --remote-debugging-port=9226 --user-data-dir=/tmp/whye-browser about:blank
 node tests/browser.mjs
 ```
 
@@ -354,10 +354,10 @@ Skip the push if it already succeeded, and create the GitHub release only if it 
 
 The **Deploy GitHub Pages** workflow builds the site on pushes to `main` and can also be started manually. Set the repository's Pages source to **GitHub Actions**. The workflow checks the website and committed WebAssembly package, renders the guide and specification with Jekyll, and deploys the resulting static artifact.
 
-Open the published [guide](https://eyereasoner.github.io/eyelight/), [specification](https://eyereasoner.github.io/eyelight/SPEC/), or [playground](https://eyereasoner.github.io/eyelight/playground/). Documentation links in this repository point to those rendered pages. The `playground.html` route remains available too.
+Open the published [guide](https://eyereasoner.github.io/whye/), [specification](https://eyereasoner.github.io/whye/SPEC/), or [playground](https://eyereasoner.github.io/whye/playground/). Documentation links in this repository point to those rendered pages. The `playground.html` route remains available too.
 
 `GUIDE.md` supplies the guide at the site root; `SPEC.md` supplies the specification.
-`node scripts/prepare-pages.mjs` prepares `_pages/` for the Jekyll build; `_site/` holds the rendered artifact. Both directories are ignored by Git. The Pages action supplies `PAGES_BASE_PATH`, so local links and assets work beneath `/eyelight/` or a different configured prefix. The site uses the committed `pkg/`; changing the package version requires rebuilding it before publishing. The deployment check rejects a browser package whose exported version differs from `Cargo.toml`.
+`node scripts/prepare-pages.mjs` prepares `_pages/` for the Jekyll build; `_site/` holds the rendered artifact. Both directories are ignored by Git. The Pages action supplies `PAGES_BASE_PATH`, so local links and assets work beneath `/whye/` or a different configured prefix. The site uses the committed `pkg/`; changing the package version requires rebuilding it before publishing. The deployment check rejects a browser package whose exported version differs from `Cargo.toml`.
 
 | File | Responsibility |
 | --- | --- |

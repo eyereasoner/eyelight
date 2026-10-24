@@ -1,5 +1,5 @@
-use eyelight::{check, parse, reason, Certificate, Condition, Limits, Value};
 use std::fs;
+use whye::{check, parse, reason, Certificate, Condition, Limits, Value};
 
 const DEPTHS: [usize; 5] = [10, 100, 1_000, 10_000, 100_000];
 fn source(depth: usize) -> String {

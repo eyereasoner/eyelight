@@ -1,4 +1,4 @@
-use eyelight::{
+use whye::{
     check, parse, reason, Boundary, Certificate, Condition, Justification, Limits, Owner, Program,
     Value,
 };
@@ -24,16 +24,20 @@ fn inspect(source: &str, text: &str, condition: Condition) {
 fn c1_distinguishes_relational_premises_from_negative_and_builtin_decisions() {
     inspect(
         "p :- eq(a,a). ?- p.",
-        "eyelight-proof 1\nstep 1 builtin : eq(a,a).\nstep 2 rule 1 [1] : p.\nanswer 1 [2]\n",
+        "whye-proof 1\nstep 1 builtin : eq(a,a).\nstep 2 rule 1 [1] : p.\nanswer 1 [2]\n",
         Condition::C1,
     );
-    inspect("p :- missing(a). ?- p.","eyelight-proof 1\nstep 1 absent 1 : missing(a).\nstep 2 rule 1 [1] : p.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C1);
-    inspect("add(2,3,99). p(X):-@add(2,3,X). ?- p(X).","eyelight-proof 1\nstep 1 source 1 : add(2,3,99).\nstep 2 rule 1 [1] : p(99).\nanswer 1 [2]\n",Condition::C1);
+    inspect("p :- missing(a). ?- p.","whye-proof 1\nstep 1 absent 1 : missing(a).\nstep 2 rule 1 [1] : p.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C1);
+    inspect(
+        "add(2,3,99). p(X):-@add(2,3,X). ?- p(X).",
+        "whye-proof 1\nstep 1 source 1 : add(2,3,99).\nstep 2 rule 1 [1] : p(99).\nanswer 1 [2]\n",
+        Condition::C1,
+    );
 }
 
 #[test]
 fn c2_rejects_boundary_evidence_later_than_the_negative_decision() {
-    inspect("p(a). q:-not missing. ?- q.","eyelight-proof 1\nstep 1 absent 1 : missing.\nstep 2 source 1 : p(a).\nstep 3 rule 1 [1] : q.\nboundary 1 level 0 [2]\nanswer 1 [3]\n",Condition::C2);
+    inspect("p(a). q:-not missing. ?- q.","whye-proof 1\nstep 1 absent 1 : missing.\nstep 2 source 1 : p(a).\nstep 3 rule 1 [1] : q.\nboundary 1 level 0 [2]\nanswer 1 [3]\n",Condition::C2);
 }
 
 #[test]
@@ -94,7 +98,7 @@ fn c5_recomputes_arithmetic_and_never_trusts_a_recorded_result() {
     assert_eq!(check(&p, &c).unwrap().condition(Condition::C1).failed, 0);
     inspect(
         "?- @eq(a,b).",
-        "eyelight-proof 1\nstep 1 builtin : eq(a,b).\nanswer 1 [1]\n",
+        "whye-proof 1\nstep 1 builtin : eq(a,b).\nanswer 1 [1]\n",
         Condition::C5,
     );
 }
@@ -118,13 +122,13 @@ fn c5_recomputes_aggregate_results_including_distinct_tuple_keys() {
 #[test]
 fn c6_rejects_a_negative_claim_that_hides_a_derivable_counterexample() {
     inspect("seed(a). blocked(X):-seed(X). allowed(X):-seed(X),not blocked(X). ?- allowed(X).",
-        "eyelight-proof 1\nstep 1 source 1 : seed(a).\nstep 2 absent 1 : blocked(a).\nstep 3 rule 2 [1,2] : allowed(a).\nboundary 1 level 0 [1]\nanswer 1 [3]\n",Condition::C6);
+        "whye-proof 1\nstep 1 source 1 : seed(a).\nstep 2 absent 1 : blocked(a).\nstep 3 rule 2 [1,2] : allowed(a).\nboundary 1 level 0 [1]\nanswer 1 [3]\n",Condition::C6);
 }
 
 #[test]
 fn c6_rejects_a_negative_claim_that_hides_an_input_fact() {
     inspect("blocked(a). allowed:-not blocked(a). ?- allowed.",
-        "eyelight-proof 1\nstep 1 absent 1 : blocked(a).\nstep 2 rule 1 [1] : allowed.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C6);
+        "whye-proof 1\nstep 1 absent 1 : blocked(a).\nstep 2 rule 1 [1] : allowed.\nboundary 1 level 0 []\nanswer 1 [2]\n",Condition::C6);
 }
 
 #[test]
@@ -151,7 +155,7 @@ fn c6_rejects_an_aggregate_over_an_incomplete_but_locally_consistent_boundary() 
 #[test]
 fn c6_detects_missing_derived_members_in_aggregate_boundaries() {
     inspect("p(a). p(b). q(X):-p(X). total(N):-count{X:q(X)}=N. ?- total(N).",
-        "eyelight-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : p(b).\nstep 3 rule 1 [1] : q(a).\nstep 4 aggregate r2 1 1 : '$aggregate:r2:1'(1).\nstep 5 rule 2 [4] : total(1).\nboundary 1 level 0 [1,2,3]\nanswer 1 [5]\n",Condition::C6);
+        "whye-proof 1\nstep 1 source 1 : p(a).\nstep 2 source 2 : p(b).\nstep 3 rule 1 [1] : q(a).\nstep 4 aggregate r2 1 1 : '$aggregate:r2:1'(1).\nstep 5 rule 2 [4] : total(1).\nboundary 1 level 0 [1,2,3]\nanswer 1 [5]\n",Condition::C6);
 }
 
 #[test]
@@ -227,12 +231,12 @@ fn c8_prevents_reuse_of_a_witness_from_a_different_firing() {
 fn c9_never_selects_a_test_as_an_ordinary_query_fact() {
     inspect(
         "?- eq(a,a).",
-        "eyelight-proof 1\nstep 1 builtin : eq(a,a).\nanswer 1 [1]\n",
+        "whye-proof 1\nstep 1 builtin : eq(a,a).\nanswer 1 [1]\n",
         Condition::C9,
     );
     inspect(
         "?- missing(a).",
-        "eyelight-proof 1\nstep 1 absent 1 : missing(a).\nboundary 1 level 0 []\nanswer 1 [1]\n",
+        "whye-proof 1\nstep 1 absent 1 : missing(a).\nboundary 1 level 0 []\nanswer 1 [1]\n",
         Condition::C9,
     );
 }

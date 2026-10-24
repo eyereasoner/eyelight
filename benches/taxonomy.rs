@@ -1,8 +1,8 @@
 // Measure taxonomy pipeline phases separately from ordinary regression tests.
 // Run scripts/bench-taxonomy on a quiet machine for comparable timings.
-use eyelight::{check, parse, reason, Certificate, Limits};
 use std::fs;
 use std::time::{Duration, Instant};
+use whye::{check, parse, reason, Certificate, Limits};
 
 const DEPTHS: [usize; 5] = [10, 100, 1_000, 10_000, 100_000];
 fn source(depth: usize) -> String {

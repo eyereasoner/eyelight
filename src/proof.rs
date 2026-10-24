@@ -241,8 +241,8 @@ impl Certificate {
     }
     fn read(source: &str) -> Result<Self, Error> {
         let mut lines = source.lines();
-        if lines.next() != Some("eyelight-proof 1") {
-            return Err(Error::new("Expected certificate header: eyelight-proof 1."));
+        if lines.next() != Some("whye-proof 1") {
+            return Err(Error::new("Expected certificate header: whye-proof 1."));
         }
         let mut result = Self::default();
         let mut claims = false;
@@ -361,7 +361,7 @@ fn list(f: &mut fmt::Formatter<'_>, ids: &[usize]) -> fmt::Result {
 }
 impl fmt::Display for Certificate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "eyelight-proof 1")?;
+        writeln!(f, "whye-proof 1")?;
         for (i, s) in self.steps.iter().enumerate() {
             write!(f, "step {} ", i + 1)?;
             match &s.justification {
@@ -399,7 +399,7 @@ impl fmt::Display for Certificate {
         Ok(())
     }
 }
-/// The nine proof conditions, specialized to eyelight's language.
+/// The nine proof conditions, specialized to whye's language.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Condition {
     C1,

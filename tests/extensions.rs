@@ -1,7 +1,7 @@
-use eyelight::{check, parse, reason, Certificate, Condition, Limits, Value};
 use std::collections::BTreeSet;
+use whye::{check, parse, reason, Certificate, Condition, Limits, Value};
 
-fn run(source: &str) -> (eyelight::Program, eyelight::Run) {
+fn run(source: &str) -> (whye::Program, whye::Run) {
     let program = parse(source).unwrap();
     let run = reason(&program, Limits::default()).unwrap();
     let proof = run.certificate(&program);
@@ -268,7 +268,7 @@ fn strata_are_independent_of_source_order_and_merged_files() {
 fn explicit_checker_limits_cover_evidence_and_closed_model_matching() {
     let (p, r) = run(include_str!("../examples/orders.pl"));
     let c = r.certificate(&p);
-    assert!(eyelight::check_with_limits(
+    assert!(whye::check_with_limits(
         &p,
         &c,
         Limits {
@@ -277,7 +277,7 @@ fn explicit_checker_limits_cover_evidence_and_closed_model_matching() {
         }
     )
     .is_err());
-    assert!(eyelight::check_with_limits(
+    assert!(whye::check_with_limits(
         &p,
         &c,
         Limits {

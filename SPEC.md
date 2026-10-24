@@ -1,11 +1,11 @@
-# Eyelight specification
+# Whye specification
 
-Version **0.1.11**. Project specification for the implemented language and proof
+Version **0.1.12**. Project specification for the implemented language and proof
 certificate contract.
 
 ## Abstract
 
-Eyelight evaluates finite relational programs written in Prolog-style syntax. This
+Whye evaluates finite relational programs written in Prolog-style syntax. This
 document specifies facts, rules, queries, interpreted built-ins, stratified negation,
 set aggregation, and scoped fresh witnesses. It also defines the proof certificate
 format and validity conditions C1–C9 used by the checker. The native and WebAssembly
@@ -13,10 +13,10 @@ interfaces use the same language and checking contract.
 
 ## Status of This Memo
 
-This specification describes the Eyelight version identified above. Syntax, semantics,
+This specification describes the Whye version identified above. Syntax, semantics,
 and certificate-checking requirements are normative. Examples, implementation notes, and
 performance observations are informative. The
-[guide](https://eyereasoner.github.io/eyelight/) provides usage instructions.
+[guide](https://eyereasoner.github.io/whye/) provides usage instructions.
 
 ## Conventions and Terminology
 
@@ -137,7 +137,7 @@ unsafe rule would never fire.
 
 ### 4.1 Built-ins as Interpreted Relations
 
-Built-ins describe potentially infinite sets of true tuples. Eyelight decides individual
+Built-ins describe potentially infinite sets of true tuples. Whye decides individual
 tuples or computes a deterministic output from bound inputs; it never enumerates an
 unbounded domain.
 
@@ -291,12 +291,12 @@ output.
 
 ### 7.1 Envelope and Ordering
 
-A certificate MUST begin with the exact line `eyelight-proof 1`. Subsequent blank lines
+A certificate MUST begin with the exact line `whye-proof 1`. Subsequent blank lines
 MAY appear. Step IDs MUST be contiguous positive integers starting at 1, followed by
 claims. Steps and boundary records MUST NOT appear after claims.
 
 ```text
-eyelight-proof 1
+whye-proof 1
 step 1 source 1 : human(socrates).
 step 2 rule 1 [1] : mortal(socrates).
 answer 1 [2]
@@ -380,7 +380,7 @@ Reports MUST list all nine conditions in order. C5 is applicable when a program 
 built-ins or aggregates; C6 when it uses negation or aggregates; C8 when it uses
 `@fresh`. A program without the corresponding feature reports **not applicable** with
 zero checks and failures. The [voucher
-example](https://github.com/eyereasoner/eyelight/blob/main/examples/orders.pl) performs
+example](https://github.com/eyereasoner/whye/blob/main/examples/orders.pl) performs
 nonzero successful checks under every condition.
 
 Counts describe attempted local checks, not a count of established conclusions. C1
@@ -452,9 +452,9 @@ execute the program.
 
 ### 11.2 Informative References
 
-- [Eyelight guide](https://eyereasoner.github.io/eyelight/): command-line use,
+- [Whye guide](https://eyereasoner.github.io/whye/): command-line use,
   examples, library and browser integration, development, and releases.
-- [Runnable examples](https://github.com/eyereasoner/eyelight/tree/main/examples/).
+- [Runnable examples](https://github.com/eyereasoner/whye/tree/main/examples/).
 
 [RFC2119]: https://www.rfc-editor.org/rfc/rfc2119
 [RFC8174]: https://www.rfc-editor.org/rfc/rfc8174

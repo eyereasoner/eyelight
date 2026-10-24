@@ -1,6 +1,6 @@
 let ready;
 async function engine() {
-  ready ??= import('./pkg/eyelight.js').then(async module => {
+  ready ??= import('./pkg/whye.js').then(async module => {
     await module.default();
     return module;
   });

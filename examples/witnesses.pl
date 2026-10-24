@@ -1,7 +1,7 @@
 % A distinct ticket for each visitor
 %
 % Each registered visitor receives a ticket with a fresh opaque identity.
-% Eyelight creates one witness per rule firing, and another rule can carry
+% Whye creates one witness per rule firing, and another rule can carry
 % that same identity onward. The proof checker verifies its origin under C8.
 
 visitor(ada).

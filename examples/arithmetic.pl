@@ -1,6 +1,6 @@
 % A shop's price calculator
 %
-% Each product has a unit price and an ordered quantity. Eyelight computes
+% Each product has a unit price and an ordered quantity. Whye computes
 % the line totals and selects orders worth at least 20 units of currency.
 % Explicit @ built-ins act as interpreted relations with bound inputs.
 

@@ -1,7 +1,7 @@
 % Discovering airport routes with up to two stopovers
 %
 % A graph of 7,698 airports and 37,274 directed flight links connects places
-% around the world. Eyelight finds three routes from Ostend to Prague with
+% around the world. Whye finds three routes from Ostend to Prague with
 % at most two stopovers, showing the airport names in travel order.
 % Finite joins enumerate one, two, or three flight legs; built-in tests
 % exclude repeated airports, and string built-ins display each route.

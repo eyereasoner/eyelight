@@ -1,6 +1,6 @@
 % Department budgets
 %
-% Each purchase belongs to a department and has a price. Eyelight counts
+% Each purchase belongs to a department and has a price. Whye counts
 % purchases and computes each budget, including an empty department.
 % Aggregate-local variables stay inside braces; item keys keep equal prices
 % on different purchases distinct when summing.

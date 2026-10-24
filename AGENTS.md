@@ -1,6 +1,6 @@
-# Working on eyelight
+# Working on whye
 
-Eyelight is a small Rust relational reasoner with a native CLI and a WebAssembly
+Whye is a small Rust relational reasoner with a native CLI and a WebAssembly
 playground. Describe implemented behavior and distinguish it from design goals.
 Keep diagnostics specific and user-facing text direct.
 
@@ -25,7 +25,7 @@ Keep diagnostics specific and user-facing text direct.
 
 ## Language and proofs
 
-Read `SPEC.md` before changing language or proof behavior. Eyelight implements
+Read `SPEC.md` before changing language or proof behavior. Whye implements
 Datalog-style rules with stratified negation, set aggregation, explicit `@`
 built-ins, and final-rule `@fresh` witnesses. Ordinary predicate names keep their
 relational meaning. Respect left-to-right safety and aggregate-local scopes.
@@ -56,8 +56,8 @@ small-graph oracle test. Keep implementation, specification, and examples consis
 
 ```sh
 cargo build --release --locked
-./target/release/eyelight examples/socrates.pl
-./target/release/eyelight --prove-and-check examples/socrates.pl
+./target/release/whye examples/socrates.pl
+./target/release/whye --prove-and-check examples/socrates.pl
 ./scripts/test-all
 cargo clippy --target wasm32-unknown-unknown --lib --locked -- -D warnings
 ./scripts/build-playground
@@ -89,7 +89,7 @@ in `_pages/`. The Pages workflow renders Jekyll into `_site/` and deploys it on
 pushes to `main`. Both output directories are ignored.
 
 Keep documentation links pointed at rendered Pages URLs; code and example links
-can point at GitHub. Preserve the configured base path (normally `/eyelight/`),
+can point at GitHub. Preserve the configured base path (normally `/whye/`),
 `/playground/`, and `playground.html`. Run `node tests/pages.mjs` and verify the
 rendered site in a browser after website changes. Version tests require the
 committed Wasm, README, guide, specification, and playground to match

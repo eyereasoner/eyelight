@@ -85,7 +85,7 @@ try {
   await screenshot('desktop-proof-check');
 
   const proof = await run('proof');
-  assert.match(proof, /^eyelight-proof 1/);
+  assert.match(proof, /^whye-proof 1/);
   await set('saved-proof', proof);
   const checked = await run('check');
   assert.match(checked, /checked: 2 steps, 1 claim/);

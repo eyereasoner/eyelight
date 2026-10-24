@@ -2,7 +2,7 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 fn cli(args: &[&str], input: &str) -> std::process::Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_eyelight"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_whye"))
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -34,7 +34,7 @@ fn stdin_answers_explanation_and_generated_proof_check() {
     assert!(result.status.success());
     let text = String::from_utf8(result.stdout).unwrap();
     assert!(text.contains("checked: 2 steps, 1 claim"));
-    for condition in eyelight::Condition::ALL {
+    for condition in whye::Condition::ALL {
         assert!(text.contains(&format!("{condition}:")));
     }
     assert!(text.contains("C5 re-decision: not applicable"));
@@ -45,6 +45,7 @@ fn saved_proof_from_stdin_is_checked_against_source() {
     let result = cli(&["-p", source], "");
     assert!(result.status.success());
     let proof = String::from_utf8(result.stdout).unwrap();
+    assert!(proof.starts_with("whye-proof 1\n"));
     assert!(cli(&["--check-proof", "-", source], &proof)
         .status
         .success());
@@ -54,7 +55,7 @@ fn saved_proof_from_stdin_is_checked_against_source() {
     assert!(result.stdout.is_empty());
     let diagnostic = String::from_utf8(result.stderr).unwrap();
     assert!(diagnostic.contains("[C1 resolution] step 2:"));
-    for condition in eyelight::Condition::ALL {
+    for condition in whye::Condition::ALL {
         assert!(diagnostic.contains(&format!("{condition}:")));
     }
 }
@@ -70,19 +71,22 @@ fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
         let result = cli(&args, input);
         assert!(!result.status.success());
         assert!(result.stdout.is_empty());
-        assert!(!result.stderr.is_empty());
+        assert!(String::from_utf8(result.stderr)
+            .unwrap()
+            .starts_with("whye: "));
     }
 }
 #[test]
 fn help_version_and_multiple_source_files_work() {
     let help = cli(&[], "");
     assert!(help.status.success());
-    assert!(String::from_utf8(help.stdout)
-        .unwrap()
-        .contains("Prolog-style .pl syntax"));
+    let help = String::from_utf8(help.stdout).unwrap();
+    assert!(help.starts_with("whye — a small relational reasoner\n"));
+    assert!(help.contains("Usage: whye [OPTIONS] FILE..."));
+    assert!(help.contains("Prolog-style .pl syntax"));
     assert_eq!(
         String::from_utf8(cli(&["--version"], "").stdout).unwrap(),
-        format!("eyelight {}\n", eyelight::VERSION)
+        format!("whye {}\n", whye::VERSION)
     );
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
     let result = cli(&[path, "-"], "human(hypatia).");
@@ -103,7 +107,7 @@ fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
     );
     let report = String::from_utf8(result.stdout).unwrap();
     assert!(!report.contains("not applicable"));
-    for condition in eyelight::Condition::ALL {
+    for condition in whye::Condition::ALL {
         assert!(report.contains(&format!("{condition}:")));
     }
     let result = cli(&["-p", source], "");

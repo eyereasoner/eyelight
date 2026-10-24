@@ -20,7 +20,7 @@ test('worker runs the engine off the UI thread and reports failures', async () =
   const source = await readFile(new URL('playground-worker.js', root), 'utf8');
   const messages = [];
   const context = vm.createContext({ self: { postMessage: message => messages.push(message) } });
-  const script = new vm.Script(source.replace("import('./pkg/eyelight.js')", 'Promise.resolve(mockEngine)'), { filename: fileURLToPath(new URL('playground-worker.js', root)) });
+  const script = new vm.Script(source.replace("import('./pkg/whye.js')", 'Promise.resolve(mockEngine)'), { filename: fileURLToPath(new URL('playground-worker.js', root)) });
   context.mockEngine = { default: async () => {}, version: () => '0.1.0', runProgram: (source, mode, proof) => {
     if (source === 'bad') throw new Error('specific failure');
     return `${source}/${mode}/${proof}`;

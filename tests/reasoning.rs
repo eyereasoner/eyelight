@@ -1,5 +1,5 @@
-use eyelight::{check, parse, parse_atom, reason, Certificate, Limits, Program, Value};
 use std::collections::BTreeSet;
+use whye::{check, parse, parse_atom, reason, Certificate, Limits, Program, Value};
 
 fn output(source: &str) -> String {
     let program = parse(source).unwrap();

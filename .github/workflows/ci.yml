@@ -1,4 +1,4 @@
-name: Check eyelight
+name: Check whye
 on: [push, pull_request]
 permissions:
   contents: read

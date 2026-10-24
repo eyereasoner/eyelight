@@ -5,13 +5,13 @@
 //! it does not run the evaluator or establish answer completeness.
 //!
 //! ```
-//! use eyelight::{check, parse, reason, Limits};
+//! use whye::{check, parse, reason, Limits};
 //! let program = parse("human(socrates). mortal(X) :- human(X). ?- mortal(Who).")?;
 //! let run = reason(&program, Limits::default())?;
 //! let report = check(&program, &run.certificate(&program))?;
 //! assert!(report.valid());
 //! assert_eq!(report.claims, 1);
-//! # Ok::<(), eyelight::Error>(())
+//! # Ok::<(), whye::Error>(())
 //! ```
 
 mod engine;

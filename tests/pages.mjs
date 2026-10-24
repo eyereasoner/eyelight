@@ -8,12 +8,12 @@ import { preparePages } from '../scripts/prepare-pages.mjs';
 const root = new URL('../', import.meta.url);
 
 test('website stages rendered documentation and every playground dependency', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'eyelight-pages-'));
+  const directory = await mkdtemp(join(tmpdir(), 'whye-pages-'));
   try {
     await preparePages(directory);
     for (const file of ['index.md', 'SPEC/index.md', 'playground.html', 'playground/index.html',
       'playground.css', 'playground.js', 'playground-worker.js', 'assets/eye.png', 'assets/docs.css',
-      'pkg/eyelight.js', 'pkg/eyelight_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
+      'pkg/whye.js', 'pkg/whye_bg.wasm', 'examples/socrates.pl', 'examples/paths.pl', 'examples/family.pl',
       'examples/values.pl', 'examples/rdf.pl', 'examples/arithmetic.pl', 'examples/negation.pl',
       'examples/aggregation.pl', 'examples/witnesses.pl', 'examples/orders.pl', 'LICENSE.md', '_layouts/default.html']) {
       assert.ok((await stat(join(directory, file))).isFile(), file);
@@ -28,15 +28,15 @@ test('website stages rendered documentation and every playground dependency', as
       assert.doesNotMatch(document, /\]\([^)]*\.md(?:#|\))/);
     }
     const guide = await readFile(join(directory, 'index.md'), 'utf8');
-    assert.match(guide, /^title: "Eyelight guide"$/m);
+    assert.match(guide, /^title: "Whye guide"$/m);
     assert.match(guide, /^## Run your first program$/m);
-    assert.match(guide, /\]\(\/eyelight\/SPEC\/#8-verification\)/);
-    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Eyelight specification"$/m);
+    assert.match(guide, /\]\(\/whye\/SPEC\/#8-verification\)/);
+    assert.match(await readFile(join(directory, 'SPEC/index.md'), 'utf8'), /^title: "Whye specification"$/m);
     const playground = await readFile(join(directory, 'playground/index.html'), 'utf8');
     assert.match(playground, /<base href="\.\.\/">/);
-    assert.match(playground, /href="\/eyelight\/SPEC\/"/);
+    assert.match(playground, /href="\/whye\/SPEC\/"/);
     assert.doesNotMatch(playground, /href="[^"]*\.md(?:#|")/);
-    assert.deepEqual(await readFile(join(directory, 'pkg/eyelight_bg.wasm')), await readFile(new URL('pkg/eyelight_bg.wasm', root)));
+    assert.deepEqual(await readFile(join(directory, 'pkg/whye_bg.wasm')), await readFile(new URL('pkg/whye_bg.wasm', root)));
     for (const directoryName of ['src', 'target', '.github']) {
       await assert.rejects(stat(join(directory, directoryName)), { code: 'ENOENT' });
     }
@@ -44,15 +44,15 @@ test('website stages rendered documentation and every playground dependency', as
 });
 
 test('documentation and playground links honor root and nested Pages prefixes', async () => {
-  for (const base of ['', '/preview/eyelight/']) {
-    const directory = await mkdtemp(join(tmpdir(), 'eyelight-prefix-'));
+  for (const base of ['', '/preview/whye/']) {
+    const directory = await mkdtemp(join(tmpdir(), 'whye-prefix-'));
     try {
       await preparePages(directory, base);
       const normalized = base.replace(/\/+$/, '');
       assert.equal(JSON.parse(await readFile(join(directory, '_config.yml'), 'utf8')).baseurl, normalized);
       for (const file of ['index.md', 'SPEC/index.md', 'playground.html']) {
         const text = await readFile(join(directory, file), 'utf8');
-        assert.doesNotMatch(text, /https:\/\/eyereasoner.github.io\/eyelight\//);
+        assert.doesNotMatch(text, /https:\/\/eyereasoner.github.io\/whye\//);
       }
       assert.ok((await readFile(join(directory, 'playground.html'), 'utf8')).includes(`href="${normalized}/SPEC/"`));
     } finally { await rm(directory, { recursive: true, force: true }); }
@@ -60,8 +60,8 @@ test('documentation and playground links honor root and nested Pages prefixes', 
 });
 
 test('committed browser package matches Cargo and performs C1–C9 checking', async () => {
-  const { initSync, runProgram, version } = await import('../pkg/eyelight.js');
-  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const { initSync, runProgram, version } = await import('../pkg/whye.js');
+  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
   const cargo = await readFile(new URL('Cargo.toml', root), 'utf8');
   const expectedVersion = /^version\s*=\s*"([^"]+)"/m.exec(cargo)[1];
   assert.equal(version(), expectedVersion);
@@ -73,7 +73,7 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   assert.ok(guide.includes(`Version **${expectedVersion}**`));
   assert.ok(spec.includes(`Version **${expectedVersion}**`));
   assert.ok(playground.includes(`id="version">v${expectedVersion}</span>`));
-  assert.ok(playground.includes(`eyelight · version ${expectedVersion}</span>`));
+  assert.ok(playground.includes(`whye · version ${expectedVersion}</span>`));
   const source = await readFile(new URL('examples/socrates.pl', root), 'utf8');
   const report = runProgram(source, 'checked', '');
   assert.match(report, /^checked: 2 steps, 1 claim/);
@@ -82,8 +82,8 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
 
 
 test('browser engine checks all nine conditions on the voucher example', async () => {
-  const { initSync, runProgram } = await import('../pkg/eyelight.js');
-  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/whye.js');
+  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/orders.pl', root), 'utf8');
   const proof = runProgram(source, 'proof', '');
   assert.match(proof, /boundary 1 level 0/);
@@ -96,8 +96,8 @@ test('browser engine checks all nine conditions on the voucher example', async (
 
 
 test('browser engine checks the 100,000-level taxonomy within default limits', async () => {
-  const { initSync, runProgram } = await import('../pkg/eyelight.js');
-  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/whye.js');
+  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/deep-taxonomy-100000.pl', root), 'utf8');
   assert.equal(runProgram(source, 'answers', ''), '?- test(Result).\nResult = true.\n');
   const report = runProgram(source, 'checked', '');
@@ -108,8 +108,8 @@ test('browser engine checks the 100,000-level taxonomy within default limits', a
 
 
 test('browser engine discovers and checks three routes across the full airport graph', async () => {
-  const { initSync, runProgram } = await import('../pkg/eyelight.js');
-  initSync({ module: await readFile(new URL('pkg/eyelight_bg.wasm', root)) });
+  const { initSync, runProgram } = await import('../pkg/whye.js');
+  initSync({ module: await readFile(new URL('pkg/whye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/path-discovery.pl', root), 'utf8');
   const answers = runProgram(source, 'answers', '');
   assert.equal((answers.match(/Stops = 2/g) || []).length, 3);

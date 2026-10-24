@@ -1,11 +1,11 @@
 [package]
-name = "eyelight"
-version = "0.1.11"
+name = "whye"
+version = "0.1.12"
 edition = "2021"
 authors = ["Jos De Roo"]
 license = "MIT"
 description = "A small relational reasoner with independently checked proof certificates."
-default-run = "eyelight"
+default-run = "whye"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
