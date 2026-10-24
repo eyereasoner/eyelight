@@ -9,6 +9,38 @@ let exampleSource = null;
 let saveTimer;
 let cancelReady = null;
 let runningState = null;
+let exampleIndex = null;
+
+async function identifyExample(source) {
+  if (!globalThis.crypto?.subtle) return null;
+  try {
+    exampleIndex ??= fetch(new URL('./examples/index.json', import.meta.url), { cache: 'no-cache' })
+      .then(response => {
+        if (!response.ok) throw new Error('Cannot load the example index.');
+        return response.json();
+      });
+    const [index, digest] = await Promise.all([
+      exampleIndex,
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(source.replace(/\r\n?/g, '\n'))),
+    ]);
+    const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    const name = index[hash];
+    return examples.has(name) ? name : null;
+  } catch {
+    exampleIndex = null;
+    return null;
+  }
+}
+
+async function restoreSource(source) {
+  const name = await identifyExample(source);
+  if (name) await loadExample(name);
+  else {
+    exampleSource = null;
+    restore({ source });
+  }
+  return name;
+}
 
 function status(message, error = false) {
   $('status').textContent = message;
@@ -104,7 +136,7 @@ async function loadExample(name) {
   if (busy) stop();
   $('source').disabled = true; $('example').disabled = true; $('run').disabled = true;
   try {
-    const response = await fetch(new URL(`./examples/${name}.pl`, import.meta.url));
+    const response = await fetch(new URL(`./examples/${name}.pl`, import.meta.url), { cache: 'no-cache' });
     if (!response.ok) throw new Error(`Cannot load example ${name}: HTTP ${response.status}.`);
     const source = await response.text();
     restore({ source });
@@ -126,8 +158,10 @@ $('share').addEventListener('click', async () => {
   const state = snapshot();
   const url = new URL(location.href);
   const params = new URLSearchParams();
-  if (exampleSource && state.source === exampleSource.source) {
-    params.set('example', exampleSource.name);
+  const name = exampleSource && state.source === exampleSource.source
+    ? exampleSource.name : await identifyExample(state.source);
+  if (name) {
+    params.set('example', name);
   } else {
     params.set('code', state.source);
   }
@@ -141,21 +175,36 @@ $('close-share').addEventListener('click', () => { $('share-box').hidden = true;
 
 async function initialise() {
   if (busy) stop();
+  clearTimeout(saveTimer);
+  $('source').disabled = true; $('example').disabled = true; $('run').disabled = true;
   $('output').textContent = 'Your first answer is one click away.\n\nPress Run to follow your facts and rules.';
   try {
     const params = new URLSearchParams(location.hash.slice(1));
-    if (params.has('code')) restore({ source: params.get('code') });
+    if (params.has('code')) {
+      const name = await restoreSource(params.get('code'));
+      if (name) {
+        const url = new URL(location.href);
+        url.hash = new URLSearchParams({ example: name }).toString();
+        history.replaceState(null, '', url);
+      }
+    }
     else if (params.has('example')) {
       if (!examples.has(params.get('example'))) throw new Error('Unknown shared example. Choose an example above.');
       await loadExample(params.get('example'));
     } else {
       let saved;
       try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch { /* No usable autosave. */ }
-      if (!restore(saved)) await loadExample('socrates');
+      if (typeof saved?.source === 'string') {
+        const name = await restoreSource(saved.source);
+        if (name && saved.source !== $('source').value) save();
+      } else await loadExample('socrates');
     }
     status('Ready when you are.');
     // Loading shared state never executes it automatically.
   } catch (error) { status(error.message, true); }
+  finally {
+    $('source').disabled = false; $('example').disabled = false; $('run').disabled = busy;
+  }
 }
 window.addEventListener('hashchange', () => { void initialise(); });
 await initialise();

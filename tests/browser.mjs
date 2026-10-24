@@ -39,12 +39,14 @@ async function wait(expression, label) {
   for (let i = 0; i < 1200; i++) { if (await evaluate(expression)) return; await delay(50); }
   throw new Error(`Timed out: ${label}`);
 }
-async function navigate(url) {
+async function navigate(url, canonicalExample) {
   await command('Page.navigate', { url });
-  await wait(`location.href === ${JSON.stringify(url)} && document.readyState === "complete" && !!document.getElementById("run") && !document.getElementById("run").disabled && !document.getElementById("source").disabled`, 'page ready');
+  const expected = new URL(url);
+  if (canonicalExample) expected.hash = new URLSearchParams({ example: canonicalExample });
+  await wait(`location.href === ${JSON.stringify(expected.href)} && document.readyState === "complete" && !!document.getElementById("run") && !document.getElementById("run").disabled && !document.getElementById("source").disabled`, 'page ready');
   const params = new URLSearchParams(new URL(url).hash.slice(1));
-  if (params.has('example')) {
-    await wait(`document.getElementById("example").value === ${JSON.stringify(params.get('example'))} && !document.getElementById("source").disabled`, 'shared example loaded');
+  if (canonicalExample || params.has('example')) {
+    await wait(`document.getElementById("example").value === ${JSON.stringify(canonicalExample || params.get('example'))} && !document.getElementById("source").disabled`, 'shared example loaded');
   } else if (params.has('code')) {
     await wait(`document.getElementById("source").value === ${JSON.stringify(params.get('code'))}`, 'shared source restored');
   }
@@ -57,6 +59,11 @@ async function run() {
   await evaluate('document.getElementById("run").click()');
   await wait('!document.getElementById("run").disabled', 'run completion');
   return evaluate('document.getElementById("output").textContent');
+}
+async function share() {
+  await evaluate('document.getElementById("share-url").value = ""; document.getElementById("share").click()');
+  await wait('document.getElementById("share-url").value !== ""', 'share link ready');
+  return evaluate('document.getElementById("share-url").value');
 }
 async function screenshot(name) {
   if (!screenshots) return;
@@ -73,6 +80,31 @@ try {
   await command('Page.navigate', { url: 'about:blank' });
   await wait('location.href === "about:blank" && document.readyState === "complete"', 'fresh page');
   await command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await navigate(`${base}#example=socrates`);
+  const currentSocrates = await readFile(new URL('../examples/socrates.pl', import.meta.url), 'utf8');
+  const legacySocrates = await readFile(new URL('fixtures/legacy-socrates.pl', import.meta.url), 'utf8');
+  await evaluate(`localStorage.setItem('wheye.playground.v1', JSON.stringify({source: ${JSON.stringify(legacySocrates)}}))`);
+  await navigate(base);
+  await wait(`document.getElementById("source").value === ${JSON.stringify(currentSocrates)}`, 'old autosave refreshed');
+  assert.equal(new URL(await share()).hash, '#example=socrates');
+  assert.match(await run(), /Who = socrates/);
+  for (const source of [legacySocrates, currentSocrates]) {
+    await navigate(`${base}#${new URLSearchParams({ code: source })}`, 'socrates');
+    assert.equal(await evaluate('document.getElementById("source").value'), currentSocrates);
+    assert.equal(new URL(await share()).hash, '#example=socrates');
+    assert.match(await evaluate('document.getElementById("output").textContent'), /first answer/);
+    assert.match(await run(), /checked: 2 steps, 1 claim/);
+  }
+  const draft = "human('Élodie'). ?- human(Who).";
+  await evaluate(`localStorage.setItem('wheye.playground.v1', JSON.stringify({source: ${JSON.stringify(draft)}}))`);
+  await navigate(`${base}#${new URLSearchParams({ code: legacySocrates })}`, 'socrates');
+  await delay(250);
+  assert.equal(await evaluate('JSON.parse(localStorage.getItem("wheye.playground.v1")).source'), draft);
+  const editedLegacy = legacySocrates + '\n% My own changes\n';
+  await navigate(`${base}#${new URLSearchParams({ code: editedLegacy })}`);
+  assert.equal(await evaluate('document.getElementById("source").value'), editedLegacy);
+  assert.equal(new URLSearchParams(new URL(await share()).hash.slice(1)).get('code'), editedLegacy);
+  assert.match(await run(), /Only table directives are supported/);
   await navigate(`${base}#example=socrates`);
   assert.match(await evaluate('document.getElementById("output").textContent'), /first answer/);
   assert.equal(await evaluate('document.querySelector("#mode, #saved-proof")'), null);
@@ -118,9 +150,7 @@ try {
   await set('source', deep + '\n?- check.');
   assert.match(await run(), /^checked: 100003 steps, 1 claim/m);
   await set('source', deep);
-  await evaluate('document.getElementById("share").click()');
-  await wait('!document.getElementById("share-box").hidden', 'deep taxonomy share opened');
-  assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=deep-taxonomy-100000');
+  assert.equal(new URL(await share()).hash, '#example=deep-taxonomy-100000');
 
   await navigate(`${base}#example=path-discovery`);
   const airport = await evaluate('document.getElementById("source").value');
@@ -132,18 +162,15 @@ try {
   }
   assert.match(routes, /^checked: [0-9]+ steps, 3 claims/m);
   await set('source', airport);
-  await evaluate('document.getElementById("share").click()');
-  assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=path-discovery');
+  assert.equal(new URL(await share()).hash, '#example=path-discovery');
   await screenshot('desktop-airport-routes');
   await example('paths');
   for (const name of ['ben', 'cara']) assert.match(await run(), new RegExp(`Who = ${name}`));
-  await evaluate('document.getElementById("share").click()');
-  assert.equal(new URL(await evaluate('document.getElementById("share-url").value')).hash, '#example=paths');
+  assert.equal(new URL(await share()).hash, '#example=paths');
 
   const unicode = "human('Élodie'). mortal(P) :- human(P). ?- mortal(Who). ?- why. ?- check.";
   await set('source', unicode);
-  await evaluate('document.getElementById("share").click()');
-  const shared = await evaluate('document.getElementById("share-url").value');
+  const shared = await share();
   const params = new URLSearchParams(new URL(shared).hash.slice(1));
   assert.equal(params.get('code'), unicode);
   assert.deepEqual([...params.keys()], ['code']);
@@ -215,5 +242,5 @@ try {
     }
   }
   assert.deepEqual(exceptions, []);
-  console.log('Browser checks passed: source-selected answers, proofs and C1–C9 checks, echoed queries, all airport routes, depth-100000 taxonomy, desktop/mobile layouts, rendered docs, sharing, Unicode, autosave, cancellation and restart.');
+  console.log('Browser checks passed: source-selected answers, proofs and C1–C9 checks, echoed queries, all airport routes, depth-100000 taxonomy, desktop/mobile layouts, rendered docs, short example links, restored old examples, custom snapshots, Unicode, autosave, cancellation and restart.');
 } finally { socket.close(); }

@@ -13,6 +13,8 @@ Keep diagnostics specific and user-facing text direct.
   the API, `main.rs` the CLI, and `wasm.rs` the browser bridge.
 - `examples/*.pl`: runnable programs with clear header comments describing
   the situation, result, and language feature. Do not mention project provenance.
+  After editing them, run `node scripts/index-examples.mjs` to update fingerprints
+  used for short share links and restoring older bundled examples.
 - `tests/`: language, CLI, proof, worker, Pages, browser, and release checks.
 - `benches/taxonomy.rs`: standalone taxonomy timing benchmark.
 - `playground.html`, `playground.css`, `playground.js`, `playground-worker.js`:

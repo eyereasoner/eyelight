@@ -1,6 +1,6 @@
 # Wheye guide
 
-Version **0.1.15**. Run a Prolog subset in the native CLI or browser, get
+Version **0.1.16**. Run a Prolog subset in the native CLI or browser, get
 answers, and inspect their independently checkable proofs. The
 [specification](https://eyereasoner.github.io/wheye/SPEC/) defines the language
 and the [C1–C9 contract](https://eyereasoner.github.io/wheye/SPEC/#8-verification).
@@ -34,6 +34,12 @@ add facts. A false goal check is a result, not a run error.
 
 The playground uses the same source requests. Opening a shared program does
 not run it automatically; press **Run**.
+
+Unedited examples use short share links such as
+[Socrates](https://eyereasoner.github.io/wheye/playground/#example=socrates).
+The playground recognizes saved copies of bundled examples, including older
+versions, and loads their current source. Custom edits retain their exact text
+in saved state and full source share links.
 
 ## Explore the examples
 
