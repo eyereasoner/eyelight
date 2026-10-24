@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const modes = new Set(['answers', 'explain', 'proof', 'checked', 'check']);
+const modes = new Set(['answers', 'proof', 'checked', 'check']);
 const examples = new Set(['abstract-interpretation', 'access-control-policy', 'ackermann', 'age', 'aggregation', 'animals', 'arithmetic', 'battery-dispatch', 'bayes-diagnosis', 'beam-deflection', 'binomial-vandermonde', 'braking-distance', 'buck-converter-design', 'collatz', 'complex', 'control-system', 'critical-path-schedule', 'data-quality-audit', 'deep-taxonomy-10', 'deep-taxonomy-100', 'deep-taxonomy-1000', 'deep-taxonomy-10000', 'deep-taxonomy-100000', 'delfour', 'dijkstra', 'dog-license', 'easter', 'electrical-rc-filter', 'explainable-ev-depot-configuration', 'expression-eval', 'family', 'family-cousins', 'fft8-numeric', 'fibonacci', 'field-nitrogen-balance', 'flute-puzzle', 'french-cities', 'friends', 'good-cobbler', 'gps', 'gray-code-counter', 'hamming-code', 'hanoi', 'interval-relations', 'inventory', 'job-shop-scheduling', 'knapsack-optimization', 'lagrange-cosets', 'least-squares-regression', 'list-collection', 'lists', 'matrix-multiplication', 'modular-exponentiation', 'negation', 'newton-raphson', 'observability-log-correlation', 'orbital-transfer-design', 'orders', 'padovan', 'paraconsistent-animals', 'path-discovery', 'paths', 'peano', 'peasant', 'pell-equation', 'permissions', 'policy-risk', 'polynomial', 'queens', 'radioactive-decay', 'rdf', 'research-portal', 'sbom-vulnerability-response', 'schema-inference', 'service-outage-recovery', 'shortest-path', 'sieve', 'socrates', 'state-transitions', 'statistics-summary', 'symbolic-derivative', 'term-structure', 'text-processing', 'turing', 'type-inference', 'unification', 'values', 'vector-similarity', 'weighted-interval-scheduling', 'wind-turbine', 'witnesses']);
 const storageKey = 'wheye.playground.v1';
 let worker = null;
@@ -35,7 +35,8 @@ function syncMode() {
 function restore(state) {
   if (typeof state?.source !== 'string') return false;
   $('source').value = state.source;
-  $('mode').value = modes.has(state.mode) ? state.mode : 'answers';
+  const mode = state.mode === 'explain' ? 'proof' : state.mode;
+  $('mode').value = modes.has(mode) ? mode : 'answers';
   $('saved-proof').value = typeof state.proof === 'string' ? state.proof : '';
   $('example').value = '';
   syncMode();

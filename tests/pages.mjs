@@ -76,7 +76,7 @@ test('committed browser package matches Cargo and performs C1–C9 checking', as
   assert.ok(playground.includes(`wheye · version ${expectedVersion}</span>`));
   const source = await readFile(new URL('examples/socrates.pl', root), 'utf8');
   const report = runProgram(source, 'checked', '');
-  assert.match(report, /^checked: 3 steps, 3 claims/);
+  assert.match(report, /^checked: 2 steps, 1 claim/);
   for (let condition = 1; condition <= 9; condition++) assert.match(report, new RegExp(`C${condition} `));
 });
 
@@ -99,7 +99,7 @@ test('browser engine checks the 100,000-level taxonomy within default limits', a
   const { initSync, runProgram } = await import('../pkg/wheye.js');
   initSync({ module: await readFile(new URL('pkg/wheye_bg.wasm', root)) });
   const source = await readFile(new URL('examples/deep-taxonomy-100000.pl', root), 'utf8');
-  assert.equal(runProgram(source, 'answers', ''), '?- test(Result).\nResult = true.\n');
+  assert.equal(runProgram(source, 'answers', ''), 'Result = true.\n');
   const report = runProgram(source, 'checked', '');
   assert.match(report, /^checked: 100003 steps, 1 claim/);
   assert.match(report, /C1 resolution: 100003 checked, 0 failed/);
@@ -118,6 +118,6 @@ test('browser engine discovers and checks three routes across the full airport g
   }
   const proof = runProgram(source, 'proof', '');
   const report = runProgram(source, 'check', proof);
-  assert.match(report, /^checked: [0-9]+ steps, 11 claims/);
+  assert.match(report, /^checked: [0-9]+ steps, 3 claims/);
   assert.match(report, /C5 re-decision: [1-9][0-9]* checked, 0 failed/);
 });

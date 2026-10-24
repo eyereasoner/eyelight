@@ -7,10 +7,9 @@ const HELP: &str = "wheye — a small relational reasoner
 Usage: wheye [OPTIONS] FILE...
        wheye [OPTIONS] -
 
-  -e, --explain              Answers with their supporting rules and facts
-  -p, --proof                Write a checkable proof certificate
-  -c, --prove-and-check      Generate and check a certificate
-      --check-proof FILE    Check a saved certificate against the source files
+  -p, --proof               Print the readable, checkable proof
+  -c, --prove-and-check     Generate and check the proof
+      --check-proof FILE    Check a saved proof against the source files
       --max-facts N         Maximum stored fact/evidence steps (default 1000000)
       --max-matches N       Maximum matching/work operations (default 10000000)
   -h, --help                Show this help
@@ -18,6 +17,7 @@ Usage: wheye [OPTIONS] FILE...
 
 Files use Prolog-style .pl syntax: facts, Head :- Body, and ?- queries.
 Use - for stdin. Multiple files form one program, in the supplied order.
+Without an output option, print answers only. Assertions run silently.
 Proof checking verifies recorded claims, not answer completeness.
 ";
 
@@ -53,7 +53,6 @@ fn run() -> Result<String, Error> {
             }
             "-h" | "--help" => return Ok(HELP.to_owned()),
             "-v" | "--version" => return Ok(format!("wheye {VERSION}\n")),
-            "-e" | "--explain" => Some("explain"),
             "-p" | "--proof" => Some("proof"),
             "-c" | "--prove-and-check" => Some("checked"),
             "--check-proof" => {
@@ -90,7 +89,9 @@ fn run() -> Result<String, Error> {
         };
         if let Some(selected) = selected {
             if mode.replace(selected).is_some() {
-                return Err(Error::new("Choose one output mode: --explain, --proof, --prove-and-check, or --check-proof."));
+                return Err(Error::new(
+                    "Choose one output mode: --proof, --prove-and-check, or --check-proof.",
+                ));
             }
         }
     }
@@ -123,8 +124,7 @@ fn run() -> Result<String, Error> {
     let result = reason(&program, limits)?;
     match mode {
         "answers" => Ok(result.output(&program)),
-        "explain" => Ok(result.explain(&program)),
-        "proof" => Ok(result.certificate(&program).to_string()),
+        "proof" => Ok(result.proof(&program)),
         "checked" => Ok(
             check_with_limits(&program, &result.certificate(&program), limits)?
                 .require_valid()?

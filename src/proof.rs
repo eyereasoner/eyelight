@@ -219,6 +219,7 @@ impl Certificate {
             run.answers
                 .iter()
                 .enumerate()
+                .filter(|(q, _)| !program.queries[*q].assertion)
                 .flat_map(|(q, answers)| {
                     answers.iter().map(move |a| Claim::Answer {
                         query: q + 1,
@@ -321,7 +322,7 @@ impl Certificate {
         let mut claims = false;
         for (line_number, line) in lines.enumerate() {
             let line = line.trim();
-            if line.is_empty() {
+            if line.is_empty() || line.starts_with('%') {
                 continue;
             }
             let invalid = || {

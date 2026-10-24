@@ -18,18 +18,18 @@ fn cli(args: &[&str], input: &str) -> std::process::Output {
     child.wait_with_output().unwrap()
 }
 #[test]
-fn stdin_answers_explanation_and_generated_proof_check() {
+fn stdin_answers_proof_and_generated_proof_check() {
     let source = "human(socrates). mortal(X) :- human(X). ?- mortal(Who).";
     let result = cli(&["-"], source);
     assert!(result.status.success());
     assert_eq!(
         String::from_utf8(result.stdout).unwrap(),
-        "?- mortal(Who).\nWho = socrates.\n"
+        "Who = socrates.\n"
     );
-    let result = cli(&["-e", "-"], source);
+    let result = cli(&["-p", "-"], source);
     assert!(String::from_utf8(result.stdout)
         .unwrap()
-        .contains("rule 1; uses [1]"));
+        .contains("step 2 rule 1 [1] : mortal(socrates)."));
     let result = cli(&["-c", "-"], source);
     assert!(result.status.success());
     let text = String::from_utf8(result.stdout).unwrap();
@@ -66,7 +66,7 @@ fn errors_and_limits_have_nonzero_status_and_no_partial_output() {
         (vec!["--max-facts", "1", "-"], "p(a). q(X) :- p(X)."),
         (vec!["--bogus"], ""),
         (vec!["--check-proof", "-", "-"], ""),
-        (vec!["-e", "-p", "-"], ""),
+        (vec!["-p", "-c", "-"], ""),
     ] {
         let result = cli(&args, input);
         assert!(!result.status.success());
@@ -130,4 +130,50 @@ fn all_nine_conditions_work_through_cli_and_saved_proof_tampering_fails() {
     );
     assert!(!result.status.success());
     assert!(result.stdout.is_empty());
+}
+
+#[test]
+fn answers_are_quiet_and_one_proof_format_is_checkable() {
+    let source = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/socrates.pl");
+    let answer = cli(&[source], "");
+    assert!(answer.status.success());
+    assert_eq!(answer.stdout, b"Who = socrates.\n");
+    let proof = cli(&["-p", source], "");
+    let result = cli(&["--proof", source], "");
+    assert!(result.status.success());
+    assert_eq!(result.stdout, proof.stdout);
+    let text = String::from_utf8(proof.stdout).unwrap();
+    let certificate = wheye::Certificate::parse(&text).unwrap();
+    assert_eq!(certificate.steps.len(), 2);
+    assert_eq!(certificate.claims.len(), 1);
+    assert!(cli(&["--check-proof", "-", source], &text).status.success());
+    let forged = text.replace("mortal(socrates)", "mortal(plato)");
+    assert!(!cli(&["--check-proof", "-", source], &forged)
+        .status
+        .success());
+    let failure = cli(&["-"], "p(a). ?- p(X). :- assertion(p(b)).");
+    assert!(!failure.status.success());
+    assert!(failure.stdout.is_empty());
+    assert!(String::from_utf8(failure.stderr)
+        .unwrap()
+        .contains("Assertion failed"));
+}
+
+#[test]
+fn help_matches_the_supported_output_options() {
+    let help = String::from_utf8(cli(&["-h"], "").stdout).unwrap();
+    assert!(help.contains("Without an output option, print answers only. Assertions run silently."));
+    assert!(help.contains("-p, --proof"));
+    assert!(help.contains("-c, --prove-and-check"));
+    assert!(help.contains("--check-proof FILE"));
+    assert!(!help.contains("--explain"));
+    assert!(!help.contains("-e,"));
+    for option in ["-e", "--explain"] {
+        let result = cli(&[option, "-"], "");
+        assert!(!result.status.success());
+        assert!(result.stdout.is_empty());
+        assert!(String::from_utf8(result.stderr)
+            .unwrap()
+            .contains("Unknown option"));
+    }
 }

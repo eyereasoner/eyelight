@@ -622,30 +622,15 @@ impl Run {
                 }
             }
         } else {
-            let mut previous = None;
-            for index in 0..=program.queries.len() {
-                for _ in program.followups.iter().filter(|i| **i == index) {
-                    text.push_str("\n?- why.\n");
-                    if let Some(query) = previous {
-                        text.push_str(&self.explanation(program, Some(query)));
-                    } else {
-                        text.push_str("Ask a query before requesting its explanation.\n");
-                    }
-                }
-                let Some(query) = program.queries.get(index) else {
-                    break;
-                };
+            let mut displayed = false;
+            for (index, query) in program.queries.iter().enumerate() {
                 if query.assertion {
-                    text.push_str(&format!(
-                        "check passed: {}\n",
-                        query_text(query).trim_start_matches("?- ")
-                    ));
                     continue;
                 }
-                if index > 0 {
+                if displayed {
                     text.push('\n');
                 }
-                text.push_str(&format!("{}\n", query_text(query)));
+                displayed = true;
                 if self.answers[index].is_empty() {
                     text.push_str("false.\n");
                 }
@@ -665,74 +650,27 @@ impl Run {
                         text.push_str(".\n");
                     }
                 }
-                previous = Some(index);
-                if query.explain {
-                    text.push_str(&self.explanation(program, Some(index)));
-                }
             }
         }
         text
     }
-    pub fn explain(&self, program: &Program) -> String {
-        let mut text = self.output(program);
-        text.push_str(&self.explanation(program, None));
-        text
-    }
-    fn explanation(&self, program: &Program, query: Option<usize>) -> String {
-        let certificate = if let Some(index) = query {
-            if self.answers[index].is_empty() {
-                return "No successful answer to explain.\n".into();
-            }
-            let mut selected = self.clone();
-            for (i, answers) in selected.answers.iter_mut().enumerate() {
-                if i != index {
-                    answers.clear();
-                }
-            }
-            selected.certificate(program)
-        } else {
-            self.certificate(program)
-        };
-        let mut text = String::from("\nExplanation\n");
-        let mut rules = vec![false; program.rules.len()];
+    /// The single, readable proof format, accepted by `Certificate::parse`.
+    pub fn proof(&self, program: &Program) -> String {
+        let certificate = self.certificate(program);
+        let mut used = vec![false; program.rules.len()];
         for step in &certificate.steps {
             if let Justification::Rule { rule, .. } = step.justification {
-                rules[rule - 1] = true;
+                used[rule - 1] = true;
             }
         }
-        for (index, used) in rules.into_iter().enumerate() {
-            if used {
-                text.push_str(&format!("Rule {}: {}\n", index + 1, program.rules[index]));
+        let mut text = String::from("wheye-proof 1\n");
+        for (index, rule) in program.rules.iter().enumerate() {
+            if used[index] {
+                text.push_str(&format!("% Rule {}: {}\n", index + 1, rule));
             }
         }
-        for (index, step) in certificate.steps.iter().enumerate() {
-            let justification = match &step.justification {
-                Justification::Source(source) => format!("source fact {source}"),
-                Justification::Rule { rule, premises } => format!(
-                    "rule {rule}; uses {}",
-                    premises
-                        .iter()
-                        .map(|id| format!("[{id}]"))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                ),
-                Justification::Builtin => "built-in re-decision".into(),
-                Justification::NotBuiltin => "negated built-in re-decision".into(),
-                Justification::Absent { boundary } => format!("absent from boundary {boundary}"),
-                Justification::Aggregate { boundary, .. } => {
-                    format!("aggregate over boundary {boundary}")
-                }
-                Justification::Fresh { rule, .. } => format!("fresh witness for rule {rule}"),
-            };
-            text.push_str(&format!(
-                "[{}] {}. ({justification})\n",
-                index + 1,
-                step.atom
-            ));
-        }
-        if certificate.claims.is_empty() {
-            text.push_str("No positive claims. This is not a proof of absence.\n");
-        }
+        let serialized = certificate.to_string();
+        text.push_str(serialized.split_once('\n').unwrap().1);
         text
     }
     pub fn certificate(&self, program: &Program) -> Certificate {

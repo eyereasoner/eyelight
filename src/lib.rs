@@ -53,8 +53,7 @@ pub fn execute(
     let run = reason(&program, limits)?;
     match mode {
         "answers" => Ok(run.output(&program)),
-        "explain" => Ok(run.explain(&program)),
-        "proof" => Ok(run.certificate(&program).to_string()),
+        "proof" => Ok(run.proof(&program)),
         "checked" => Ok(
             check_with_limits(&program, &run.certificate(&program), limits)?
                 .require_valid()?

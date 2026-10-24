@@ -1,7 +1,7 @@
 # Wheye guide
 
-Version **0.1.13**. Run a Prolog subset in the native CLI or browser, inspect
-explanations, and check independent proof certificates. The
+Version **0.1.14**. Run a Prolog subset in the native CLI or browser, get
+answers, and inspect their independently checkable proofs. The
 [specification](https://eyereasoner.github.io/wheye/SPEC/) defines the language
 and the [C1–C9 contract](https://eyereasoner.github.io/wheye/SPEC/#8-verification).
 
@@ -12,7 +12,7 @@ With Rust and Cargo installed:
 ```sh
 cargo build --release --locked
 ./target/release/wheye examples/socrates.pl
-./target/release/wheye --explain examples/socrates.pl
+./target/release/wheye --proof examples/socrates.pl
 ./target/release/wheye --prove-and-check examples/socrates.pl
 cargo install --path . --locked
 ```
@@ -27,8 +27,9 @@ mortal(Person) :- human(Person).
 :- assertion(mortal(socrates)).
 ```
 
-`why` explains the preceding query. Assertions check an expected result and
-fail the run if no solution exists. They never assert facts. Opening a shared
+`why` markers in existing programs are accepted without adding output. Use
+`--proof` to see the reasoning. Assertions check an expected result and fail
+the run if no solution exists; successful checks stay silent. They never assert facts. Opening a shared
 playground program does not run it automatically; press **Run**.
 
 ## Explore the examples
@@ -60,9 +61,9 @@ airports are excluded, and an airport can have a zero-leg route to itself.
 The example includes assertions for its supplied answers.
 
 The packaged classification examples cover depths 10, 100, 1,000, 10,000, and
-100,000. The first four include `why` and assertions; the largest selects
+100,000. The first four include compatibility `why` markers and assertions; the largest selects
 `test(true)` and is kept small enough to inspect or check without printing its
-entire closure. Use files for large certificates and explanations:
+entire closure. Use files for large proofs:
 
 ```sh
 ./target/release/wheye -c examples/deep-taxonomy-100000.pl
@@ -157,9 +158,12 @@ the voucher example:
 ./target/release/wheye --check-proof /tmp/orders.proof examples/orders.pl
 ```
 
-Certificates start with `wheye-proof 1` and list source facts, rule
-applications, pure decisions, closed boundaries, demanded-call patterns, and
-selected query claims. They are separate from the Prolog source language.
+There is one proof format, starting with `wheye-proof 1`. It lists supporting
+source facts, rule applications, pure decisions, any required closed boundaries
+and demanded-call patterns, and selected answer claims. `% Rule` comments show
+the source rules used; comments are informative and the checker uses the supplied
+source program. The proof is both readable and accepted by `--check-proof`.
+Assertions execute during reasoning but are not exported as answer claims.
 The checker validates the supplied evidence; it does not call the evaluator,
 activate tables, or repair missing facts. C5 recomputes builtins and aggregates.
 C6 requires complete finite models and transitively complete demanded calls;
@@ -185,16 +189,16 @@ wheye --check-proof - rules.pl data.pl < /tmp/saved.proof
 
 | Option | Output |
 | --- | --- |
-| `-e`, `--explain` | Answers and supporting evidence |
-| `-p`, `--proof` | Saved proof certificate |
-| `-c`, `--prove-and-check` | Generate and independently check a certificate |
+| `-p`, `--proof` | The readable, checkable proof |
+| `-c`, `--prove-and-check` | Generate and independently check the proof |
 | `--check-proof FILE` | Check saved evidence against the source |
 | `--max-facts N` | Bound stored evidence |
 | `--max-matches N` | Bound counted matching and finite-model work |
 | `-v`, `--version` | Version |
 | `-h`, `--help` | Usage |
 
-Choose one output mode per invocation. Success returns status 0. Parse errors,
+Default output contains only answer bindings, `true.`, or `false.`, without query
+headings, explanations, or successful assertion messages. Choose one output mode per invocation. Success returns status 0. Parse errors,
 failed assertions, incomplete runs, and invalid proofs return status 1 with no
 successful partial stdout. Keep source file order the same when checking;
 source fact, rule, and query IDs are separate ordered lists.

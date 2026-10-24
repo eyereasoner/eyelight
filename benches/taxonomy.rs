@@ -49,9 +49,9 @@ fn main() {
             let check_time = start.elapsed();
             assert!(report.valid(), "{report}");
             let start = Instant::now();
-            let explanation = run.explain(&p);
+            let explanation = run.proof(&p);
             let explain_time = start.elapsed();
-            assert!(explanation.starts_with("?- test(Result).\nResult = true."));
+            assert!(explanation.starts_with("wheye-proof 1\n"));
             drop((p, run, proof, serialized, restored, report, explanation));
             samples.push([
                 parse_time,

@@ -1,6 +1,6 @@
 # Wheye specification
 
-Version **0.1.13**. Implemented Prolog subset and independently checked proof
+Version **0.1.14**. Implemented Prolog subset and independently checked proof
 certificate contract. This specification does not claim full ISO Prolog conformance.
 
 Uppercase MUST, MUST NOT, SHOULD, and MAY express requirement levels under
@@ -391,26 +391,30 @@ omitted from display. Aggregate producer variables are local and do not escape.
 Successful requests without displayed variables print `true.`; unsuccessful
 queries print `false.`, which is not a certificate of absence.
 
-`?- why.` explains the preceding ordinary query, even when assertions or other
-follow-ups intervene. With no preceding query it asks for one. After a failed
-query it reports no successful answer. `?- why(Goal).` queries and explains Goal,
-which MAY be a parenthesized conjunction, and becomes the new context.
-Explanations list numbered source rules and evidence steps with supporting IDs.
+Default output MUST contain only answer bindings, `true.`, or `false.`, with
+blank lines between queries. It MUST NOT print query headings or automatic
+proofs. `?- why.` is accepted as a compatibility marker without output;
+`?- why(Goal).` is accepted as a query for Goal without changing the output mode.
 
 `:- assertion(Goal).` requires at least one successful solution. Assertions run
 in source order and MAY request demand-driven computation. A failing assertion
-MUST return an error. Successful assertions print `check passed: Goal.`. They
-never add facts. Without queries, ordinary output lists newly derived ordinary
-facts, excluding source facts and auxiliary evidence. The guide defines CLI
-flags for answers, explanations, proof generation, and checking saved proofs.
+MUST return an error. Successful assertions MUST stay silent and MUST NOT be
+exported as answer claims. They never add facts. Without queries, ordinary output
+lists newly derived ordinary facts, excluding source facts and auxiliary evidence.
+
+There MUST be one readable, checkable proof format, selected by `-p` or `--proof`.
+There is no separate explanation option. Requesting a proof MUST NOT
+prepend answers or append a second explanation. The playground presents one
+Proof choice. The guide defines the CLI flags for proof generation and checking.
 
 ## 7. Proof Certificates
 
 
 ### 7.1 Envelope and Ordering
 
-A certificate MUST begin with the exact line `wheye-proof 1`. Subsequent blank lines
-MAY appear. Step IDs MUST be contiguous positive integers starting at 1, followed by
+A certificate MUST begin with the exact line `wheye-proof 1`. Subsequent blank lines and `%` comment lines
+MAY appear. Comments are informative; verification uses the supplied source, not
+commented rule text. Step IDs MUST be contiguous positive integers starting at 1, followed by
 claims. Steps and boundary records MUST NOT appear after claims.
 
 ```text
@@ -488,7 +492,8 @@ no queries, `derived STEP` instead claims a new rule conclusion. A queried progr
 NOT use `derived` claims. Query answers are selections, never inference steps or premise
 providers. Query-owned aggregate evidence MUST NOT satisfy a rule-owned aggregate goal.
 
-The generator keeps selected claims, their transitive dependencies, and complete
+The generator selects ordinary query answers, omitting successful assertion
+claims, and keeps their transitive dependencies, and complete
 boundaries they require, then renumbers them. It marks dependencies iteratively and
 scans retained IDs in order, so a deep proof chain does not require recursive traversal
 or sorting. Boundaries can make proofs considerably larger than proofs of positive rules

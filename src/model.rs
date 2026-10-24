@@ -300,7 +300,6 @@ pub struct Query {
     pub goals: Vec<Literal>,
     pub variables: Vec<String>,
     pub assertion: bool,
-    pub explain: bool,
 }
 
 /// Merge parsed documents with `extend`; variable scopes are local to clauses.
@@ -310,16 +309,12 @@ pub struct Program {
     pub rules: Vec<Rule>,
     pub queries: Vec<Query>,
     pub tables: BTreeSet<(String, usize)>,
-    /// Follow-up explanations, indexed by the number of preceding requests.
-    pub followups: Vec<usize>,
 }
 
 impl Program {
     pub fn extend(&mut self, other: Self) {
         self.facts.extend(other.facts);
         self.rules.extend(other.rules);
-        self.followups
-            .extend(other.followups.into_iter().map(|i| i + self.queries.len()));
         self.queries.extend(other.queries);
         self.tables.extend(other.tables);
     }

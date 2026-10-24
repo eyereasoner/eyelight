@@ -595,12 +595,7 @@ impl Parser {
         }
         Ok(goals)
     }
-    fn request(
-        &mut self,
-        program: &mut Program,
-        assertion: bool,
-        explain: bool,
-    ) -> Result<(), Error> {
+    fn request(&mut self, program: &mut Program, assertion: bool) -> Result<(), Error> {
         let goals = self.goals()?;
         let mut variables = Vec::new();
         for goal in &goals {
@@ -625,7 +620,6 @@ impl Parser {
             goals,
             variables,
             assertion,
-            explain,
         });
         Ok(())
     }
@@ -635,13 +629,11 @@ impl Parser {
             if self.take("?-") {
                 if self.take("why") {
                     if self.take("(") {
-                        self.request(&mut program, false, true)?;
+                        self.request(&mut program, false)?;
                         self.expect(")")?;
-                    } else {
-                        program.followups.push(program.queries.len());
                     }
                 } else {
-                    self.request(&mut program, false, false)?;
+                    self.request(&mut program, false)?;
                 }
             } else if self.take(":-") {
                 if self.take("table") {
@@ -668,7 +660,7 @@ impl Parser {
                     }
                 } else if self.take("assertion") {
                     self.expect("(")?;
-                    self.request(&mut program, true, false)?;
+                    self.request(&mut program, true)?;
                     self.expect(")")?;
                 } else {
                     return Err(self.error("Supported directives are table and assertion."));
